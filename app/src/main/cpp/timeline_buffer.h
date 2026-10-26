@@ -207,7 +207,7 @@ private:
  */
 class TimelineBuffer {
 public:
-    static constexpr size_t WAVEFORM_SIZE = 32;
+    static constexpr size_t WAVEFORM_SIZE = 5;
     // cushion policy lives in mTracker; timeline reads mTracker.target() live
     TimelineBuffer(int sampleRate, int channels, int staticCushionMs, int percentilePct)
         : mSampleRate(sampleRate),
@@ -216,29 +216,40 @@ public:
           // ring can't be reallocated mid-stream: size for worst-case backlog, i.e. cap
           // of largest reachable cushion + one throttle window of overshoot (trims are
           // throttled), 2x slack
-          mRing(2 * capOf(mTracker.ceil()) + (size_t)sampleRate * TRIM_THROTTLE_MS / 1000 * channels) {}
+          mRing(2 * capOf(mTracker.ceil()) + (size_t)sampleRate * TRIM_THROTTLE_MS / 1000 * channels) {
+        const float cutoffs[4] = {125.0f, 400.0f, 1600.0f, 5000.0f};
+        for (size_t band = 0; band < 4; ++band)
+            mSpectrumAlpha[band] = 1.0f - std::exp(-6.28318530718f * std::min(cutoffs[band], sampleRate * .45f) / sampleRate);
+    }
 
     void noteOutputBufferFrames(int frames) { mTracker.noteOutputBufferFrames(frames); }
 
-    // Publish the actual output signal as a rolling RMS envelope for the compact player.
-    // Called on the audio callback; only fixed-size arithmetic and lock-free atomics.
+    // Five real frequency bands, bass to treble; fixed arithmetic on the audio callback.
     void publishWaveform(const int16_t *pcm, int32_t frames) {
-        if (!pcm || frames <= 0) return;
-        const uint32_t base = mWaveWrite.load(std::memory_order_relaxed);
-        for (size_t bin = 0; bin < WAVEFORM_SIZE; ++bin) {
-            const int32_t first = (int64_t)frames * bin / WAVEFORM_SIZE;
-            const int32_t last = (int64_t)frames * (bin + 1) / WAVEFORM_SIZE;
-            double sum = 0.0;
-            int count = 0;
-            for (int32_t frame = first; frame < last; ++frame) {
-                for (int channel = 0; channel < mChannels; ++channel) {
-                    const double sample = pcm[(size_t)frame * mChannels + channel] / 32768.0;
-                    sum += sample * sample;
-                    ++count;
+        if (!pcm || frames <= 0 || mChannels <= 0) return;
+        const int channels = std::min(mChannels, 8);
+        double energy[5] = {};
+        for (int32_t frame = 0; frame < frames; ++frame) {
+            for (int channel = 0; channel < channels; ++channel) {
+                const float sample = pcm[(size_t)frame * mChannels + channel] / 32768.0f;
+                float previous = 0.0f;
+                for (size_t band = 0; band < 4; ++band) {
+                    float &low = mSpectrumState[channel][band];
+                    low += mSpectrumAlpha[band] * (sample - low);
+                    const float signal = low - previous;
+                    energy[band] += signal * signal;
+                    previous = low;
                 }
+                const float treble = sample - previous;
+                energy[4] += treble * treble;
             }
-            const float rms = count ? (float)std::sqrt(sum / count) : 0.0f;
-            mWaveform[(base + bin) % WAVEFORM_SIZE].store(rms, std::memory_order_relaxed);
+        }
+        const uint32_t base = mWaveWrite.load(std::memory_order_relaxed);
+        for (size_t band = 0; band < 5; ++band) {
+            const float rms = (float)std::sqrt(energy[band] / ((double)frames * channels));
+            float &level = mSpectrumEnvelope[band];
+            level += (rms > level ? .45f : .08f) * (rms - level);
+            mWaveform[band].store(level, std::memory_order_relaxed);
         }
         mWaveWrite.store(base + WAVEFORM_SIZE, std::memory_order_release);
     }
@@ -413,6 +424,9 @@ private:
     DelayTracker mTracker;               // owns cushion policy; read live each read()
     SpscRing mRing;
     TimelineMetrics mMetrics;
+    float mSpectrumAlpha[4]{};
+    float mSpectrumState[8][4]{};
+    float mSpectrumEnvelope[5]{};
     std::array<std::atomic<float>, WAVEFORM_SIZE> mWaveform{};
     std::atomic<uint32_t> mWaveWrite{0};
     bool mPriming = true;                // stream start: buffer output to build cushion
