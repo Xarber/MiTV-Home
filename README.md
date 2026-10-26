@@ -19,7 +19,7 @@ A remote-first Android TV launcher with a six-item dock, fullscreen artwork, fas
 - **Fullscreen banners.** App artwork takes priority; source banners use centered device logos. Translucent surfaces and strong library shading keep controls readable. Popups capture and blur the current screen when opened; their backdrop is discarded on dismissal.
 - **Remote ergonomics.** Hold OK on an item for its menu. Hold Back for Control Center. A downward All Apps hint leads from Inputs to the app grid.
 - **Compact status.** Time, date, and an expanding, single-line network bubble.
-- **Integrated AirPlay.** The receiver starts with Home and can remain active in the background. Audio uses a small upper-left circle with five sound-level bars and a focused popup with playback/volume controls; supported video and screen mirroring open fullscreen.
+- **Integrated AirPlay.** The receiver starts with Home and can remain active in the background. Audio uses a small upper-left circle with five real frequency bands, from bass to treble and a focused popup with playback/volume controls; supported video and screen mirroring open fullscreen.
 - **Phone remote.** Scan the QR in Control Center. A browser pairing request shows its code in a small notification at the upper left.
 
 <p><img src="docs/assets/inputs.png" alt="Inputs and Live TV" width="49%"> <img src="docs/assets/apps.png" alt="App library" width="49%"></p>
