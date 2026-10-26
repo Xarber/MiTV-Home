@@ -30,7 +30,10 @@ jobs:
           java-version: '21'
       - uses: gradle/actions/setup-gradle@v5
       - name: Install Android tools
-        run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0' 'ndk;27.0.12077973' 'cmake;3.22.1'
+        run: |
+          SDK_MANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n 1)"
+          test -x "$SDK_MANAGER"
+          "$SDK_MANAGER" 'platforms;android-37.0' 'build-tools;37.0.0' 'ndk;27.0.12077973' 'cmake;3.22.1' 
       - name: Prepare release signing
         env:
           KEYSTORE: ${{ secrets.MITV_KEYSTORE_BASE64 }}
