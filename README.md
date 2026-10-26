@@ -16,7 +16,7 @@ A remote-first Android TV launcher with a six-item dock, fullscreen artwork, fas
 
 - **Six customizable positions.** Apps, individual HDMI inputs, Live TV, and Sources can move around. All Apps is available in position six.
 - **Three landing points.** Dock → Inputs & Live TV → apps with All Apps, System Apps, and Casting categories. Longer grids scroll normally; dock edges keep horizontal focus inside the dock.
-- **Fullscreen banners.** App artwork takes priority; source banners use centered device logos. Translucent surfaces and strong library shading keep controls readable. Artwork-derived blur is disabled to prevent stale background effects.
+- **Fullscreen banners.** App artwork takes priority; source banners use centered device logos. Translucent surfaces and strong library shading keep controls readable. Popups capture and blur the current screen when opened; their backdrop is discarded on dismissal.
 - **Remote ergonomics.** Hold OK on an item for its menu. Hold Back for Control Center. A downward All Apps hint leads from Inputs to the app grid.
 - **Compact status.** Time, date, and an expanding, single-line network bubble.
 - **Integrated AirPlay.** The receiver starts with Home and can remain active in the background. Audio uses a compact activity bubble with a PCM-derived waveform and playback/volume controls; supported video and screen mirroring open fullscreen.
