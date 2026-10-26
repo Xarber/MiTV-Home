@@ -12,9 +12,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name != 'release' }}
 jobs:
   android:
-    if: >-
-      (github.event_name == 'release' && github.event.release.target_commitish == 'main') ||
-      (github.event_name != 'release' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/beta'))
+    if: github.event_name != 'release' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/beta')
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     permissions:
@@ -58,12 +56,37 @@ jobs:
           name: MiTV-Home-${{ github.ref_name }}-${{ github.sha }}
           path: dist/
           retention-days: 30
-      - name: Attach APK to stable release
-        if: github.event_name == 'release'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: gh release upload "$RELEASE_TAG" dist/MiTV-Home.apk dist/SHA256SUMS.txt --clobber
       - name: Remove signing material
         if: always()
         run: rm -f "$RUNNER_TEMP/mitv-release.jks"
+
+  publish:
+    if: github.event_name == 'release' && github.event.release.target_commitish == 'main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 65
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.release.tag_name }}
+      - name: Attach the validated build for this exact commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          COMMIT="$(git rev-parse HEAD)"
+          BUILD_RUN=""
+          for attempt in $(seq 1 24); do
+            BUILD_RUN="$(gh run list --workflow build.yml --branch main --event push --commit "$COMMIT" --json databaseId --jq '.[0].databaseId // empty')"
+            if [ -n "$BUILD_RUN" ]; then break; fi
+            sleep 5
+          done
+          test -n "$BUILD_RUN"
+          gh run watch "$BUILD_RUN" --exit-status --interval 30
+          gh run download "$BUILD_RUN" --name "MiTV-Home-main-$COMMIT" --dir dist
+          cd dist
+          sha256sum --check SHA256SUMS.txt
+          cd ..
+          gh release upload "$RELEASE_TAG" dist/MiTV-Home.apk dist/SHA256SUMS.txt --clobber

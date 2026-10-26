@@ -27,4 +27,4 @@ GitHub Actions requires four repository secrets:
 
 Keep a private backup of the keystore and passwords. They are never committed.
 
-Pushes to `main` or `beta` build a signed APK, run lint, and upload an artifact plus SHA-256 checksum. Publishing a release targeting `main` builds its tag and attaches APK/checksum to the release. Beta never publishes a release. The `testing` branch has no workflow files.
+Pushes to `main` or `beta` build a signed APK, run lint, and upload an artifact plus SHA-256 checksum. Publishing a release targeting `main` waits for the successful main build at the exact tagged commit, verifies its checksum, and attaches that signed APK to the release. Beta never publishes a release. The `testing` branch has no workflow files.
