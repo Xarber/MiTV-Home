@@ -76,8 +76,11 @@ data class VideoPlaybackInfo(
     val buffering: Boolean = false,
 )
 
+@androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
 
+    private var languageReceiver: BroadcastReceiver? = null
+    private fun localizedString(id: Int, vararg args: Any): String = it.xarber.tvhome.AppLanguage.wrap(this).getString(id, *args)
     private var nativeHandle = 0L
     private var nsdManager: NsdServiceManager? = null
     private var usbAdvertiser: UsbMdnsAdvertiser? = null
@@ -185,6 +188,7 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
     private var _clientVolHint = 0
     private var _clientVolDir = 0
     private var _clientVolSteps = 0
+    @Volatile private var visualActivityLaunched = false
     private val _clientVolTimeout = Runnable { _clientVolDriveEnd() }
 
     var logCallback: ((String) -> Unit)? = null
@@ -215,9 +219,30 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         return LocalBinder()
     }
 
+    private var advertisedDeviceName = ""
+    private val refreshDeviceName = object : Runnable {
+        override fun run() {
+            if (it.xarber.tvhome.DeviceName.read(this@AirPlayService) == advertisedDeviceName) return
+            if (_connectionCount.value > 0) { _mainHandler.postDelayed(this, 5000); return }
+            _restartServer()
+        }
+    }
+    private val deviceNameObserver = object : android.database.ContentObserver(Handler(Looper.getMainLooper())) {
+        override fun onChange(selfChange: Boolean) {
+            _mainHandler.removeCallbacks(refreshDeviceName)
+            _mainHandler.post(refreshDeviceName)
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
+        contentResolver.registerContentObserver(android.provider.Settings.Global.getUriFor("device_name"), false, deviceNameObserver)
+        contentResolver.registerContentObserver(android.provider.Settings.Secure.getUriFor("bluetooth_name"), false, deviceNameObserver)
         createNotificationChannel()
+        languageReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) { createNotificationChannel(); _updateMediaNotification() }
+        }
+        ContextCompat.registerReceiver(this, languageReceiver, IntentFilter("it.xarber.tvhome.LANGUAGE_CHANGED"), ContextCompat.RECEIVER_NOT_EXPORTED)
         dacpController = DacpController(this)
         dacpPlayer = DacpPlayer(
             mainLooper,
@@ -348,12 +373,13 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == ACTION_START_SERVER) {
+        super.onStartCommand(intent, flags, startId)
+        if (intent == null || intent.action == ACTION_START_SERVER) {
             promoteToForeground()
             _startServer(ensureServiceStarted = false)
             if (_serverState.value != ServerState.RUNNING) stopSelf(startId)
         }
-        return START_NOT_STICKY
+        return START_STICKY
     }
 
     fun startServer() {
@@ -367,7 +393,9 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
             _failStart()
             return
         }
-        val effectiveName = prefs[Prefs.SERVER_NAME].ifBlank { Prefs.SERVER_NAME.def }
+        val effectiveName = it.xarber.tvhome.DeviceName.read(this)
+        advertisedDeviceName = effectiveName
+        log("AirPlay device name: $effectiveName")
 
         val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
         wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "airplay:server").apply { acquire() }
@@ -624,6 +652,10 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
     }
 
     override fun onDestroy() {
+        contentResolver.unregisterContentObserver(deviceNameObserver)
+        _mainHandler.removeCallbacks(refreshDeviceName)
+        languageReceiver?.let { unregisterReceiver(it) }
+        languageReceiver = null
         stopServer()
         dacpPlayer.release()
         mediaReceiver?.let {
@@ -661,6 +693,7 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         _videoTitle.value = ""
         _videoPlaybackActive.value = true
         airPlayVideoPlayer.play(location, startPositionSeconds)
+        launchVisualActivity()
         // claim media-button routing for keys that arrive as media-session events
         mediaSession?.isActive = true
         log("AirPlay Video play: $location @ ${startPositionSeconds}s")
@@ -695,6 +728,7 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
             _videoResolution.value = "${w.toInt()}x${h.toInt()}"
             videoRenderer.setResolution(w.toInt(), h.toInt())
             _mirroringActive.value = true
+            launchVisualActivity()
         }
         log("Video size: ${srcW}x${srcH} -> ${w}x${h}")
     }
@@ -719,6 +753,7 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
     private fun _clientVolExpected(): Float = if (_syncClientVol) _serverVolFrac() else _clientVol ?: 1f
 
     fun clientVolume(): Float = _clientVol ?: _clientVolExpected()
+    fun audioWaveform(): FloatArray = audioRenderer.waveform()
 
     // synced: receiver volume broadcast then drives sender
     fun setClientVolume(frac: Float) {
@@ -797,7 +832,7 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         val firstConnection = _connectionCount.value == 0
         _connectionCount.value++
         log("Sender connected (${_connectionCount.value})")
-        if (firstConnection && shouldLaunchOnConnect()) launchMainActivity()
+        if (firstConnection) visualActivityLaunched = false
     }
 
     override fun onConnectionDestroy() {
@@ -825,6 +860,7 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
                 _applyClientVol()
             }
             mediaSession?.isActive = false
+            visualActivityLaunched = false
             _refreshDacpPlayer()
             _updateMediaNotification()
         }
@@ -926,6 +962,14 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         val nowPlaying = !_playing.value
         _setPlaying(nowPlaying)
         dacpController?.let { if (nowPlaying) it.play() else it.pause() }
+    }
+
+    fun toggleMediaPlayback() {
+        if (_videoPlaybackActive.value) {
+            airPlayVideoPlayer.setPlaying(!_videoPlaybackInfo.value.playing)
+        } else {
+            togglePlayPause()
+        }
     }
 
     private fun _setPlaying(playing: Boolean) {
@@ -1081,7 +1125,7 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val channel = NotificationChannel(
             CHANNEL_ID,
-            getString(R.string.notification_channel),
+            localizedString(R.string.notification_channel),
             NotificationManager.IMPORTANCE_LOW
         )
         (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).createNotificationChannel(channel)
@@ -1101,8 +1145,11 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         foregroundStarted = true
     }
 
-    private fun shouldLaunchOnConnect(): Boolean {
-        return prefs[Prefs.LAUNCH_ON_CONNECT]
+    private fun launchVisualActivity() {
+        if (!prefs[Prefs.LAUNCH_ON_CONNECT]) return
+        if (visualActivityLaunched) return
+        visualActivityLaunched = true
+        launchMainActivity()
     }
 
     private fun _buildMediaNotification(): Notification {
@@ -1126,17 +1173,18 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
                         .setShowActionsInCompactView(0, 1, 2)
                 )
                 // transport action buttons
-                builder.addAction(android.R.drawable.ic_media_previous, "Prev", _mediaAction(ACTION_PREV))
-                builder.addAction(android.R.drawable.ic_media_pause, "Pause", _mediaAction(ACTION_PLAY_PAUSE))
-                builder.addAction(android.R.drawable.ic_media_next, "Next", _mediaAction(ACTION_NEXT))
+                builder.addAction(android.R.drawable.ic_media_previous, localizedString(R.string.media_previous), _mediaAction(ACTION_PREV))
+                builder.addAction(android.R.drawable.ic_media_pause, localizedString(R.string.media_pause), _mediaAction(ACTION_PLAY_PAUSE))
+                builder.addAction(android.R.drawable.ic_media_next, localizedString(R.string.media_next), _mediaAction(ACTION_NEXT))
             }
         } else {
-            if (_lastPin != null) {
-                builder.setContentTitle(getString(R.string.notification_pin_title))
-                    .setContentText(getString(R.string.notification_pin_text, _lastPin))
+            val lastPin = _lastPin
+            if (lastPin != null) {
+                builder.setContentTitle(localizedString(R.string.notification_pin_title))
+                    .setContentText(localizedString(R.string.notification_pin_text, lastPin))
             } else {
-                builder.setContentTitle(getString(R.string.notification_title))
-                    .setContentText(getString(R.string.notification_text))
+                builder.setContentTitle(localizedString(R.string.notification_title))
+                    .setContentText(localizedString(R.string.notification_text))
             }
         }
         return builder.build()

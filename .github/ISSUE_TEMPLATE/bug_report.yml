@@ -1,0 +1,27 @@
+name: Bug report
+description: Report a launcher, input, AirPlay, or phone remote problem
+body:
+  - type: input
+    id: version
+    attributes:
+      label: MiTV Home version
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: TV model and Android version
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: What happened?
+      description: Include exact remote actions, expected behavior, and actual behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshots or logs
+      description: Remove network names, credentials, and pairing codes.

@@ -507,12 +507,22 @@ fun MainScreen(
         if (pin != null) fullscreen = false
     }
 
-    if (fullscreen) {
-        BackHandler { fullscreen = false }
+    if (!videoScreen && !mirroringActive && !audioOnly && pin == null) {
+        Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
+            Text(it.xarber.tvhome.AppLanguage.text(LocalContext.current,"Connecting to AirPlay…"), color = Color.White)
+        }
+        return
+    }
+    if (audioOnly && connections > 0 && !videoScreen && !mirroringActive) {
+        Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) { NowPlayingContent(viewModel) }
+        return
+    }
+    if (fullscreen || (mirroringActive && autoFullscreen)) {
+        BackHandler { activity?.finish() }
         FullscreenVideo(
             viewModel = viewModel,
             video = video,
-            onExitFullscreen = { fullscreen = false },
+            onExitFullscreen = { activity?.finish() },
             onPip = onPip
         )
     } else {

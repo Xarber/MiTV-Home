@@ -3,6 +3,8 @@
 
 #include <algorithm>
 #include <atomic>
+#include <array>
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
@@ -205,6 +207,7 @@ private:
  */
 class TimelineBuffer {
 public:
+    static constexpr size_t WAVEFORM_SIZE = 32;
     // cushion policy lives in mTracker; timeline reads mTracker.target() live
     TimelineBuffer(int sampleRate, int channels, int staticCushionMs, int percentilePct)
         : mSampleRate(sampleRate),
@@ -216,6 +219,41 @@ public:
           mRing(2 * capOf(mTracker.ceil()) + (size_t)sampleRate * TRIM_THROTTLE_MS / 1000 * channels) {}
 
     void noteOutputBufferFrames(int frames) { mTracker.noteOutputBufferFrames(frames); }
+
+    // Publish the actual output signal as a rolling RMS envelope for the compact player.
+    // Called on the audio callback; only fixed-size arithmetic and lock-free atomics.
+    void publishWaveform(const int16_t *pcm, int32_t frames) {
+        if (!pcm || frames <= 0) return;
+        const uint32_t base = mWaveWrite.load(std::memory_order_relaxed);
+        for (size_t bin = 0; bin < WAVEFORM_SIZE; ++bin) {
+            const int32_t first = (int64_t)frames * bin / WAVEFORM_SIZE;
+            const int32_t last = (int64_t)frames * (bin + 1) / WAVEFORM_SIZE;
+            double sum = 0.0;
+            int count = 0;
+            for (int32_t frame = first; frame < last; ++frame) {
+                for (int channel = 0; channel < mChannels; ++channel) {
+                    const double sample = pcm[(size_t)frame * mChannels + channel] / 32768.0;
+                    sum += sample * sample;
+                    ++count;
+                }
+            }
+            const float rms = count ? (float)std::sqrt(sum / count) : 0.0f;
+            mWaveform[(base + bin) % WAVEFORM_SIZE].store(rms, std::memory_order_relaxed);
+        }
+        mWaveWrite.store(base + WAVEFORM_SIZE, std::memory_order_release);
+    }
+
+    void copyWaveform(float *dst, size_t count) const {
+        if (!dst) return;
+        const uint32_t end = mWaveWrite.load(std::memory_order_acquire);
+        const uint32_t available = std::min<uint32_t>(end, WAVEFORM_SIZE);
+        const size_t offset = count > available ? count - available : 0;
+        const uint32_t start = end - available;
+        for (size_t i = 0; i < count; ++i) {
+            if (i < offset || i - offset >= available) dst[i] = 0.0f;
+            else dst[i] = mWaveform[(start + (i - offset)) % WAVEFORM_SIZE].load(std::memory_order_relaxed);
+        }
+    }
 
     // producer: push samples
     void write(const int16_t *pcm, size_t samples, int64_t ptsNs) {
@@ -375,6 +413,8 @@ private:
     DelayTracker mTracker;               // owns cushion policy; read live each read()
     SpscRing mRing;
     TimelineMetrics mMetrics;
+    std::array<std::atomic<float>, WAVEFORM_SIZE> mWaveform{};
+    std::atomic<uint32_t> mWaveWrite{0};
     bool mPriming = true;                // stream start: buffer output to build cushion
     uint32_t mPrimeSilenceFrames = 0;    // consumer-only: silence frames output while priming with partial data
     int64_t mLastTrimBlockNs = 0;        // consumer-only: last trim/underrun time (trim throttle)

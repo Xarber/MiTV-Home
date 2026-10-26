@@ -38,6 +38,7 @@ public:
             const size_t n = (size_t)numFrames * mChannels;
             for (size_t i = 0; i < n; i++) out[i] = (int16_t)(out[i] * gain);
         }
+        mTimeline->publishWaveform(out, numFrames);
         return oboe::DataCallbackResult::Continue;
     }
 

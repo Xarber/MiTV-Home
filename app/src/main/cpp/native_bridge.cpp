@@ -418,3 +418,17 @@ Java_io_github_jqssun_airplay_bridge_NativeBridge_nativeServerAudioDebug(
     if (!addr || cap <= 0) return JNI_FALSE;
     return audio_engine_get_debug(ctx->cb_ctx.audio_engine, addr, (size_t)cap) ? JNI_TRUE : JNI_FALSE;
 }
+
+extern "C"
+JNIEXPORT jboolean JNICALL
+Java_io_github_jqssun_airplay_bridge_NativeBridge_nativeServerAudioWaveform(
+        JNIEnv *env, jobject thiz, jlong handle, jfloatArray values) {
+    server_ctx_t *ctx = (server_ctx_t *)(intptr_t)handle;
+    if (!ctx || !ctx->cb_ctx.audio_engine || !values) return JNI_FALSE;
+    const jsize count = env->GetArrayLength(values);
+    jfloat *dst = env->GetFloatArrayElements(values, NULL);
+    if (!dst) return JNI_FALSE;
+    const bool ok = audio_engine_get_waveform(ctx->cb_ctx.audio_engine, dst, (size_t)count);
+    env->ReleaseFloatArrayElements(values, dst, 0);
+    return ok ? JNI_TRUE : JNI_FALSE;
+}

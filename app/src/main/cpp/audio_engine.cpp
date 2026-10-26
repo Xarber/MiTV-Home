@@ -124,6 +124,14 @@ struct AudioEngine {
         return true;
     }
 
+    bool copyWaveform(float *dst, size_t count) {
+        if (!dst) return false;
+        std::unique_lock<std::mutex> lk(mRebuildLock, std::try_to_lock);
+        if (!lk.owns_lock() || !mTimeline) return false;
+        mTimeline->copyWaveform(dst, count);
+        return true;
+    }
+
     // touches decoder: must not run concurrently with stop()
     void decode(const uint8_t *data, size_t len, int ct, int64_t ptsNs) {
         if (!mTimeline) return;
@@ -259,6 +267,10 @@ void audio_engine_pause(AudioEngine *engine) {
 bool audio_engine_get_debug(AudioEngine *engine, void *dst, size_t dstLen) {
     if (!engine || !dst) return false;
     return engine->copyDebug(dst, dstLen);
+}
+
+bool audio_engine_get_waveform(AudioEngine *engine, float *dst, size_t count) {
+    return engine && engine->copyWaveform(dst, count);
 }
 
 void audio_engine_destroy(AudioEngine *engine) {

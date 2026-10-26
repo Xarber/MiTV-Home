@@ -41,6 +41,7 @@ void audio_engine_pause(AudioEngine *engine);
 
 /* refresh + copy packed debug struct into dst; false if engine NULL or dstLen too small */
 bool audio_engine_get_debug(AudioEngine *engine, void *dst, size_t dstLen);
+bool audio_engine_get_waveform(AudioEngine *engine, float *dst, size_t count);
 
 /* stop + destroy engine; no concurrent or later audio_engine_decode calls allowed */
 void audio_engine_destroy(AudioEngine *engine);

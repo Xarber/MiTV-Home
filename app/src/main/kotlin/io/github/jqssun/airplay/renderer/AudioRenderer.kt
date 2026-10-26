@@ -87,6 +87,13 @@ class AudioRenderer {
     }
 
     @Synchronized
+    fun waveform(): FloatArray {
+        val values = FloatArray(32)
+        if (serverHandle != 0L) NativeBridge.nativeServerAudioWaveform(serverHandle, values)
+        return values
+    }
+
+    @Synchronized
     fun setFormat(ct: Int, spf: Int) {
         codecLabel = when (ct) {
             CT_ALAC -> "ALAC"; CT_AAC_LC -> "AAC-LC"; CT_AAC_ELD -> "AAC-ELD"; else -> "?"

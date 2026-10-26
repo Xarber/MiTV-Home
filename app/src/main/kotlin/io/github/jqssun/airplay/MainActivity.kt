@@ -34,9 +34,11 @@ import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    override fun attachBaseContext(base: android.content.Context) { super.attachBaseContext(it.xarber.tvhome.AppLanguage.wrap(base)) }
 
     private val viewModel: MainViewModel by viewModels()
     private var service: AirPlayService? = null
+    private var hadSender = false
     val isInPip = mutableStateOf(false)
     private val logCallback: (String) -> Unit = { viewModel.addLog(it) }
     private val pinCallback: (String?) -> Unit = { viewModel.showPin(it) }
@@ -79,6 +81,8 @@ class MainActivity : ComponentActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 while (true) {
                     viewModel.updateFromService()
+                    if (viewModel.connectionCount.value > 0) hadSender = true
+                    else if (hadSender && !viewModel.videoPlaybackActive.value) { finish(); return@repeatOnLifecycle }
                     delay(200)
                 }
             }
@@ -106,6 +110,11 @@ class MainActivity : ComponentActivity() {
                     ) { _, _, _, _, _ -> }.collect { setPictureInPictureParams(_pipParams()) }
                 }
             }
+        }
+
+        lifecycleScope.launch {
+            delay(1500)
+            if (viewModel.connectionCount.value == 0 && !viewModel.videoPlaybackActive.value) finish()
         }
 
         setContent {

@@ -1,0 +1,438 @@
+package it.xarber.tvhome;
+
+import android.app.*;
+import android.content.*;
+import android.content.pm.*;
+import android.graphics.*;
+import android.graphics.drawable.*;
+import android.media.*;
+import android.media.tv.*;
+import android.net.*;
+import android.net.wifi.*;
+import android.os.*;
+import android.provider.Settings;
+import android.view.*;
+import android.widget.*;
+import java.text.*;
+import java.util.*;
+import java.util.concurrent.*;
+import java.io.*;
+
+/** Remote-first Home screen with an integrated AirPlay foreground receiver. */
+public final class MainActivity extends Activity {
+    static final int WHITE=0xfff6f7fb, MUTED=0xffa8b0c0, SURFACE=0xff1a2030;
+    final Handler handler=new Handler(Looper.getMainLooper());
+    final ExecutorService worker=Executors.newSingleThreadExecutor();
+    final ArrayList<Entry> apps=new ArrayList<>();
+    final HashMap<Integer,Entry> sources=new HashMap<>();
+    final HashMap<String,View> focusViews=new HashMap<>();
+    PackageManager pm; FrameLayout root,hero; LinearLayout content,header; SnapScrollView scroll;
+    TextView clock,date,network,networkMark,homeAppsLabel;View networkBubble,networkSurface,networkContent;String networkTitle="";boolean networkHover,networkExpanded;android.animation.ValueAnimator networkAnimator;NetworkGlass networkGlass; ImageView heroImage,heroOutgoing,heroSoftBlur,systemFloatingIcon;String heroKey="";boolean systemBackdrop; TextView heroName,heroHint; Ambient ambient;
+    long suppressConfirmUntil;View panelOrigin,pendingPanelFocus;boolean homeFocusPending=true;Dialog panel; String dockFocus="inputs"; String page="home", lastFocus="inputs", filter="all"; boolean resumed,loaded,receiverRegistered;
+    boolean libraryVisible; View libraryShade,libraryTopMask; Drawable selectedBackdrop; io.github.jqssun.airplay.service.AirPlayService nativeReceiver; boolean receiverBound;
+    View audioBubble; PopupWindow audioPopup; AudioWaveform audioWave; TextView audioTitle,audioArtist,audioPlayButton; ImageView audioCover; SeekBar audioVolume; boolean audioExpanded;
+    View homeNotice; Runnable hideNotice; HomeRemoteServer remoteServer;
+    final ServiceConnection receiverConnection=new ServiceConnection(){public void onServiceConnected(ComponentName n,IBinder b){nativeReceiver=((io.github.jqssun.airplay.service.AirPlayService.LocalBinder)b).getService();}public void onServiceDisconnected(ComponentName n){nativeReceiver=null;}};
+    boolean preview; int tileWidth; View libraryAnchor,inputsAnchor,appsAnchor,inputsSection,appTabs,homeAppGrid; LinearLayout dockBand;  final HashMap<String,Bitmap> logoCache=new HashMap<>();final android.util.LruCache<String,Bitmap> sharpHeroes=new android.util.LruCache<>(3);final HashSet<String> sharpening=new HashSet<>(); Drawable hdmiArt,tvArt,appsArt,controlsArt;
+    final Runnable tick=new Runnable(){public void run(){if(resumed){updateStatus();handler.postDelayed(this,15000);}}};
+    final Runnable audioTick=new Runnable(){public void run(){if(!resumed)return;updateAudioActivity();handler.postDelayed(this,activeAudio()?100:350);}};
+    final BroadcastReceiver changes=new BroadcastReceiver(){@Override public void onReceive(Context c,Intent i){
+        String a=i.getAction();if(Intent.ACTION_CLOSE_SYSTEM_DIALOGS.equals(a) && "homekey".equals(i.getStringExtra("reason"))){resetHome();return;} if(a!=null && a.startsWith("android.intent.action.PACKAGE_"))loadApps(); else updateStatus();
+    }};
+    static class Entry {
+        String key,label,pkg="",kind="app",inputId=""; Intent intent; Drawable banner,icon,heroBanner;
+        String profile="generic"; boolean system; int color=0xff263248,port,state=-1;
+        Entry(String k,String l){key=k;label=l;}
+    }
+    @Override protected void attachBaseContext(Context base){super.attachBaseContext(AppLanguage.wrap(base));}
+    String tr(String value){return AppLanguage.text(this,value);}
+    boolean motionEnabled(){return Settings.Global.getFloat(getContentResolver(),Settings.Global.ANIMATOR_DURATION_SCALE,1f)>0;}
+    long motionDuration(long ms){return motionEnabled()?ms:0;}
+    android.view.animation.Interpolator easeOut(){return new android.view.animation.PathInterpolator(.23f,1f,.32f,1f);}
+    void stopBannerMotion(){if(heroOutgoing!=null){heroOutgoing.animate().cancel();heroOutgoing.setAlpha(0f);}if(heroSoftBlur!=null){heroSoftBlur.animate().cancel();heroSoftBlur.clearAnimation();heroSoftBlur.setAlpha(0f);}if(heroImage!=null){heroImage.animate().cancel();heroImage.setAlpha(1f);heroImage.setScaleX(1f);heroImage.setScaleY(1f);}}
+    void bannerTransition(Drawable previous){
+        if(!motionEnabled() || libraryVisible)return;
+        heroImage.animate().cancel();heroOutgoing.animate().cancel();
+        if(previous!=null){heroOutgoing.setImageDrawable(copy(previous));heroOutgoing.setAlpha(1f);heroImage.setAlpha(0f);}else{heroOutgoing.setAlpha(0f);heroImage.setAlpha(1f);}
+        float scaleX=Math.abs(heroImage.getScaleX()-1f)<.001f?.982f:heroImage.getScaleX();float scaleY=Math.abs(heroImage.getScaleY()-1f)<.001f?.982f:heroImage.getScaleY();heroImage.setScaleX(scaleX);heroImage.setScaleY(scaleY);
+        heroImage.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(220).setInterpolator(easeOut()).withEndAction(()->heroOutgoing.setAlpha(0f)).start();
+    }
+    void enterCategory(){if(!motionEnabled())return;content.setAlpha(.85f);content.setTranslationY(dp(6));content.animate().alpha(1f).translationY(0).setDuration(180).setInterpolator(easeOut()).start();}
+
+    @Override public void onCreate(Bundle b){
+        super.onCreate(b);pm=getPackageManager();
+        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+        preview=Build.MODEL.startsWith("sdk_") || Build.FINGERPRINT.contains("generic");
+        hdmiArt=asset("icon_hdmi");tvArt=asset("icon_live_tv");appsArt=asset("icon_apps");controlsArt=asset("icon_controls");
+        
+        buildRoot();renderHome();loadApps();
+        IntentFilter f=new IntentFilter();f.addAction(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);f.addAction(Intent.ACTION_TIME_TICK);f.addAction(Intent.ACTION_TIME_CHANGED);f.addAction(Intent.ACTION_TIMEZONE_CHANGED);f.addAction(Intent.ACTION_LOCALE_CHANGED);f.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);f.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
+        androidx.core.content.ContextCompat.registerReceiver(this,changes,f,androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED); receiverRegistered=true;
+    }
+    Drawable asset(String name){int id=getResources().getIdentifier(name,"drawable",getPackageName());return id==0?null:getDrawable(id);}
+    int dp(float v){return Math.round(v*getResources().getDisplayMetrics().density);}
+    LinearLayout.LayoutParams lp(int w,int h){return new LinearLayout.LayoutParams(w<0?w:dp(w),h<0?h:dp(h));}
+    TextView text(String s,float size,int color){TextView t=new TextView(this);t.setText(tr(s));t.setTextSize(size);t.setTextColor(color);t.setFontFeatureSettings("kern");t.setIncludeFontPadding(false);return t;}
+    GradientDrawable surface(int color,int radius){GradientDrawable g=new GradientDrawable();g.setColor(color);g.setCornerRadius(dp(radius));return g;}
+    void buildRoot(){
+        root=new FrameLayout(this);ambient=new Ambient();root.addView(ambient,new FrameLayout.LayoutParams(-1,-1));
+        heroOutgoing=new ImageView(this);heroOutgoing.setScaleType(ImageView.ScaleType.CENTER_CROP);heroOutgoing.setAlpha(0f);root.addView(heroOutgoing,new FrameLayout.LayoutParams(-1,-1));
+        heroImage=new ImageView(this);heroImage.setScaleType(ImageView.ScaleType.CENTER_CROP);root.addView(heroImage,new FrameLayout.LayoutParams(-1,-1));
+        heroSoftBlur=new ImageView(this);heroSoftBlur.setScaleType(ImageView.ScaleType.CENTER_CROP);heroSoftBlur.setAlpha(0f);root.addView(heroSoftBlur,new FrameLayout.LayoutParams(-1,-1));
+        root.addView(new Scrim(),new FrameLayout.LayoutParams(-1,-1));libraryShade=new View(this);libraryShade.setBackgroundColor(0xe6080b13);libraryShade.setVisibility(View.GONE);root.addView(libraryShade,new FrameLayout.LayoutParams(-1,-1));
+        systemFloatingIcon=new ImageView(this);systemFloatingIcon.setScaleType(ImageView.ScaleType.FIT_CENTER);systemFloatingIcon.setVisibility(View.GONE);FrameLayout.LayoutParams floatBox=new FrameLayout.LayoutParams(dp(200),dp(200),Gravity.TOP|Gravity.CENTER_HORIZONTAL);floatBox.topMargin=Math.round(getResources().getDisplayMetrics().heightPixels*.18f);root.addView(systemFloatingIcon,floatBox);
+        heroName=text("",36,WHITE);heroName.setGravity(Gravity.CENTER);heroName.setTypeface(Typeface.create("sans-serif-light",Typeface.NORMAL));FrameLayout.LayoutParams fallback=new FrameLayout.LayoutParams(-1,dp(130),Gravity.TOP);fallback.topMargin=dp(105);root.addView(heroName,fallback);
+        scroll=new SnapScrollView();scroll.setFillViewport(true);scroll.setClipToPadding(false);scroll.setVerticalScrollBarEnabled(false);
+        content=new LinearLayout(this);content.setOrientation(LinearLayout.VERTICAL);content.setPadding(dp(50),dp(28),dp(50),dp(30));content.setClipChildren(false);content.setClipToPadding(false);
+        scroll.setOnScrollChangeListener((v,x,y,oldx,oldy)->{scroll.settleGap();if(page.equals("home") && dockBand!=null)dockBand.setVisibility(scroll.libraryStop()>0 && y>=scroll.libraryStop()?View.INVISIBLE:View.VISIBLE);boolean show=page.equals("library") || y>dp(90);if(show!=libraryVisible){libraryVisible=show;updateBackdrop();}});
+        scroll.addView(content,new ScrollView.LayoutParams(-1,-2));root.addView(scroll);libraryTopMask=new View(this);libraryTopMask.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,new int[]{0xff080b13,0xf0080b13,0x00080b13}));libraryTopMask.setVisibility(View.GONE);root.addView(libraryTopMask,new FrameLayout.LayoutParams(-1,dp(88),Gravity.TOP));setContentView(root);
+    }
+    @Override public void onResume(){super.onResume();ensureReceiver();resumed=true;startHomeRemote();handler.removeCallbacks(tick);handler.post(tick);handler.removeCallbacks(audioTick);handler.post(audioTick);if(loaded)refreshSources();}
+    @Override public void onPause(){resumed=false;handler.removeCallbacks(tick);handler.removeCallbacks(audioTick);stopHomeRemote();if(audioPopup!=null&&audioPopup.isShowing())audioPopup.dismiss();audioExpanded=false;if(receiverBound){unbindService(receiverConnection);receiverBound=false;nativeReceiver=null;}super.onPause();}
+    @Override public void onDestroy(){handler.removeCallbacks(holdBack);handler.removeCallbacks(audioTick);scroll.cancelSnap();stopHomeRemote();if(receiverRegistered)unregisterReceiver(changes);worker.shutdownNow();super.onDestroy();}
+    void resetHome(){android.util.Log.d("MiTVFocus","Home requested");handler.removeCallbacks(holdBack);backPending=false;backHeld=false;pendingPanelFocus=null;panelOrigin=null;if(panel!=null)panel.dismiss();lastFocus="inputs";dockFocus="inputs";homeFocusPending=true;renderHome();scroll.post(()->{scroll.cancelSnap();scroll.scrollTo(0,0);View first=focusViews.get("inputs");if(first!=null)first.requestFocus();if(root.hasWindowFocus())homeFocusPending=false;});}
+    @Override public void onNewIntent(Intent i){super.onNewIntent(i);setIntent(i);resetHome();}
+    @Override public void onWindowFocusChanged(boolean hasFocus){super.onWindowFocusChanged(hasFocus);if(!hasFocus || (panel!=null && panel.isShowing()))return;if(homeFocusPending && page.equals("home")){homeFocusPending=false;pendingPanelFocus=null;root.post(()->{View v=focusViews.get("inputs");if(v!=null)v.requestFocus();scroll.cancelSnap();scroll.scrollTo(0,0);});}else if(pendingPanelFocus!=null){View v=pendingPanelFocus;pendingPanelFocus=null;root.post(()->{if(v.isAttachedToWindow())v.requestFocus();});}}
+    void clearPage(String name){stopBannerMotion();content.animate().cancel();content.setAlpha(1f);content.setTranslationY(0f);scroll.cancelSnap();page=name;libraryVisible=!name.equals("home")||scroll.getScrollY()>dp(90);updateBackdrop();heroName.setVisibility(View.GONE);focusViews.clear();content.removeAllViews();addHeader();}
+    void addHeader(){
+        if(networkAnimator!=null)networkAnimator.cancel();if(header!=null)root.removeView(header);header=new LinearLayout(this);header.setGravity(Gravity.CENTER_VERTICAL);header.setClipChildren(false);header.addView(new View(this),new LinearLayout.LayoutParams(0,1,1));
+        FrameLayout wifiSlot=new FrameLayout(this);networkBubble=wifiSlot;networkHover=false;networkExpanded=false;wifiSlot.setFocusable(true);wifiSlot.setFocusableInTouchMode(true);wifiSlot.setClickable(true);wifiSlot.setContentDescription(tr("Network settings"));wifiSlot.setOnTouchListener((view,event)->{if(event.getAction()==MotionEvent.ACTION_DOWN)view.requestFocus();return false;});wifiSlot.setOnClickListener(v->openSettings(Settings.ACTION_WIFI_SETTINGS));
+        View wifiSurface=new View(this);networkSurface=wifiSurface;networkGlass=new NetworkGlass(wifiSurface);wifiSurface.setBackground(networkGlass);wifiSlot.addView(wifiSurface,new FrameLayout.LayoutParams(-1,-1));
+        FrameLayout wifiContent=new FrameLayout(this);networkContent=wifiContent;wifiSlot.addView(wifiContent,new FrameLayout.LayoutParams(-1,-1));
+        networkMark=text("",14,WHITE);networkMark.setGravity(Gravity.CENTER);networkMark.setPadding(dp(13),0,dp(13),0);networkMark.setCompoundDrawablesWithIntrinsicBounds(new Glyph("wifi",dp(18)),null,null,null);FrameLayout.LayoutParams markLp=new FrameLayout.LayoutParams(dp(44),dp(44),Gravity.RIGHT|Gravity.CENTER_VERTICAL);wifiContent.addView(networkMark,markLp);
+        network=text("",13,0xffe7edfa);network.setGravity(Gravity.CENTER_VERTICAL|Gravity.RIGHT);network.setPadding(dp(12),0,dp(8),0);network.setSingleLine(true);network.setEllipsize(android.text.TextUtils.TruncateAt.END);network.setAlpha(0f);network.setTranslationX(dp(9));FrameLayout.LayoutParams labelLp=new FrameLayout.LayoutParams(dp(152),dp(44),Gravity.RIGHT|Gravity.CENTER_VERTICAL);labelLp.rightMargin=dp(44);wifiContent.addView(network,labelLp);
+        wifiSlot.setOnFocusChangeListener((v,f)->{networkGlass.focused=f;setNetworkExpanded(f||networkHover);networkGlass.invalidateSelf();});wifiSlot.setOnHoverListener((v,event)->{if(event.getAction()==MotionEvent.ACTION_HOVER_ENTER)networkHover=true;else if(event.getAction()==MotionEvent.ACTION_HOVER_EXIT)networkHover=false;setNetworkExpanded(networkHover||v.hasFocus());return false;});header.addView(wifiSlot,lp(196,44));
+        LinearLayout pill=new LinearLayout(this);pill.setGravity(Gravity.CENTER);pill.setId(View.generateViewId());pill.setFocusable(true);pill.setFocusableInTouchMode(true);pill.setClickable(true);pill.setOnTouchListener((view,event)->{if(event.getAction()==MotionEvent.ACTION_DOWN)view.requestFocus();return false;});pill.setContentDescription(tr("Control Center, time and date"));pill.setPadding(dp(16),0,dp(16),0);pill.setBackground(new FrostedDock(pill));
+        clock=text("",16,0xfff2eeff);date=text("",13,0xffb6c8e9);clock.setTypeface(Typeface.create("sans-serif-rounded",Typeface.BOLD));date.setTypeface(Typeface.create("sans-serif",Typeface.NORMAL));for(TextView t:new TextView[]{clock,date}){t.setGravity(Gravity.CENTER_VERTICAL);LinearLayout.LayoutParams p=lp(-2,44);p.rightMargin=dp(12);pill.addView(t,p);}
+        ImageView gear=new ImageView(this);gear.setImageDrawable(new Glyph("controls",dp(21)));pill.addView(gear,lp(21,21));pill.setOnClickListener(v->showControls());pill.setOnFocusChangeListener((v,f)->{v.setBackground(new FrostedDock(pill));pill.setForeground(f?focusOutline(22):null);});LinearLayout.LayoutParams pp=lp(-2,44);pp.leftMargin=dp(12);header.addView(pill,pp);focusViews.put("controls",pill);
+        audioBubble=new LinearLayout(this);LinearLayout audioCompact=(LinearLayout)audioBubble;audioCompact.setGravity(Gravity.CENTER);audioCompact.setOrientation(LinearLayout.HORIZONTAL);audioCompact.setPadding(dp(9),0,dp(9),0);audioCompact.setBackground(new FrostedDock(audioBubble));audioCompact.setFocusable(true);audioCompact.setFocusableInTouchMode(true);audioCompact.setClickable(true);audioCompact.setContentDescription(tr("AirPlay audio controls"));TextView audioDot=text("•",16,0xff8cb5ff);audioCompact.addView(audioDot,lp(10,24));AudioWaveform compactWave=new AudioWaveform();audioCompact.addView(compactWave,lp(38,24));audioWave=compactWave;audioCompact.setOnFocusChangeListener((v,f)->{v.setBackground(new FrostedDock(audioBubble));audioCompact.setForeground(f?focusOutline(22):null);});audioCompact.setOnClickListener(v->showAudioControls());audioCompact.setVisibility(View.GONE);LinearLayout.LayoutParams abp=lp(70,44);abp.leftMargin=dp(12);header.addView(audioCompact,abp);
+        FrameLayout.LayoutParams hp=new FrameLayout.LayoutParams(-1,dp(48),Gravity.TOP);hp.setMargins(dp(50),dp(24),dp(50),0);root.addView(header,hp);content.addView(new View(this),lp(-1,48));updateStatus();
+    }
+    TextView button(String label,Runnable action){
+        TextView b=text(label,14,WHITE);b.setGravity(Gravity.CENTER);b.setPadding(dp(10),0,dp(10),0);b.setFocusable(true);b.setFocusableInTouchMode(true);b.setClickable(true);b.setOnTouchListener((view,event)->{if(event.getAction()==MotionEvent.ACTION_DOWN)view.requestFocus();return false;});b.setId(View.generateViewId());b.setBackground(new FrostedDock(b));
+        b.setOnFocusChangeListener((v,f)->{v.setBackground(new FrostedDock(b));b.setForeground(f?focusOutline(20):null);b.setTextColor(WHITE);v.animate().scaleX(f?1.04f:1).scaleY(f?1.04f:1).setDuration(motionDuration(120)).start();});b.setOnClickListener(v->action.run());return b;
+    }
+    GradientDrawable focusOutline(int radius){GradientDrawable outline=surface(0x223f5d82,radius);outline.setStroke(dp(2),0xffdce8ff);return outline;}
+    void setNetworkExpanded(boolean expanded){
+        if(network==null||networkGlass==null||networkExpanded==expanded)return;networkExpanded=expanded;
+        if(networkAnimator!=null)networkAnimator.cancel();network.animate().cancel();
+        float start=networkGlass.expansion,target=expanded?1f:0f;
+        if(!motionEnabled()){networkGlass.expansion=target;networkGlass.invalidateSelf();network.setAlpha(target);network.setTranslationX(0);return;}
+        networkAnimator=android.animation.ValueAnimator.ofFloat(start,target);networkAnimator.setDuration(190);networkAnimator.setInterpolator(easeOut());NetworkGlass glass=networkGlass;TextView label=network;
+        networkAnimator.addUpdateListener(a->{float progress=(Float)a.getAnimatedValue();glass.expansion=progress;glass.invalidateSelf();label.setAlpha(progress);label.setTranslationX(dp(9)*(1f-progress));});networkAnimator.start();
+    }
+    final class NetworkGlass extends Drawable {
+        final FrostedDock glass;final Paint stroke=new Paint(3);float expansion;boolean focused;
+        NetworkGlass(View owner){glass=new FrostedDock(owner);}
+        public void draw(Canvas canvas){Rect bounds=getBounds();int width=Math.round(dp(44)+(bounds.width()-dp(44))*expansion);Rect pill=new Rect(bounds.right-width,bounds.top,bounds.right,bounds.bottom);glass.setBounds(pill);glass.draw(canvas);if(focused){stroke.setColor(0xfff6f7fb);stroke.setStyle(Paint.Style.STROKE);stroke.setStrokeWidth(dp(2));RectF frame=new RectF(pill);frame.inset(dp(1),dp(1));canvas.drawRoundRect(frame,dp(22),dp(22),stroke);}}
+        public void setAlpha(int alpha){}public void setColorFilter(ColorFilter filter){}public int getOpacity(){return PixelFormat.TRANSLUCENT;}
+    }
+
+    void updateStatus(){if(clock==null)return;Date now=new Date();clock.setText(new SimpleDateFormat("HH:mm",Locale.getDefault()).format(now));date.setText(new SimpleDateFormat("dd/MM/yy",Locale.getDefault()).format(now));
+        ConnectivityManager cm=(ConnectivityManager)getSystemService(CONNECTIVITY_SERVICE);NetworkCapabilities caps=cm==null?null:cm.getNetworkCapabilities(cm.getActiveNetwork());String s="Offline",kind="offline";
+        if(caps!=null && caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)){
+            kind="wifi";s="Wi-Fi";
+            try{WifiManager wm=(WifiManager)getApplicationContext().getSystemService(WIFI_SERVICE);String ssid=wm==null?null:wm.getConnectionInfo().getSSID();if(ssid!=null && !ssid.equals("<unknown ssid>") && !ssid.equals("0x"))s=ssid.replace("\"","");}catch(SecurityException ignored){}
+        }else if(caps!=null && caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)){s="Ethernet";kind="ethernet";}else if(caps!=null){s="Connected";kind="ethernet";}
+        networkTitle=s;networkMark.setCompoundDrawablesWithIntrinsicBounds(new Glyph(kind,dp(18)),null,null,null);network.setText(tr(s));network.setContentDescription(tr(s)+", "+tr("Network settings"));networkBubble.setContentDescription(tr(s)+", "+tr("Network settings"));
+    }
+    void loadApps(){worker.execute(()->{
+        LinkedHashMap<String,Entry> found=new LinkedHashMap<>();
+        for(String category:new String[]{Intent.CATEGORY_LEANBACK_LAUNCHER,Intent.CATEGORY_LAUNCHER}){
+            Intent q=new Intent(Intent.ACTION_MAIN).addCategory(category);
+            for(ResolveInfo ri:pm.queryIntentActivities(q,0)){
+                if(ri.activityInfo==null)continue;String pkg=ri.activityInfo.packageName;
+                if(pkg.equals(getPackageName())||pkg.equals("io.github.jqssun.airplay")||unsafe(pkg)||found.containsKey(pkg))continue;
+                Entry e=new Entry(pkg,tr(String.valueOf(ri.loadLabel(pm))));e.pkg=pkg;e.system=(ri.activityInfo.applicationInfo.flags&ApplicationInfo.FLAG_SYSTEM)!=0;
+                e.intent=new Intent(Intent.ACTION_MAIN).addCategory(category).setComponent(new ComponentName(pkg,ri.activityInfo.name)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);
+                try{e.banner=ri.activityInfo.loadBanner(pm);if(e.banner==null)e.banner=ri.activityInfo.applicationInfo.loadBanner(pm);e.icon=ri.loadIcon(pm);}catch(RuntimeException ignored){}
+                e.color=colorFor(pkg);found.put(pkg,e);
+            }
+        }
+        ArrayList<Entry> list=new ArrayList<>(found.values());Entry builtInAirPlay=action("airplay","AirPlay","airplay",asset("icon_airplay"));builtInAirPlay.pkg=getPackageName();builtInAirPlay.system=true;builtInAirPlay.banner=null;list.add(builtInAirPlay);Entry inputsShortcut=action("inputs","Inputs","inputs",hdmiArt);inputsShortcut.system=true;list.add(inputsShortcut);Entry allAppsShortcut=action("library","All apps","library",appsArt);allAppsShortcut.system=true;list.add(allAppsShortcut);list.sort(Comparator.comparing(x->x.label.toLowerCase(Locale.getDefault())));
+        if((getApplicationInfo().flags&ApplicationInfo.FLAG_DEBUGGABLE)!=0)exportArtwork(list);
+        runOnUiThread(()->{if(isFinishing()||isDestroyed())return;boolean first=!loaded;apps.clear();apps.addAll(list);loaded=true;if(first)lastFocus="inputs";refreshSources();if(page.equals("home"))renderHome();else renderLibrary(filter);});
+    });}
+    void exportArtwork(java.util.List<Entry> entries){
+        File dir=new File(getCacheDir(),"artwork");dir.mkdirs();
+        for(Entry e:entries){
+            if(!Arrays.asList("com.netflix.ninja","com.amazon.amazonvideo.livingroom","com.google.android.youtube.tv","io.github.jqssun.airplay").contains(e.pkg))continue;
+            for(String kind:new String[]{"banner","icon"}){
+                Drawable d=copy(kind.equals("banner")?e.banner:e.icon);if(d==null)continue;
+                int w=kind.equals("banner")?480:192,h=kind.equals("banner")?270:192;
+                Bitmap b=Bitmap.createBitmap(w,h,Bitmap.Config.ARGB_8888);d.setBounds(0,0,w,h);d.draw(new Canvas(b));
+                try(FileOutputStream f=new FileOutputStream(new File(dir,e.pkg+"-"+kind+".png"))){b.compress(Bitmap.CompressFormat.PNG,100,f);}catch(IOException ignored){}b.recycle();
+            }
+        }
+    }
+    boolean unsafe(String pkg){String p=pkg.toLowerCase(Locale.ROOT);return p.contains("factory")||p.contains("factorytest")||p.contains("engineering")||p.contains("testmenu");}
+    int colorFor(String pkg){if(pkg.contains("netflix"))return 0xff931b36;if(pkg.contains("amazon"))return 0xff216f94;if(pkg.contains("youtube"))return 0xffad3049;if(pkg.contains("airplay"))return 0xff586da3;return 0xff34415c;}
+    Entry app(String pkg){for(Entry e:apps)if(e.pkg.equals(pkg)||e.key.equals(pkg))return e;return null;}
+    Entry action(String key,String label,String kind,Drawable icon){Entry e=new Entry(key,tr(label));e.kind=kind;e.icon=icon;e.color=0xff334663;if(kind.equals("inputs")||kind.equals("library"))e.heroBanner=asset("hero_system_background");return e;}
+    void refreshSources(){
+        sources.clear();TvInputManager tm=(TvInputManager)getSystemService(TV_INPUT_SERVICE);
+        if(tm==null)return;
+        try{
+            ArrayList<TvInputInfo> inputs=new ArrayList<>(tm.getTvInputList());
+            for(TvInputInfo info:inputs){
+                if(info.getType()!=TvInputInfo.TYPE_HDMI || info.getParentId()!=null)continue;
+                int port=0;String id=info.getId();
+                // The IDs/port association below was read from this MOOQ0's TvInputHardwareInfo.
+                if(Build.MODEL.equals("MiTV-MOOQ0")){if(id.endsWith("/HW4"))port=1;else if(id.endsWith("/HW5"))port=2;else if(id.endsWith("/HW6"))port=3;}
+                if(port==0){String l=String.valueOf(info.loadLabel(this));java.util.regex.Matcher m=java.util.regex.Pattern.compile("(?i)HDMI\\s*([123])").matcher(l);if(m.find())port=Integer.parseInt(m.group(1));}
+                if(port>0 && !sources.containsKey(port)){Entry e=action("hdmi"+port,"HDMI "+port,"hdmi",hdmiArt);e.inputId=id;e.port=port;e.state=tm.getInputState(id);decorateInput(e);sources.put(port,e);}
+            }
+        }catch(RuntimeException ignored){}
+    }
+    void renderHome(){
+        clearPage("home");tileWidth=Math.max(90,((int)(getResources().getDisplayMetrics().widthPixels/getResources().getDisplayMetrics().density)-100-28-5*14)/6);
+        int heightDp=(int)(getResources().getDisplayMetrics().heightPixels/getResources().getDisplayMetrics().density);View shelfSpace=new View(this);content.addView(shelfSpace,lp(-1,Math.max(100,heightDp-28-48-14-100-30)));
+        ArrayList<Entry> dock=dockEntries();
+        LinearLayout band=new LinearLayout(this);band.setClipChildren(false);band.setClipToPadding(false);band.setPadding(dp(14),dp(12),dp(14),dp(12));dockBand=band;band.setBackground(new FrostedDock(band));
+        for(int i=0;i<dock.size();i++){View t=tile(dock.get(i),tileWidth,76,false);if(i==0&&!dock.get(i).key.equals("inputs"))focusViews.put("inputs",t);LinearLayout.LayoutParams tp=lp(tileWidth,76);if(i>0)tp.leftMargin=dp(14);band.addView(t,tp);}
+        LinearLayout.LayoutParams bp=lp(-1,100);bp.topMargin=dp(14);content.addView(band,bp);
+        LinearLayout inputPage=new LinearLayout(this);inputPage.setOrientation(LinearLayout.VERTICAL);inputPage.setClipChildren(false);inputPage.setClipToPadding(false);inputPage.setMinimumHeight(dp(heightDp-90));inputsSection=inputPage;LinearLayout.LayoutParams inputPageLp=lp(-1,-2);inputPageLp.topMargin=dp(42);content.addView(inputPage,inputPageLp);libraryAnchor=inputPage;
+        TextView libraryTitle=text("App library",28,WHITE);inputPage.addView(libraryTitle,lp(-1,44));
+        TextView sourceLabel=text("INPUTS & LIVE TV",11,MUTED);sourceLabel.setLetterSpacing(.15f);LinearLayout.LayoutParams sl=lp(-1,20);sl.topMargin=dp(28);inputPage.addView(sourceLabel,sl);inputsAnchor=sourceLabel;
+        ArrayList<Entry> inputEntries=new ArrayList<>();for(int n=1;n<=3;n++){Entry e=sources.get(n);if(e==null){e=action("hdmi"+n,"HDMI "+n,"hdmi",hdmiArt);e.port=n;decorateInput(e);}inputEntries.add(e);}inputEntries.add(action("live","Live TV","live",tvArt));
+        addRows(inputPage,inputEntries,4,96);
+        inputPage.addView(new View(this),new LinearLayout.LayoutParams(1,0,1));TextView moreApps=button(tr("All apps")+"  ↓",this::revealApps);moreApps.setTextColor(MUTED);LinearLayout.LayoutParams moreLp=lp(180,44);moreLp.gravity=Gravity.CENTER_HORIZONTAL;moreLp.topMargin=dp(24);moreLp.bottomMargin=dp(22);inputPage.addView(moreApps,moreLp);
+        LinearLayout folders=new LinearLayout(this);folders.setClipChildren(false);folders.setClipToPadding(false);appTabs=folders;appsAnchor=folders;
+        for(String category:new String[]{"all","system","casting"}){TextView tab=button(category.equals("all")?"All apps":category.equals("system")?"System apps":"Casting",()->showHomeCategory(category));LinearLayout.LayoutParams tabLp=new LinearLayout.LayoutParams(0,dp(44),1);tabLp.setMargins(dp(5),0,dp(5),0);folders.addView(tab,tabLp);}
+        content.addView(folders,lp(-1,54));
+        TextView appsLabel=text(filter.equals("system")?"System apps":filter.equals("casting")?"Casting":"APPS",11,MUTED);homeAppsLabel=appsLabel;appsLabel.setLetterSpacing(.15f);LinearLayout.LayoutParams ap=lp(-1,22);ap.topMargin=dp(28);content.addView(appsLabel,ap);addHomeAppRows();
+        restoreFocus(lastFocus);
+    }
+    ArrayList<Entry> filteredApps(){ArrayList<Entry> result=new ArrayList<>();for(Entry e:apps){boolean casting=e.kind.equals("airplay")||e.pkg.contains("airplay")||e.pkg.contains("smartshare")||e.pkg.contains("mediashell")||e.pkg.contains("miracast")||e.pkg.contains("milink");if(filter.equals("all")||filter.equals("system")&&e.system||filter.equals("casting")&&casting)result.add(e);}return result;}
+    void addHomeAppRows(){HashMap<String,View> saved=new HashMap<>(focusViews);LinearLayout grid=new LinearLayout(this);grid.setOrientation(LinearLayout.VERTICAL);grid.setClipChildren(false);grid.setClipToPadding(false);grid.setMinimumHeight(getResources().getDisplayMetrics().heightPixels-dp(120));homeAppGrid=grid;addRows(grid,filteredApps(),6,76);content.addView(grid,lp(-1,-2));focusViews.putAll(saved);}
+    void showHomeCategory(String category){filter=category;HashMap<String,View> saved=new HashMap<>(focusViews);LinearLayout grid=(LinearLayout)homeAppGrid;grid.removeAllViews();addRows(grid,filteredApps(),6,76);focusViews.putAll(saved);homeAppsLabel.setText(tr(category.equals("system")?"System apps":category.equals("casting")?"Casting":"APPS"));libraryVisible=true;updateBackdrop();scroll.post(()->scroll.scrollTo(0,scroll.appsStop()));}
+    void revealInputs(){revealLibrary();}
+    void moveTo(View focus,int target){int from=scroll.getScrollY();scroll.focusing=true;if(focus!=null)focus.requestFocus();scroll.focusing=false;scroll.scrollTo(0,from);scroll.animateTo(target);}
+    void revealLibrary(){moveTo(findTile(inputsSection,"hdmi1",null),scroll.libraryStop());}
+    void revealApps(){View first=appTabs instanceof android.view.ViewGroup?((android.view.ViewGroup)appTabs).getChildAt(0):null;moveTo(first,scroll.appsStop());}
+
+    View findLibraryTile(String key){return findTile(content,key,dockBand);}
+    View findTile(View v,String key,View exclude){if(v==exclude)return null;if(key.equals(v.getTag()))return v;if(v instanceof android.view.ViewGroup){android.view.ViewGroup g=(android.view.ViewGroup)v;for(int i=0;i<g.getChildCount();i++){View found=findTile(g.getChildAt(i),key,exclude);if(found!=null)return found;}}return null;}
+    void revealDock(){View v=dockBand==null?null:findTile(dockBand,dockFocus,null);if(v==null)v=focusViews.get("inputs");moveTo(v,0);}
+    /** Dock, Inputs, and app tabs are three landing points; long app grids keep normal scrolling. */
+    final class SnapScrollView extends ScrollView {
+        android.animation.ValueAnimator animator;float downY;boolean consumed,focusing,touching;int gestureStart;
+        final Runnable settle=()->{int y=getScrollY();if(!page.equals("home")||touching||animator!=null)return;int inputs=libraryStop(),apps=appsStop();if(y>0&&y<inputs)animateTo(y<inputs/2?0:inputs);else if(y>inputs&&y<apps)animateTo(y<(inputs+apps)/2?inputs:apps);};
+        SnapScrollView(){super(MainActivity.this);setOverScrollMode(OVER_SCROLL_NEVER);}
+        @Override public void requestChildFocus(View child,View focused){int before=getScrollY();super.requestChildFocus(child,focused);if(focusing)scrollTo(0,before);}
+        @Override public boolean requestChildRectangleOnScreen(View child,Rect rectangle,boolean immediate){if(focusing||animator!=null)return false;return super.requestChildRectangleOnScreen(child,rectangle,immediate);}
+        int libraryStop(){return libraryAnchor==null?0:Math.max(0,libraryAnchor.getTop()-dp(90));}
+        int appsStop(){return appsAnchor==null?libraryStop():Math.max(libraryStop(),appsAnchor.getTop()-dp(90));}
+        void cancelSnap(){removeCallbacks(settle);if(animator!=null){android.animation.ValueAnimator old=animator;animator=null;old.cancel();}}
+        void settleGap(){if(animator==null&&!touching){removeCallbacks(settle);int y=getScrollY();if(page.equals("home")&&y>0&&y<appsStop()&&y!=libraryStop())postDelayed(settle,100);}}
+        boolean step(int direction,int start){if(direction>0){if(start<libraryStop()-dp(2)){revealLibrary();return true;}if(start<appsStop()-dp(2)){revealApps();return true;}}else{if(start<=libraryStop()+dp(2)&&start>0){revealDock();return true;}if(start<=appsStop()+dp(2)&&start>libraryStop()){revealLibrary();return true;}}return false;}
+        boolean navigate(View current,int direction){if(!page.equals("home"))return false;if((direction==View.FOCUS_LEFT||direction==View.FOCUS_RIGHT)&&isInside(current,dockBand)){int index=-1;for(int i=0;i<dockBand.getChildCount();i++)if(isInside(current,dockBand.getChildAt(i))){index=i;break;}if(direction==View.FOCUS_LEFT&&index==0||direction==View.FOCUS_RIGHT&&index==dockBand.getChildCount()-1)return true;}if(direction==View.FOCUS_DOWN&&isInside(current,dockBand)){revealLibrary();return true;}if(isInside(current,inputsSection)){if(direction==View.FOCUS_DOWN)revealApps();else if(direction==View.FOCUS_UP)revealDock();else return false;return true;}if(direction==View.FOCUS_UP&&(isInside(current,appTabs)||isFirstAppRow(current))){revealLibrary();return true;}return false;}
+        boolean isFirstAppRow(View current){return homeAppGrid instanceof android.view.ViewGroup&&((android.view.ViewGroup)homeAppGrid).getChildCount()>0&&isInside(current,((android.view.ViewGroup)homeAppGrid).getChildAt(0));}
+        @Override public boolean dispatchKeyEvent(KeyEvent event){if(event.getAction()==KeyEvent.ACTION_DOWN){int direction=0;switch(event.getKeyCode()){case KeyEvent.KEYCODE_DPAD_DOWN:direction=View.FOCUS_DOWN;break;case KeyEvent.KEYCODE_DPAD_UP:direction=View.FOCUS_UP;break;case KeyEvent.KEYCODE_DPAD_LEFT:direction=View.FOCUS_LEFT;break;case KeyEvent.KEYCODE_DPAD_RIGHT:direction=View.FOCUS_RIGHT;break;}if(direction!=0&&navigate(getCurrentFocus(),direction))return true;}return super.dispatchKeyEvent(event);}
+
+        void animateTo(int target){animateTo(target,true);}
+        void animateTo(int target,boolean animate){cancelSnap();target=Math.max(0,target);android.util.Log.d("MiTVSnap","target="+target+" animate="+animate);if(!animate||!motionEnabled()){scrollTo(0,target);removeCallbacks(settle);return;}android.animation.ValueAnimator running=android.animation.ValueAnimator.ofInt(getScrollY(),target);animator=running;running.setDuration(220);running.setInterpolator(easeOut());int from=getScrollY();int[] frames={0};running.addUpdateListener(a->{frames[0]++;scrollTo(0,(Integer)a.getAnimatedValue());});running.addListener(new android.animation.AnimatorListenerAdapter(){@Override public void onAnimationEnd(android.animation.Animator a){if(animator==a)animator=null;android.util.Log.d("MiTVSnap","completed from="+from+" to="+getScrollY()+" frames="+frames[0]);}});running.start();}
+        @Override public boolean dispatchTouchEvent(MotionEvent event){if(!page.equals("home"))return super.dispatchTouchEvent(event);int action=event.getActionMasked();if(action==MotionEvent.ACTION_DOWN){cancelSnap();touching=true;downY=event.getY();gestureStart=getScrollY();consumed=false;}if(action==MotionEvent.ACTION_MOVE&&!consumed&&Math.abs(event.getY()-downY)>dp(8)){int direction=event.getY()<downY?1:-1;if((direction>0&&gestureStart<appsStop()-dp(2))||(direction<0&&gestureStart>0&&gestureStart<=appsStop()+dp(2))){MotionEvent cancel=MotionEvent.obtain(event);cancel.setAction(MotionEvent.ACTION_CANCEL);super.dispatchTouchEvent(cancel);cancel.recycle();consumed=true;step(direction,gestureStart);}}if(action==MotionEvent.ACTION_UP||action==MotionEvent.ACTION_CANCEL)touching=false;if(consumed)return true;boolean handled=super.dispatchTouchEvent(event);if(!touching)settleGap();return handled;}
+        @Override public boolean onGenericMotionEvent(MotionEvent event){float delta=event.getAxisValue(MotionEvent.AXIS_VSCROLL);if(page.equals("home")&&delta!=0&&step(delta<0?1:-1,getScrollY()))return true;return super.onGenericMotionEvent(event);}
+        @Override public void fling(int velocity){if(page.equals("home")&&step(velocity>0?1:-1,getScrollY()))return;super.fling(velocity);}
+    }
+
+    void restoreFocus(String key){Entry preferred=app(key);if(preferred!=null && page.equals("home"))showHero(preferred);content.postDelayed(()->{if(page.equals("home")&&scroll.getScrollY()>dp(2))return;View v=focusViews.get(key);if(v==null && !focusViews.isEmpty())v=focusViews.get("inputs");if(v!=null){boolean ok=v.requestFocus();android.util.Log.d("MiTVFocus","Restore "+key+" success="+ok+" visible="+v.isShown());}},160);}
+    void showHero(Entry e){if(heroImage==null || !page.equals("home"))return;
+        boolean changed=!heroKey.equals(e.key);Drawable previous=selectedBackdrop;heroKey=e.key;lastFocus=e.key;ambient.tint(e.color);
+        systemBackdrop=isSystemArtwork(e);Drawable background=systemBackdrop?asset("hero_system_background"):(e.heroBanner!=null?e.heroBanner:e.banner);
+        boolean enhance=!systemBackdrop && e.kind.equals("app") && background!=null;if(enhance){Bitmap cached=sharpHeroes.get(e.key);if(cached!=null)background=new BitmapDrawable(getResources(),cached);else requestSharpHero(e.key,background);}
+        if(systemBackdrop){Drawable floating=e.icon;if(floating==null && e.kind.equals("airplay"))floating=asset("ic_launcher_monochrome");systemFloatingIcon.setImageDrawable(copy(floating));systemFloatingIcon.clearColorFilter();}
+        if(background!=null){selectedBackdrop=copy(background);heroImage.setVisibility(View.VISIBLE);heroName.setVisibility(View.GONE);updateGlass(background);updateBackdrop();if(changed){bannerTransition(previous);if(systemBackdrop && !libraryVisible && motionEnabled()){systemFloatingIcon.animate().cancel();systemFloatingIcon.setAlpha(0f);systemFloatingIcon.setScaleX(.97f);systemFloatingIcon.setScaleY(.97f);systemFloatingIcon.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(220).setInterpolator(easeOut()).start();}}}
+        else if(!e.kind.equals("app")){heroName.setVisibility(View.GONE);}
+        else{selectedBackdrop=null;heroImage.setImageDrawable(null);heroName.setVisibility(libraryVisible?View.GONE:View.VISIBLE);heroName.setText(tr(e.label));}
+    }
+    boolean isSystemArtwork(Entry e){if(e.kind.equals("hdmi"))return false;if(!e.kind.equals("app"))return true;String p=e.pkg;boolean media=p.contains("netflix")||p.contains("amazonvideo")||p.contains("youtube")||p.equals("com.google.android.videos")||p.contains("disney")||p.contains("raiplay")||p.contains("pluto")||p.contains("crunchyroll");return e.system && !media;}
+    Drawable copy(Drawable d){Drawable result=d!=null && d.getConstantState()!=null?d.getConstantState().newDrawable().mutate():d;if(result instanceof BitmapDrawable){((BitmapDrawable)result).setFilterBitmap(true);((BitmapDrawable)result).setAntiAlias(true);}return result;}
+    void requestSharpHero(String key,Drawable artwork){
+        if(artwork.getIntrinsicWidth()>=960 || !sharpening.add(key))return;
+        Drawable source=copy(artwork);
+        worker.execute(()->{
+            Bitmap result=Bitmap.createBitmap(960,540,Bitmap.Config.ARGB_8888);source.setFilterBitmap(true);source.setBounds(0,0,960,540);source.draw(new Canvas(result));
+            int w=result.getWidth(),h=result.getHeight();int[] pixels=new int[w*h],out=new int[w*h];result.getPixels(pixels,0,w,0,0,w,h);System.arraycopy(pixels,0,out,0,pixels.length);
+            // A restrained five-tap unsharp pass avoids strong halos around lettering.
+            for(int y=1;y<h-1;y++)for(int x=1;x<w-1;x++){int i=y*w+x,c=pixels[i];int r=Color.red(c),g=Color.green(c),b=Color.blue(c);int l=pixels[i-1],rgt=pixels[i+1],u=pixels[i-w],d=pixels[i+w];int nr=Color.red(l)+Color.red(rgt)+Color.red(u)+Color.red(d),ng=Color.green(l)+Color.green(rgt)+Color.green(u)+Color.green(d),nb=Color.blue(l)+Color.blue(rgt)+Color.blue(u)+Color.blue(d);r=Math.max(0,Math.min(255,r+Math.round((4*r-nr)*.18f)));g=Math.max(0,Math.min(255,g+Math.round((4*g-ng)*.18f)));b=Math.max(0,Math.min(255,b+Math.round((4*b-nb)*.18f)));out[i]=Color.argb(Color.alpha(c),r,g,b);}
+            result.setPixels(out,0,w,0,0,w,h);sharpHeroes.put(key,result);
+            runOnUiThread(()->{sharpening.remove(key);handler.postDelayed(()->{if(isFinishing()||isDestroyed()||!heroKey.equals(key))return;selectedBackdrop=new BitmapDrawable(getResources(),result);updateGlass(selectedBackdrop);updateBackdrop();},240);});
+        });
+    }
+    View tile(Entry e,int width,int height,boolean library){
+        FrameLayout box=new FrameLayout(this);box.setId(View.generateViewId());box.setFocusable(true);box.setFocusableInTouchMode(true);box.setClickable(true);box.setOnTouchListener((view,event)->{if(event.getAction()==MotionEvent.ACTION_DOWN)view.requestFocus();return false;});box.setContentDescription(tr(e.label));box.setClipToOutline(true);box.setBackground(surface(e.color,13));box.setElevation(dp(2));box.setTag(e.key);
+        ImageView image=new ImageView(this);image.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);image.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        if(e.banner!=null){image.setImageDrawable(copy(e.banner));box.addView(image,new FrameLayout.LayoutParams(-1,-1));}
+        else if(!e.kind.equals("app")){int artHeight=(e.kind.equals("hdmi")||e.kind.equals("live"))?72:height;image.setImageDrawable(systemBanner(e,Math.max(300,width*2),artHeight*2,false));FrameLayout.LayoutParams artBox=new FrameLayout.LayoutParams(-1,dp(artHeight),Gravity.CENTER);box.addView(image,artBox);}
+        else{
+            image.setImageDrawable(copy(e.icon));FrameLayout.LayoutParams ip=new FrameLayout.LayoutParams(dp(35),dp(35),Gravity.TOP|Gravity.CENTER_HORIZONTAL);ip.topMargin=dp(8);box.addView(image,ip);
+            TextView label=text(e.label,10,WHITE);label.setGravity(Gravity.CENTER);label.setSingleLine(true);label.setEllipsize(android.text.TextUtils.TruncateAt.END);FrameLayout.LayoutParams name=new FrameLayout.LayoutParams(-1,dp(24),Gravity.BOTTOM);name.setMargins(dp(6),0,dp(6),dp(3));box.addView(label,name);
+        }
+        box.setOnFocusChangeListener((v,f)->{GradientDrawable border=surface(Color.TRANSPARENT,13);border.setStroke(dp(f?2:0),0xfff6f7fb);v.setForeground(f?border:null);v.setElevation(dp(f?12:2));v.animate().scaleX(f?1.045f:1).scaleY(f?1.045f:1).setDuration(motionDuration(130)).start();if(f){if(!library)dockFocus=e.key;showHero(e);}});
+        boolean[] heldOk={false},pressingOk={false};Runnable longOk=()->{if(pressingOk[0] && !heldOk[0]){heldOk[0]=true;suppressConfirmUntil=SystemClock.uptimeMillis()+1000;box.setPressed(false);box.performLongClick();}};
+        box.setOnKeyListener((v,key,event)->{if(key==KeyEvent.KEYCODE_DPAD_CENTER || key==KeyEvent.KEYCODE_ENTER){if(event.getAction()==KeyEvent.ACTION_DOWN){if(event.getRepeatCount()==0){pressingOk[0]=true;heldOk[0]=false;box.setPressed(true);handler.postDelayed(longOk,ViewConfiguration.getLongPressTimeout());}else if(event.isLongPress())longOk.run();return true;}if(event.getAction()==KeyEvent.ACTION_UP){handler.removeCallbacks(longOk);pressingOk[0]=false;box.setPressed(false);if(!heldOk[0] && !event.isCanceled())box.performClick();heldOk[0]=false;return true;}}if(!library && page.equals("home") && key==KeyEvent.KEYCODE_DPAD_DOWN && event.getAction()==KeyEvent.ACTION_DOWN){revealLibrary();return true;}if(library && page.equals("home") && (e.kind.equals("hdmi")||e.kind.equals("live")) && key==KeyEvent.KEYCODE_DPAD_UP && event.getAction()==KeyEvent.ACTION_DOWN){revealDock();return true;}return false;});
+        box.setOnClickListener(v->activate(e));box.setOnLongClickListener(v->{if(e.kind.equals("app"))showAppActions(e);else if(e.kind.equals("airplay"))showAppActions(e);else if(e.kind.equals("hdmi")||e.kind.equals("live")||e.kind.equals("inputs")||e.kind.equals("library"))showAppActions(e);return true;});focusViews.put(e.key,box);return box;
+    }
+    Drawable systemBanner(Entry e,int w,int h,boolean hero){
+        Bitmap b=Bitmap.createBitmap(w,h,Bitmap.Config.ARGB_8888);Canvas c=new Canvas(b);Paint p=new Paint(3);p.setColor(e.color);
+        if(e.kind.equals("hdmi") && !e.profile.equals("generic")){
+            int cy=(int)(h*.31f);
+            if(hero){
+                if(e.profile.equals("nintendo")){drawLogoFit(c,"nintendoswitch",w*.36f,cy,w*.17f,h*.25f);drawLogoFit(c,"wiiu",w*.64f,cy,w*.20f,h*.23f);}
+                else if(e.profile.equals("gaming")){drawLogoFit(c,"playstation",w*.36f,cy,w*.18f,h*.25f);drawLogoFit(c,"xbox",w*.64f,cy,w*.17f,h*.25f);}
+                else drawLogoFit(c,e.profile,w*.5f,cy,w*.19f,h*.22f);
+            }else{
+                if(e.profile.equals("nintendo")){drawLogoFit(c,"nintendoswitch",w*.30f,cy,w*.23f,h*.36f);drawLogoFit(c,"wiiu",w*.68f,cy,w*.31f,h*.29f);}
+                else if(e.profile.equals("gaming")){drawLogoFit(c,"playstation",w*.33f,cy,w*.25f,h*.36f);drawLogoFit(c,"xbox",w*.68f,cy,w*.22f,h*.36f);}
+                else drawLogoFit(c,e.profile,w*.5f,cy,w*.5f,h*.40f);
+                p.setColor(WHITE);p.setTextAlign(Paint.Align.CENTER);p.setTypeface(Typeface.create("sans-serif-medium",Typeface.NORMAL));p.setTextSize(h*.135f);
+                if(e.profile.equals("nintendo")){c.drawText("Switch",w*.30f,h*.74f,p);c.drawText("Wii U",w*.68f,h*.74f,p);}
+                else if(e.profile.equals("gaming")){c.drawText("PlayStation 4",w*.33f,h*.74f,p);c.drawText("Xbox",w*.68f,h*.74f,p);}
+                else c.drawText(profileTitle(e.profile),w*.5f,h*.74f,p);
+                p.setColor(MUTED);p.setTextSize(h*.115f);c.drawText("HDMI "+e.port,w*.5f,h*.92f,p);
+            }
+        }else{
+            Drawable a=copy(e.icon);int size=(int)(h*(hero?.24f:.67f));int top=hero?Math.round(h*.31f-size*.5f):Math.round(h*.01f);if(a!=null){a.setBounds((w-size)/2,top,(w+size)/2,top+size);a.draw(c);}else new Glyph(e.kind,size).drawAt(c,(w-size)/2,top,size);
+            if(!hero){p.setColor(WHITE);p.setTextSize(h*.18f);p.setTypeface(Typeface.create("sans-serif-medium",Typeface.NORMAL));p.setTextAlign(Paint.Align.CENTER);c.drawText(e.label,w*.5f,h*.86f,p);}
+        }
+        if(!hero && e.kind.equals("hdmi") && e.state==TvInputManager.INPUT_STATE_CONNECTED){p.setColor(0xff89d6ab);c.drawCircle(w-14,14,4,p);}
+        return new BitmapDrawable(getResources(),b);
+    }
+    String profileTitle(String p){switch(p){case "nintendo":return "Switch + Wii U";case "gaming":return "PS4 + Xbox";case "appletv":return "Apple TV";case "nintendoswitch":return "Nintendo Switch";case "playstation":return "PlayStation 4";case "xbox":return "Xbox";case "wiiu":return "Wii U";default:return "HDMI";}}
+    void decorateInput(Entry e){String fallback=e.port==1?"nintendo":e.port==2?"appletv":"gaming";e.profile=getPreferences(0).getString("input-profile-"+e.port,fallback);e.label="HDMI "+e.port+(e.profile.equals("generic")?"":" · "+profileTitle(e.profile));e.color=e.profile.equals("nintendo")?0xff783c4b:e.profile.equals("gaming")?0xff345267:0xff34415a;e.heroBanner=inputHeroBanner(e);}
+    Drawable inputHeroBanner(Entry e){int w=960,h=540;Bitmap b=Bitmap.createBitmap(w,h,Bitmap.Config.ARGB_8888);Canvas c=new Canvas(b);Drawable base=asset("hero_system_background");if(base!=null){base.setBounds(0,0,w,h);base.draw(c);}Drawable foreground=systemBanner(e,w,h,true);foreground.setBounds(0,0,w,h);foreground.draw(c);return new BitmapDrawable(getResources(),b);}
+    void drawLogo(Canvas c,String name,float x,float y,float size){Drawable d=asset("logo_"+name);if(d==null)return;d.setBounds((int)(x-size/2),(int)(y-size/2),(int)(x+size/2),(int)(y+size/2));d.draw(c);}
+    void drawLogoFit(Canvas c,String name,float x,float y,float maxW,float maxH){
+        Bitmap b=logoCache.get(name);if(b==null){Drawable d=asset("logo_"+name);if(d==null)return;Bitmap raw=Bitmap.createBitmap(192,192,Bitmap.Config.ARGB_8888);d.setBounds(0,0,192,192);d.draw(new Canvas(raw));int left=192,top=192,right=0,bottom=0;for(int yy=0;yy<192;yy++)for(int xx=0;xx<192;xx++)if(Color.alpha(raw.getPixel(xx,yy))>40){left=Math.min(left,xx);top=Math.min(top,yy);right=Math.max(right,xx);bottom=Math.max(bottom,yy);}if(right<left)return;b=Bitmap.createBitmap(raw,left,top,right-left+1,bottom-top+1);logoCache.put(name,b);if(b!=raw)raw.recycle();}
+        float scale=Math.min(maxW/b.getWidth(),maxH/b.getHeight());float w=b.getWidth()*scale,h=b.getHeight()*scale;Paint p=new Paint(Paint.ANTI_ALIAS_FLAG|Paint.FILTER_BITMAP_FLAG);c.drawBitmap(b,null,new RectF(x-w/2,y-h/2,x+w/2,y+h/2),p);
+    }
+    void editInput(Entry e){LinearLayout rows=dialog("Edit HDMI "+e.port);for(String profile:new String[]{"nintendo","gaming","appletv","nintendoswitch","playstation","xbox","wiiu","generic"}){
+        addControl(rows,profile.equals("generic")?"HDMI only":profileTitle(profile),"",()->{getPreferences(0).edit().putString("input-profile-"+e.port,profile).apply();closePanel();refreshSources();renderHome();});
+    }panel.show();Window w=panel.getWindow();if(w!=null)w.setLayout(dp(325),Math.min(dp(510),getResources().getDisplayMetrics().heightPixels-dp(30)));focusFirst(rows);}
+    void addRows(LinearLayout dest,java.util.List<Entry> list,int columns,int height){
+        int available=(int)(getResources().getDisplayMetrics().widthPixels/getResources().getDisplayMetrics().density)-100;int w=(available-(columns-1)*14)/columns;
+        for(int i=0;i<list.size();i+=columns){LinearLayout row=new LinearLayout(this);row.setClipChildren(false);row.setClipToPadding(false);
+            for(int j=i;j<Math.min(i+columns,list.size());j++){LinearLayout.LayoutParams p=lp(w,height);if(j>i)p.leftMargin=dp(14);row.addView(tile(list.get(j),w,height,true),p);}
+            LinearLayout.LayoutParams rp=lp(-1,height);rp.topMargin=dp(12);dest.addView(row,rp);
+        }
+    }
+    void renderLibrary(String choice){
+        filter=choice;clearPage("library");TextView title=text(choice.equals("system")?"System apps":choice.equals("casting")?"Casting":"App library",30,WHITE);LinearLayout.LayoutParams titleLp=lp(-1,54);titleLp.topMargin=dp(20);content.addView(title,titleLp);
+        LinearLayout tabs=new LinearLayout(this);for(String s:new String[]{"all","system","casting"}){TextView t=button(s.equals("all")?"All apps":s.equals("system")?"System":"Casting",()->renderLibrary(s));LinearLayout.LayoutParams p=lp(130,40);p.rightMargin=dp(12);tabs.addView(t,p);}content.addView(tabs,lp(-1,55));
+        ArrayList<Entry> selected=new ArrayList<>();for(Entry e:apps){boolean casting=e.kind.equals("airplay")||e.pkg.contains("airplay")||e.pkg.contains("smartshare")||e.pkg.contains("mediashell")||e.pkg.contains("miracast")||e.pkg.contains("milink");if(choice.equals("all") || choice.equals("system")&&e.system || choice.equals("casting")&&casting)selected.add(e);}
+        addRows(content,selected,6,78);if(selected.isEmpty()){TextView empty=text("No launchable apps in this folder",16,MUTED);content.addView(empty,lp(-1,80));}
+        if(!selected.isEmpty())content.post(()->{View v=focusViews.get(selected.get(0).key);if(v!=null)v.requestFocus();});
+        TextView back=button("Back to Home",this::renderHome);LinearLayout.LayoutParams bp=lp(160,42);bp.topMargin=dp(24);content.addView(back,bp);enterCategory();
+    }
+    void activate(Entry e){
+        switch(e.kind){case "airplay":showAirPlayInfo();break;case "app":if(preview && e.intent!=null && e.intent.getComponent()!=null && e.intent.getComponent().getClassName().equals("android.app.Activity")){showNotice(tr("Artwork preview only — open this app on the television"),3500);}else start(e.intent);break;case "inputs":revealInputs();break;case "hdmi":openInput(e);break;case "live":openLive();break;case "library":if(page.equals("home"))revealApps();else renderLibrary("all");break;case "system":renderLibrary("system");break;default:showControls();}
+    }
+    boolean start(Intent i){if(i==null)return false;try{startActivity(new Intent(i));return true;}catch(ActivityNotFoundException|SecurityException ex){showNotice(tr("This screen is unavailable on this TV"),3500);return false;}}
+    void openInput(Entry e){
+        if(e.inputId.isEmpty()){showNotice(tr(preview?"Preview: this emulator has no physical HDMI ports":"This HDMI port is not registered; choose an input below"),4500);if(!preview)showInputs();return;}
+        Intent i=new Intent(Intent.ACTION_VIEW,TvContract.buildChannelUriForPassthroughInput(e.inputId)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        i.setPackage("com.mediatek.wwtv.tvcenter");if(pm.resolveActivity(i,0)==null)i.setPackage(null);
+        if(!start(i))showInputs();
+    }
+    void openLive(){
+        TvInputManager tm=(TvInputManager)getSystemService(TV_INPUT_SERVICE);String tuner=null;
+        if(tm!=null){for(TvInputInfo info:tm.getTvInputList()){if(info.getType()==TvInputInfo.TYPE_TUNER && info.getServiceInfo().packageName.equals("com.mediatek.tvinput")){if(tuner==null)tuner=info.getId();if(info.getId().endsWith("/HW0")){tuner=info.getId();break;}}}}
+        if(tuner!=null){Intent tune=new Intent(Intent.ACTION_VIEW,TvContract.buildChannelsUriForInput(tuner)).setPackage("com.mediatek.wwtv.tvcenter");if(pm.resolveActivity(tune,0)!=null && start(tune))return;}
+        Intent i=pm.getLeanbackLaunchIntentForPackage("com.mediatek.wwtv.tvcenter");if(i==null)i=pm.getLaunchIntentForPackage("com.mediatek.wwtv.tvcenter");if(i!=null)start(i);else showNotice(tr(preview?"Preview: this emulator has no broadcast tuner":"Live TV is unavailable"),4500);
+    }
+    void showInputs(){LinearLayout rows=dialog("Inputs");for(int n=1;n<=3;n++){Entry e=sources.get(n);if(e==null){e=action("hdmi"+n,"HDMI "+n,"hdmi",hdmiArt);e.port=n;decorateInput(e);}final Entry target=e;addControl(rows,e.label,e.inputId.isEmpty()?"Not registered on this device":e.state==0?"Connected":"No signal",()->{closePanel();openInput(target);});}addControl(rows,"Live TV","Broadcast channels",()->{closePanel();openLive();});panel.show();focusFirst(rows);}
+    LinearLayout dialog(String title){if(panel!=null && panel.isShowing())panel.dismiss();else panelOrigin=getCurrentFocus();panel=new Dialog(this);panel.setOnKeyListener((dialog,key,event)->{if((key==KeyEvent.KEYCODE_DPAD_CENTER || key==KeyEvent.KEYCODE_ENTER) && event.getAction()==KeyEvent.ACTION_UP && SystemClock.uptimeMillis()<suppressConfirmUntil){suppressConfirmUntil=0;return true;}if(event.getAction()==KeyEvent.ACTION_DOWN && event.getRepeatCount()==0)suppressConfirmUntil=0;return key==KeyEvent.KEYCODE_BACK && handleBack(event);});LinearLayout rows=new LinearLayout(this);rows.setOrientation(LinearLayout.VERTICAL);rows.setClipChildren(false);rows.setClipToPadding(false);rows.setPadding(dp(26),dp(26),dp(26),dp(24));rows.setBackground(new FrostedDock(rows,true));rows.addView(text(title,27,WHITE),lp(-1,50));ScrollView dialogScroll=new ScrollView(this);dialogScroll.setClipChildren(false);dialogScroll.setClipToPadding(false);dialogScroll.addView(rows);panel.setContentView(dialogScroll);Window w=panel.getWindow();if(w!=null){w.setBackgroundDrawableResource(android.R.color.transparent);w.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);WindowManager.LayoutParams p=w.getAttributes();p.width=dp(325);p.height=-2;p.gravity=Gravity.RIGHT|Gravity.CENTER_VERTICAL;p.x=dp(30);p.dimAmount=.38f;w.setAttributes(p);w.setWindowAnimations(getResources().getIdentifier("HomePanelMotion","style",getPackageName()));}return rows;}
+    void addControl(LinearLayout rows,String label,String hint,Runnable action){TextView v=button(label+(hint.isEmpty()?"":"\n"+hint),action);v.setTextSize(14);v.setGravity(Gravity.CENTER_VERTICAL);v.setPadding(dp(16),dp(10),dp(10),dp(10));v.setLineSpacing(dp(2),1f);v.setMinHeight(dp(59));v.setBackground(new FrostedDock(v,true));View.OnFocusChangeListener feedback=v.getOnFocusChangeListener();v.setOnFocusChangeListener((view,focused)->{if(feedback!=null)feedback.onFocusChange(view,focused);v.setBackground(new FrostedDock(v,true));});LinearLayout.LayoutParams p=lp(-1,-2);p.topMargin=dp(8);rows.addView(v,p);}
+    void focusFirst(LinearLayout rows){rows.post(()->{for(int i=1;i<rows.getChildCount();i++){View child=rows.getChildAt(i);if(child.isFocusable()){child.requestFocus();break;}}});}
+    void closePanel(){pendingPanelFocus=panelOrigin;if(panel!=null)panel.dismiss();}
+    void addControlIcon(LinearLayout rows,String label,String hint,String icon,Runnable action){
+        addControl(rows,label,hint,action);TextView v=(TextView)rows.getChildAt(rows.getChildCount()-1);
+        Glyph glyph=new Glyph(icon,dp(24));glyph.setBounds(0,0,dp(24),dp(24));v.setCompoundDrawables(glyph,null,null,null);v.setCompoundDrawablePadding(dp(14));
+        LinearLayout.LayoutParams p=(LinearLayout.LayoutParams)v.getLayoutParams();p.height=-2;p.topMargin=dp(6);v.setMinHeight(dp(50));v.setPadding(dp(16),dp(8),dp(10),dp(8));v.setLayoutParams(p);
+        View.OnFocusChangeListener feedback=v.getOnFocusChangeListener();v.setOnFocusChangeListener((view,focused)->{if(feedback!=null)feedback.onFocusChange(view,focused);});
+    }
+    void showControls(){LinearLayout rows=dialog("Control Center");
+        addControlIcon(rows,"Network",network==null?"":network.getText().toString(),network!=null && network.getText().toString().contains("Ethernet")?"ethernet":"wifi",()->{closePanel();openSettings(Settings.ACTION_WIFI_SETTINGS);});
+        addControlIcon(rows,"Inputs","HDMI & Live TV","inputs",()->{closePanel();if(!page.equals("home"))renderHome();scroll.post(this::revealInputs);});
+        addControlIcon(rows,"Display","Picture settings","display",()->{closePanel();openSettings(Settings.ACTION_DISPLAY_SETTINGS);});
+        addControlIcon(rows,"Sound","TV audio settings","sound",()->{closePanel();openSettings(Settings.ACTION_SOUND_SETTINGS);});
+        addControlIcon(rows,"AirPlay","Always available in the background","airplay",()->{closePanel();showAirPlayInfo();});
+        addControlIcon(rows,"Language",AppLanguage.italian(this)?"Italiano":"English","language",()->{closePanel();showLanguage();});
+        addControlIcon(rows,"Remote","Use a phone on the same Wi-Fi","remote",()->{closePanel();showRemoteAddress();});
+        addControlIcon(rows,"TV settings","All settings","controls",()->{closePanel();openSettings(Settings.ACTION_SETTINGS);});
+        panel.show();focusFirst(rows);
+    }
+    void showLanguage(){LinearLayout rows=dialog("Language");addControl(rows,"Italiano",AppLanguage.italian(this)?"✓":"",()->{AppLanguage.set(this,"it");closePanel();recreate();});addControl(rows,"English",!AppLanguage.italian(this)?"✓":"",()->{AppLanguage.set(this,"en");closePanel();recreate();});panel.show();focusFirst(rows);}
+    Entry dockEntry(String key){Entry installed=app(key);if(installed!=null)return installed;if(key.matches("hdmi[123]")){int port=key.charAt(4)-'0';Entry input=sources.get(port);if(input==null){input=action(key,"HDMI "+port,"hdmi",hdmiArt);input.port=port;decorateInput(input);}return input;}if(key.equals("live"))return action("live","Live TV","live",tvArt);return null;}
+    ArrayList<Entry> dockEntries(){
+        ArrayList<Entry> dock=new ArrayList<>();ArrayList<String> keys=dockKeys();while(keys.size()<5)keys.add("");String firstKey=inputDockKey();if(firstKey.isEmpty())firstKey="inputs";
+        HashSet<String> used=new HashSet<>();Entry first=dockEntry(firstKey);if(first==null||first.key.equals("library"))first=action("inputs","Inputs","inputs",hdmiArt);dock.add(first);used.add(first.key);
+        for(int slot=0;slot<5;slot++){Entry entry=dockEntry(keys.get(slot));if(entry!=null&&(used.contains(entry.key)||(slot<4&&entry.key.equals("library"))))entry=null;
+            if(entry==null&&slot==4)entry=action("library","All apps","library",appsArt);
+            if(entry==null){for(Entry candidate:apps)if(!candidate.key.equals("inputs")&&!candidate.key.equals("library")&&!used.contains(candidate.key)){entry=candidate;break;}}
+            if(entry==null)entry=action("empty"+slot,"Empty","library",appsArt);dock.add(entry);used.add(entry.key);
+        }return dock;
+    }
+    String inputDockKey(){return getPreferences(0).getString("input-dock-pin","");}
+    ArrayList<String> dockKeys(){ArrayList<String> result=new ArrayList<>();String raw=getPreferences(0).getString("dock-pins",null);if(raw!=null)try{org.json.JSONArray array=new org.json.JSONArray(raw);for(int i=0;i<array.length() && result.size()<5;i++)result.add(array.getString(i));}catch(org.json.JSONException ignored){}if(result.isEmpty())Collections.addAll(result,"com.netflix.ninja","com.amazon.amazonvideo.livingroom","com.google.android.youtube.tv","airplay");return result;}
+    int pinnedCount(ArrayList<String> keys){int n=0;for(String key:keys)if(key!=null&&!key.isEmpty())n++;return n;}
+    void saveDockKeys(ArrayList<String> keys){while(!keys.isEmpty()&&keys.get(keys.size()-1).isEmpty())keys.remove(keys.size()-1);getPreferences(0).edit().putString("dock-pins",new org.json.JSONArray(keys).toString()).apply();}
+    void pinToDock(Entry e){LinearLayout rows=dialog("Pin to dock");ArrayList<Entry> dock=dockEntries();for(int i=0;i<6;i++){if(e.key.equals("library")&&i!=5)continue;final int slot=i;addControl(rows,String.format(Locale.getDefault(),tr("Dock position %d"),i+1),dock.get(i).label,()->{ArrayList<String> slots=new ArrayList<>();for(Entry entry:dock)slots.add(entry.key);int previous=slots.indexOf(e.key);String replaced=slots.get(slot);slots.set(slot,e.key);if(previous>=0&&previous!=slot){if(previous==0&&replaced.equals("library")){for(Entry candidate:apps)if(!candidate.key.equals("inputs")&&!candidate.key.equals("library")&&!slots.contains(candidate.key)){replaced=candidate.key;break;}}slots.set(previous,replaced);}getPreferences(0).edit().putString("input-dock-pin",slots.get(0)).apply();saveDockKeys(new ArrayList<>(slots.subList(1,6)));closePanel();lastFocus=e.key;renderHome();scroll.post(()->scroll.scrollTo(0,0));});}panel.show();focusFirst(rows);}
+
+    void removeFromDock(Entry e){ArrayList<Entry> dock=dockEntries();ArrayList<String> slots=new ArrayList<>();for(Entry item:dock)slots.add(item.key);int slot=slots.indexOf(e.key);if(slot<0)return;String replacement="library";if(slot<5){replacement="";for(Entry candidate:apps)if(!candidate.key.equals("inputs")&&!candidate.key.equals("library")&&!slots.contains(candidate.key)){replacement=candidate.key;break;}if(replacement.isEmpty())return;}slots.set(slot,replacement);getPreferences(0).edit().putString("input-dock-pin",slots.get(0)).apply();saveDockKeys(new ArrayList<>(slots.subList(1,6)));closePanel();lastFocus=slots.get(0);renderHome();scroll.post(()->scroll.scrollTo(0,0));if(slot==5)showNotice(tr("All apps restored to the dock"),3000);}
+
+    void showAppActions(Entry e){LinearLayout rows=dialog(e.label);addControlIcon(rows,"Open","","display",()->{closePanel();activate(e);});addControlIcon(rows,"Pin to dock","","apps",()->{closePanel();pinToDock(e);});ArrayList<String> pins=dockKeys();boolean sourcePinned=e.kind.equals("inputs")&&dockEntries().stream().anyMatch(item->item.key.equals(e.key));if(sourcePinned||(!e.key.equals("library")&&pinnedCount(pins)==5&&pins.size()>=5&&e.key.equals(pins.get(4))))addControlIcon(rows,"Remove from dock",sourcePinned?"":"All apps returns to the dock", "removeDock",()->removeFromDock(e));if(e.kind.equals("hdmi"))addControlIcon(rows,"Customize input","","inputs",()->{closePanel();editInput(e);});if(e.kind.equals("app")){addControlIcon(rows,"Uninstall","","uninstall",()->{closePanel();start(new Intent(Intent.ACTION_DELETE,Uri.parse("package:"+e.pkg)));});addControlIcon(rows,"App information","System settings","controls",()->{closePanel();start(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:"+e.pkg)));});}panel.show();focusFirst(rows);}
+    void openSettings(String action){Intent i=new Intent(action);if(action.equals(Settings.ACTION_DISPLAY_SETTINGS)){Intent picture=new Intent("com.mitv.settings.PICTURE_SETTINGS");if(pm.resolveActivity(picture,0)!=null)i=picture;}if(pm.resolveActivity(i,0)==null)i=new Intent(Settings.ACTION_SETTINGS);start(i);}
+    @Override public void onBackPressed(){if(!page.equals("home")){lastFocus="inputs";dockFocus="inputs";renderHome();scroll.post(()->scroll.scrollTo(0,0));return;}View v=focusViews.get("inputs");if(v!=null){revealDock();}}
+    boolean backHeld,backPending;
+    final Runnable holdBack=()->{if(backPending){backHeld=true;closePanel();showControls();}};
+    boolean handleBack(KeyEvent event){if(event.getAction()==KeyEvent.ACTION_DOWN){if(event.getRepeatCount()==0){backPending=true;backHeld=false;handler.postDelayed(holdBack,ViewConfiguration.getLongPressTimeout());}else if(event.isLongPress() && !backHeld)holdBack.run();return true;}if(event.getAction()==KeyEvent.ACTION_UP){handler.removeCallbacks(holdBack);backPending=false;if(!backHeld && !event.isCanceled()){if(panel!=null && panel.isShowing())closePanel();else if(audioPopup!=null&&audioPopup.isShowing())audioPopup.dismiss();else onBackPressed();}backHeld=false;return true;}return true;}
+    @Override public boolean dispatchKeyEvent(KeyEvent event){if(event.getKeyCode()==KeyEvent.KEYCODE_BACK)return handleBack(event);return super.dispatchKeyEvent(event);}
+    @Override public boolean onKeyDown(int code,android.view.KeyEvent event){if(code==android.view.KeyEvent.KEYCODE_MENU || code==android.view.KeyEvent.KEYCODE_SETTINGS){showControls();return true;}if(code==android.view.KeyEvent.KEYCODE_TV_INPUT || code==130){showInputs();return true;}return super.onKeyDown(code,event);}
+    void ensureReceiver(){
+        getSharedPreferences("settings",0).edit().putBoolean("auto_start",true).putBoolean("boot_auto_start",true).putBoolean("run_in_background",true).putBoolean("launch_on_connect",true).putBoolean("auto_fullscreen",true).apply();
+        Intent receiver=new Intent().setClassName(this,"io.github.jqssun.airplay.service.AirPlayService").setAction("io.github.jqssun.airplay.START_SERVER");
+        try{startForegroundService(receiver);if(!receiverBound)receiverBound=bindService(receiver,receiverConnection,0);}catch(RuntimeException ex){android.util.Log.w("MiTVHome","Receiver startup pending",ex);}
+    }
+    boolean activeAudio(){return nativeReceiver!=null && nativeReceiver.getConnectionCount().getValue()>0 && nativeReceiver.getAudioOnly().getValue() && !nativeReceiver.getMirroringActive().getValue() && !nativeReceiver.getVideoPlaybackActive().getValue();}
+    void updateAudioActivity(){if(audioBubble==null)return;boolean show=page.equals("home") && (panel==null||!panel.isShowing()) && activeAudio();audioBubble.setVisibility(show?View.VISIBLE:View.GONE);if(!show){if(audioPopup!=null&&audioPopup.isShowing())audioPopup.dismiss();audioExpanded=false;return;}io.github.jqssun.airplay.audio.TrackInfo info=nativeReceiver.getTrackInfo().getValue();String title=info.getTitle().isEmpty()?tr("AirPlay audio"):info.getTitle();audioBubble.setContentDescription(title+" — "+tr("AirPlay audio controls"));audioWave.setLevels(nativeReceiver.audioWaveform());if(audioTitle!=null){audioTitle.setText(title);audioArtist.setText(info.getArtist().isEmpty()?info.getAlbum():info.getArtist());if(audioCover!=null){if(info.getCoverArt()!=null)audioCover.setImageBitmap(info.getCoverArt());else audioCover.setImageDrawable(asset("icon_airplay"));}if(audioPlayButton!=null)audioPlayButton.setText(nativeReceiver.getPlaying().getValue()?"Ⅱ":"▶");}if(audioVolume!=null&&!audioVolume.isPressed())audioVolume.setProgress(Math.round(nativeReceiver.clientVolume()*100));}
+    void showAudioControls(){if(!activeAudio()||audioBubble==null)return;if(audioPopup!=null&&audioPopup.isShowing()){audioPopup.dismiss();audioExpanded=false;return;}LinearLayout card=new LinearLayout(this);card.setOrientation(LinearLayout.VERTICAL);card.setPadding(dp(18),dp(14),dp(18),dp(12));card.setBackground(new FrostedDock(card,true));card.setElevation(dp(15));card.setFocusable(false);
+        LinearLayout line=new LinearLayout(this);line.setGravity(Gravity.CENTER_VERTICAL);audioCover=new ImageView(this);io.github.jqssun.airplay.audio.TrackInfo info=nativeReceiver.getTrackInfo().getValue();if(info.getCoverArt()!=null)audioCover.setImageBitmap(info.getCoverArt());else audioCover.setImageDrawable(asset("icon_airplay"));audioCover.setScaleType(ImageView.ScaleType.CENTER_CROP);audioCover.setBackground(surface(0xff30384a,12));line.addView(audioCover,lp(62,62));LinearLayout labels=new LinearLayout(this);labels.setOrientation(LinearLayout.VERTICAL);labels.setGravity(Gravity.CENTER_VERTICAL);labels.setPadding(dp(14),0,dp(8),0);audioTitle=text(info.getTitle().isEmpty()?"AirPlay audio":info.getTitle(),17,WHITE);audioTitle.setSingleLine(true);audioTitle.setEllipsize(android.text.TextUtils.TruncateAt.END);audioArtist=text(info.getArtist().isEmpty()?info.getAlbum():info.getArtist(),13,MUTED);audioArtist.setSingleLine(true);audioArtist.setEllipsize(android.text.TextUtils.TruncateAt.END);labels.addView(audioTitle,lp(-1,26));labels.addView(audioArtist,lp(-1,22));line.addView(labels,new LinearLayout.LayoutParams(0,dp(62),1));TextView prev=audioButton("‹",()->{if(nativeReceiver!=null&&nativeReceiver.getDacpController()!=null)nativeReceiver.getDacpController().prevItem();});audioPlayButton=audioButton(nativeReceiver.getPlaying().getValue()?"Ⅱ":"▶",()->{if(nativeReceiver!=null)nativeReceiver.toggleMediaPlayback();});TextView next=audioButton("›",()->{if(nativeReceiver!=null&&nativeReceiver.getDacpController()!=null)nativeReceiver.getDacpController().nextItem();});line.addView(prev,lp(42,46));line.addView(audioPlayButton,lp(48,46));line.addView(next,lp(42,46));card.addView(line,lp(-1,64));LinearLayout vol=new LinearLayout(this);vol.setGravity(Gravity.CENTER_VERTICAL);TextView glyph=text("−",18,WHITE);vol.addView(glyph,lp(24,30));audioVolume=new SeekBar(this);audioVolume.setMax(100);audioVolume.setProgress(Math.round(nativeReceiver.clientVolume()*100));audioVolume.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener(){public void onStartTrackingTouch(SeekBar s){}public void onStopTrackingTouch(SeekBar s){}public void onProgressChanged(SeekBar s,int p,boolean from){if(from&&nativeReceiver!=null)nativeReceiver.setClientVolume(p/100f);}});vol.addView(audioVolume,new LinearLayout.LayoutParams(0,dp(34),1));TextView plus=text("+",18,WHITE);vol.addView(plus,lp(24,30));card.addView(vol,lp(-1,38));
+        audioPopup=new PopupWindow(card,dp(410),dp(128),true);audioPopup.setBackgroundDrawable(surface(0x001a2030,22));audioPopup.setOutsideTouchable(true);audioPopup.setOnDismissListener(()->{audioExpanded=false;if(audioBubble!=null&&audioBubble.isShown())audioBubble.requestFocus();});int[] loc=new int[2];audioBubble.getLocationOnScreen(loc);int right=root.getWidth()-loc[0]-audioBubble.getWidth();audioPopup.showAtLocation(root,Gravity.TOP|Gravity.RIGHT,right,loc[1]-dp(2));audioExpanded=true;card.setAlpha(.92f);card.setScaleX(.97f);card.setScaleY(.97f);if(motionEnabled())card.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(180).setInterpolator(easeOut()).start();else{card.setAlpha(1f);card.setScaleX(1f);card.setScaleY(1f);}card.setFocusableInTouchMode(true);card.requestFocus();}
+    TextView audioButton(String label,Runnable action){TextView b=text(label,20,WHITE);b.setGravity(Gravity.CENTER);b.setFocusable(true);b.setClickable(true);b.setBackground(surface(0x332d3548,18));b.setOnClickListener(v->action.run());return b;}
+    void startHomeRemote(){if(remoteServer!=null)return;try{remoteServer=new HomeRemoteServer(this,cmd->runOnUiThread(()->{if(cmd.equals("pair-request"))showRemoteCode();else remoteCommand(cmd);}));remoteServer.start();}catch(Exception e){remoteServer=null;showNotice(tr("Phone remote unavailable on this network"),5000);android.util.Log.w("MiTVRemote","HTTP remote could not start",e);}}
+    void stopHomeRemote(){if(remoteServer!=null){remoteServer.stop();remoteServer=null;}if(hideNotice!=null){handler.removeCallbacks(hideNotice);hideNotice=null;}if(homeNotice!=null){root.removeView(homeNotice);homeNotice=null;}}
+    String localIp(){try{WifiManager wm=(WifiManager)getApplicationContext().getSystemService(WIFI_SERVICE);int ip=wm.getConnectionInfo().getIpAddress();if(ip!=0)return String.format(Locale.US,"%d.%d.%d.%d",ip&255,(ip>>8)&255,(ip>>16)&255,(ip>>24)&255);}catch(Exception ignored){}return "TV-IP";}
+    String remoteAddress(){return "http://"+localIp()+(remoteServer!=null&&remoteServer.port()!=80?":"+remoteServer.port():"")+"/";}
+    void showRemoteAddress(){if(remoteServer==null)return;String address=remoteAddress();LinearLayout rows=dialog("Phone remote");TextView instructions=text("Scan with your phone on the same Wi-Fi",14,MUTED);instructions.setGravity(Gravity.CENTER);instructions.setPadding(0,0,0,dp(12));rows.addView(instructions,lp(-1,-2));try{com.google.zxing.common.BitMatrix bits=new com.google.zxing.qrcode.QRCodeWriter().encode(address,com.google.zxing.BarcodeFormat.QR_CODE,384,384);Bitmap code=Bitmap.createBitmap(384,384,Bitmap.Config.ARGB_8888);int[] pixels=new int[384*384];for(int y=0;y<384;y++)for(int x=0;x<384;x++)pixels[y*384+x]=bits.get(x,y)?0xff111522:Color.WHITE;code.setPixels(pixels,0,384,0,0,384,384);ImageView qr=new ImageView(this);qr.setImageBitmap(code);qr.setScaleType(ImageView.ScaleType.FIT_CENTER);qr.setContentDescription(tr("Open the phone remote")+": "+address);LinearLayout.LayoutParams qp=lp(220,220);qp.gravity=Gravity.CENTER_HORIZONTAL;rows.addView(qr,qp);}catch(com.google.zxing.WriterException e){android.util.Log.w("MiTVRemote","QR code unavailable",e);}TextView url=text(address,14,WHITE);url.setGravity(Gravity.CENTER);url.setPadding(0,dp(14),0,dp(6));rows.addView(url,lp(-1,-2));addControl(rows,"Close","",this::closePanel);panel.show();focusFirst(rows);}
+
+    void showRemoteCode(){if(remoteServer==null)return;if(remoteServer.pairingExpired())remoteServer.rotatePairing();showNotice(String.format(Locale.US,tr("Pairing request  •  Code %s"),remoteServer.pin()),15000);}
+    void showNotice(String message,long duration){if(root==null)return;if(hideNotice!=null)handler.removeCallbacks(hideNotice);if(homeNotice!=null)root.removeView(homeNotice);TextView notice=text(message,14,WHITE);notice.setMaxWidth(dp(540));notice.setSingleLine(true);notice.setEllipsize(android.text.TextUtils.TruncateAt.END);notice.setPadding(dp(18),dp(13),dp(18),dp(13));notice.setBackground(surface(0xee202737,18));notice.setElevation(dp(12));FrameLayout.LayoutParams p=new FrameLayout.LayoutParams(-2,dp(46),Gravity.TOP|Gravity.LEFT);p.leftMargin=dp(50);p.topMargin=dp(22);root.addView(notice,p);homeNotice=notice;notice.setAlpha(.9f);notice.setTranslationY(-dp(8));if(motionEnabled())notice.animate().alpha(1f).translationY(0).setDuration(180).setInterpolator(easeOut()).start();hideNotice=()->{if(homeNotice==notice){if(motionEnabled())notice.animate().alpha(0f).translationY(-dp(5)).setDuration(140).setInterpolator(easeOut()).withEndAction(()->root.removeView(notice)).start();else root.removeView(notice);homeNotice=null;}hideNotice=null;};handler.postDelayed(hideNotice,duration);}
+    boolean isInside(View child,View ancestor){if(child==null||ancestor==null)return false;View current=child;while(current!=null){if(current==ancestor)return true;android.view.ViewParent parent=current.getParent();current=parent instanceof View?(View)parent:null;}return false;}
+    void remoteCommand(String cmd){if(cmd.equals("home")){resetHome();return;}if(cmd.equals("volumeup")||cmd.equals("volumedown")){android.media.AudioManager am=(android.media.AudioManager)getSystemService(AUDIO_SERVICE);am.adjustStreamVolume(android.media.AudioManager.STREAM_MUSIC,cmd.equals("volumeup")?android.media.AudioManager.ADJUST_RAISE:android.media.AudioManager.ADJUST_LOWER,0);return;}if(nativeReceiver!=null){if(cmd.equals("playpause")){nativeReceiver.togglePlayPause();return;}if(cmd.equals("next")||cmd.equals("previous")){if(nativeReceiver.getDacpController()!=null){if(cmd.equals("next"))nativeReceiver.getDacpController().nextItem();else nativeReceiver.getDacpController().prevItem();}return;}}if(cmd.equals("back")){if(panel!=null&&panel.isShowing())closePanel();else if(audioPopup!=null&&audioPopup.isShowing())audioPopup.dismiss();else onBackPressed();return;}View current=getCurrentFocus();if(current==null)current=root;if(cmd.equals("ok")){if(current!=null)current.performClick();return;}int direction;switch(cmd){case "up":direction=View.FOCUS_UP;break;case "down":direction=View.FOCUS_DOWN;break;case "left":direction=View.FOCUS_LEFT;break;case "right":direction=View.FOCUS_RIGHT;break;default:return;}if(scroll.navigate(current,direction))return;View next=current==null?null:current.focusSearch(direction);if(next!=null)next.requestFocus();}
+    void showAirPlayInfo(){ensureReceiver();LinearLayout rows=dialog("AirPlay");boolean ready=nativeReceiver!=null && nativeReceiver.getServerState().getValue()==io.github.jqssun.airplay.service.AirPlayService.ServerState.RUNNING;TextView status=text(ready?"Ready to receive":"Starting receiver…",19,WHITE);rows.addView(status,lp(-1,45));TextView instructions=text(String.format(Locale.getDefault(),tr("Choose %s in Screen Mirroring or AirPlay.\n\nThe receiver starts with Home and remains available in the background."),DeviceName.read(this)),14,MUTED);instructions.setLineSpacing(dp(3),1);rows.addView(instructions,lp(-1,140));addControl(rows,"Done","",this::closePanel);panel.show();focusFirst(rows);}
+    void updateBackdrop(){if(libraryVisible)stopBannerMotion();if(heroImage==null)return;heroImage.setAlpha(1f);heroImage.setImageDrawable(copy(selectedBackdrop));if(libraryShade!=null)libraryShade.setVisibility(libraryVisible?View.VISIBLE:View.GONE);if(libraryTopMask!=null)libraryTopMask.setVisibility(libraryVisible?View.VISIBLE:View.GONE);if(systemFloatingIcon!=null)systemFloatingIcon.setVisibility(systemBackdrop && !libraryVisible?View.VISIBLE:View.GONE);if(libraryVisible && heroName!=null)heroName.setVisibility(View.GONE);}
+    void updateGlass(Drawable art){if(dockBand!=null)dockBand.invalidate();if(root!=null)root.invalidate();}
+    final class FrostedDock extends Drawable {final View owner;final boolean popup;final Paint p=new Paint(3);final RectF rect=new RectF();FrostedDock(View v){this(v,false);}FrostedDock(View v,boolean popup){owner=v;this.popup=popup;}public void setAlpha(int a){}public void setColorFilter(ColorFilter f){}public int getOpacity(){return PixelFormat.TRANSLUCENT;}public void draw(Canvas c){rect.set(getBounds());p.setShader(new LinearGradient(0,rect.top,0,rect.bottom,popup?new int[]{0xf02e3445,0xf01b2130}:new int[]{0x99444b64,0x99202739},null,Shader.TileMode.CLAMP));c.drawRoundRect(rect,dp(22),dp(22),p);p.setShader(null);p.setColor(0x40ffffff);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(dp(1));rect.inset(dp(.5f),dp(.5f));c.drawRoundRect(rect,dp(22),dp(22),p);p.setStyle(Paint.Style.FILL);}}
+
+    final class Scrim extends View {Paint p=new Paint(3);Scrim(){super(MainActivity.this);}@Override protected void onSizeChanged(int w,int h,int ow,int oh){p.setShader(new LinearGradient(0,0,0,h,new int[]{0xb0040910,0x08040910,0x50040910,0xee080b13},new float[]{0f,.23f,.52f,1f},Shader.TileMode.CLAMP));}@Override protected void onDraw(Canvas c){c.drawRect(0,0,getWidth(),getHeight(),p);}}
+    final class AudioWaveform extends View {final Paint p=new Paint(3);float[] levels=new float[32];AudioWaveform(){super(MainActivity.this);}void setLevels(float[] next){if(next!=null&&next.length>0){int n=Math.min(levels.length,next.length);int offset=levels.length-n;for(int i=0;i<offset;i++)levels[i]=0;System.arraycopy(next,0,levels,offset,n);invalidate();}}@Override protected void onDraw(Canvas c){super.onDraw(c);float slot=getWidth()/(float)levels.length;p.setColor(0xff9fc4ff);p.setStrokeWidth(Math.max(dp(1),slot*.58f));p.setStrokeCap(Paint.Cap.ROUND);for(int i=0;i<levels.length;i++){float amp=Math.min(1f,levels[i]*5.5f);float h=dp(3)+amp*Math.max(dp(3),getHeight()*.43f);float x=(i+.5f)*slot;c.drawLine(x,getHeight()/2f-h,x,getHeight()/2f+h,p);}}}
+    final class Ambient extends View {Paint p=new Paint(3);int tint=0xff243d6b;Ambient(){super(MainActivity.this);}void tint(int c){tint=c;invalidate();}@Override protected void onDraw(Canvas c){c.drawColor(0xff080b13);p.setShader(new RadialGradient(getWidth()*.74f,getHeight()*.18f,getWidth()*.8f,new int[]{withAlpha(tint,150),0x00101a30},null,Shader.TileMode.CLAMP));c.drawRect(0,0,getWidth(),getHeight(),p);p.setShader(null);}}
+    int withAlpha(int c,int alpha){return c&0xffffff|alpha<<24;}
+    final class Glyph extends Drawable {String kind;int size;int ink=WHITE;Paint p=new Paint(3);Glyph(String k,int s){kind=k;size=s;}public int getIntrinsicWidth(){return size;}public int getIntrinsicHeight(){return size;}public void setAlpha(int a){p.setAlpha(a);}public void setColorFilter(android.graphics.ColorFilter f){p.setColorFilter(f);}public int getOpacity(){return android.graphics.PixelFormat.TRANSLUCENT;}void drawAt(Canvas c,float x,float y,int s){setBounds((int)x,(int)y,(int)x+s,(int)y+s);draw(c);}@Override public void draw(Canvas canvas){canvas.save();android.graphics.Rect r=getBounds();canvas.translate(r.left,r.top);canvas.scale(r.width()/24f,r.height()/24f);p.setColor(ink);p.setStyle(Paint.Style.STROKE);p.setStrokeWidth(1.65f);p.setStrokeCap(Paint.Cap.ROUND);p.setStrokeJoin(Paint.Join.ROUND);
+        if(kind.equals("wifi")||kind.equals("offline")){for(int i=0;i<3;i++){float inset=2+i*3;canvas.drawArc(inset,5+i*3,24-inset,25-i*3,219,102,false,p);}p.setStyle(Paint.Style.FILL);canvas.drawCircle(12,19,1.4f,p);}
+        else if(kind.equals("uninstall")){canvas.drawLine(4,6,20,6,p);canvas.drawLine(9,3,15,3,p);canvas.drawLine(6,6,7,21,p);canvas.drawLine(7,21,17,21,p);canvas.drawLine(17,21,18,6,p);canvas.drawLine(10,10,10,17,p);canvas.drawLine(14,10,14,17,p);}
+        else if(kind.equals("removeDock")){canvas.drawRoundRect(3,4,21,13,2,2,p);canvas.drawLine(7,8,17,8,p);canvas.drawLine(12,14,12,21,p);canvas.drawLine(9,18,12,21,p);canvas.drawLine(12,21,15,18,p);}
+        else if(kind.equals("inputs")){canvas.drawRoundRect(3,4,21,13,2,2,p);canvas.drawLine(7,8,17,8,p);canvas.drawLine(9,13,9,17,p);canvas.drawLine(15,13,15,17,p);canvas.drawLine(9,17,15,17,p);canvas.drawLine(12,17,12,22,p);}
+        else if(kind.equals("display")){canvas.drawRoundRect(2,3,22,17,2,2,p);canvas.drawLine(12,17,12,21,p);canvas.drawLine(7,21,17,21,p);}
+        else if(kind.equals("sound")){Path speaker=new Path();speaker.moveTo(3,9);speaker.lineTo(7,9);speaker.lineTo(12,5);speaker.lineTo(12,19);speaker.lineTo(7,15);speaker.lineTo(3,15);speaker.close();canvas.drawPath(speaker,p);canvas.drawArc(10,7,20,17,-55,110,false,p);canvas.drawArc(9,3,25,21,-50,100,false,p);}
+        else if(kind.equals("airplay")){canvas.drawLine(8,18,3,18,p);canvas.drawLine(3,18,3,4,p);canvas.drawLine(3,4,21,4,p);canvas.drawLine(21,4,21,18,p);canvas.drawLine(21,18,16,18,p);Path triangle=new Path();triangle.moveTo(12,14);triangle.lineTo(6,22);triangle.lineTo(18,22);triangle.close();canvas.drawPath(triangle,p);}
+        else if(kind.equals("language")){canvas.drawCircle(12,12,9,p);canvas.drawOval(8,3,16,21,p);canvas.drawLine(3,12,21,12,p);canvas.drawArc(4,5,20,13,0,180,false,p);}
+        else if(kind.equals("controls")){canvas.drawLine(4,8,20,8,p);canvas.drawLine(4,16,20,16,p);p.setStyle(Paint.Style.FILL);canvas.drawCircle(9,8,2.4f,p);canvas.drawCircle(16,16,2.4f,p);}
+        else if(kind.equals("ethernet")){canvas.drawRoundRect(5,4,19,17,2,2,p);canvas.drawLine(9,20,15,20,p);canvas.drawLine(12,17,12,20,p);}
+        else if(kind.equals("apps")||kind.equals("library")||kind.equals("system")){for(int x=4;x<18;x+=10)for(int y=4;y<18;y+=10)canvas.drawRoundRect(x,y,x+6,y+6,1.4f,1.4f,p);}
+        else{canvas.drawRoundRect(3,5,21,18,2,2,p);canvas.drawLine(8,21,16,21,p);}
+        canvas.restore();}}
+}

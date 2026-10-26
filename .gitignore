@@ -10,3 +10,10 @@
 .cxx/
 
 *.jks
+*.keystore
+*.p12
+*.pem
+.env
+.env.*
+/native-build/
+/dist/

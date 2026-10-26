@@ -11,6 +11,10 @@ val localProps = Properties().apply {
     rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use(::load)
 }
 
+listOf("storeFile" to "MITV_STORE_FILE", "storePassword" to "MITV_STORE_PASSWORD", "keyAlias" to "MITV_KEY_ALIAS", "keyPassword" to "MITV_KEY_PASSWORD").forEach { (property, variable) ->
+    providers.environmentVariable(variable).orNull?.let { localProps.setProperty(property, it) }
+}
+
 val allAbis = listOf("arm64-v8a", "armeabi-v7a", "x86_64")
 
 android {
@@ -30,11 +34,11 @@ android {
     }
 
     defaultConfig {
-        applicationId = "io.github.jqssun.airplay"
-        minSdk = 23
-        targetSdk = 37
-        versionCode = 36
-        versionName = "0.0.36"
+        applicationId = providers.gradleProperty("homeApplicationId").getOrElse("it.xarber.mitvhome")
+        minSdk = 26
+        targetSdk = 34
+        versionCode = 11
+        versionName = "1.1"
 
         externalNativeBuild {
             cmake {
@@ -44,10 +48,9 @@ android {
         }
     }
 
-    externalNativeBuild {
-        cmake {
-            path = file("src/main/cpp/CMakeLists.txt")
-        }
+    if (!project.hasProperty("useBundledNative")) {
+        sourceSets.getByName("main").jniLibs.setSrcDirs(emptyList<String>())
+        externalNativeBuild { cmake { path = file("src/main/cpp/CMakeLists.txt") } }
     }
 
     buildTypes {
@@ -112,6 +115,7 @@ tasks.configureEach {
 }
 
 dependencies {
+    implementation("com.google.zxing:core:3.5.4")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime)
