@@ -11,3 +11,7 @@ Corresponding-source archives include repository sources, build scripts, patches
 Obtainium tracks public GitHub Releases: choose MiTV-Home with the APK asset filter `android-universal` and enable prereleases only for beta. See distribution/README.md for fully configured stable/beta import links and JSON, and releases/latest for stable downloads. No iOS AltSource/IPA or mutable metadata 1.0 release is generated because there is no iOS application or configured source consumer. No Play/App Store submission occurs automatically.
 
 When a build exceeds three minutes, report its link/status and stop actively waiting. A queued/running build is not a release. Never publish failed/incomplete packages or claim simulator coverage validates native source.
+
+## In-app discovery
+
+Validated APK jobs emit a public signer/hash/package sidecar. Publication generates update-manifest.json from exact bytes and structured release notes, stages a complete draft release, publishes only after assets are present, then verifies public manifest and APK URLs. Existing public GitHub stable/beta channel authorization applies; no new distribution destination is added. See features/UPDATES.md.

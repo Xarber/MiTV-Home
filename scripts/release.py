@@ -25,7 +25,7 @@ def history():
             assert set(item[field]) == {'en', 'it'} and all(item[field].values())
         assert item.get('features'), 'Every release requires descriptive feature rows'
         for feature in item['features']:
-            assert feature['icon'] in {'code','history','transfer','sound','remote','controls','apps','inputs','airplay','info'}
+            assert feature['icon'] in {'code','history','transfer','sound','remote','controls','apps','inputs','airplay','info','shield'}
             for field in ('label','detail'):
                 assert set(feature[field]) == {'en','it'} and all(feature[field].values())
         assert set(item['compatibility']) == {'en','it'}

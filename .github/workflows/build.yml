@@ -90,6 +90,8 @@ jobs:
             FILE="dist/MiTV-Home-v${VERSION}-android-universal-${MITV_BUILD_CHANNEL}-github-extended-${SHORT_SHA}.apk"
             cp app/build/outputs/apk/release/app-release.apk "$FILE"
             "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --verbose "$FILE"
+            "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --print-certs "$FILE" > "$RUNNER_TEMP/apk-signers.txt"
+            python3 scripts/update_manifest.py package --apk "$FILE" --report "$RUNNER_TEMP/apk-signers.txt" --commit "$GITHUB_SHA" --channel "$MITV_BUILD_CHANNEL"
             "$ANDROID_HOME/build-tools/37.0.0/aapt2" dump badging "$FILE" > "$RUNNER_TEMP/badging.txt"
             grep -F "name='it.xarber.mitvhome'" "$RUNNER_TEMP/badging.txt"
             grep -F "versionCode='$CODE'" "$RUNNER_TEMP/badging.txt"
@@ -180,7 +182,12 @@ jobs:
           # A build must never retarget/overwrite an existing release or version tag.
           if gh release view "$TAG" >/dev/null 2>&1; then echo "Release already exists: $TAG; bump version before publishing." >&2; exit 1; fi
           if git rev-parse --verify "refs/tags/$TAG" >/dev/null 2>&1; then test "$(git rev-list -n 1 "$TAG")" = "$GITHUB_SHA"; fi
+          python3 scripts/update_manifest.py manifest --dir dist --tag "$TAG" --commit "$GITHUB_SHA" --channel "$MITV_BUILD_CHANNEL"
           python3 scripts/release.py notes > "$RUNNER_TEMP/release-notes.md"
           cp distribution/obtainium.json dist/obtainium.json
           cp distribution/obtainium-beta.json dist/obtainium-beta.json
-          gh release create "$TAG" --target "$GITHUB_SHA" --title "MiTV Home $VERSION ($MITV_BUILD_CHANNEL)" --notes-file "$RUNNER_TEMP/release-notes.md" "${RELEASE_ARGS[@]}" dist/*.apk dist/*.aab dist/*.tar.gz dist/SHA256SUMS.txt dist/obtainium.json dist/obtainium-beta.json
+          (cd dist && sha256sum ./*.apk ./*.aab ./*.tar.gz update-manifest.json obtainium.json obtainium-beta.json > SHA256SUMS.txt)
+          gh release create "$TAG" --draft --target "$GITHUB_SHA" --title "MiTV Home $VERSION ($MITV_BUILD_CHANNEL)" --notes-file "$RUNNER_TEMP/release-notes.md" "${RELEASE_ARGS[@]}" dist/*.apk dist/*.aab dist/*.tar.gz dist/SHA256SUMS.txt dist/obtainium.json dist/obtainium-beta.json dist/update-manifest.json
+          test "$(gh release view "$TAG" --json assets --jq '.assets | length')" -ge 7
+          if [ "$MITV_BUILD_CHANNEL" = beta ]; then gh release edit "$TAG" --draft=false --latest=false; else gh release edit "$TAG" --draft=false --latest; fi
+          python3 scripts/check_published_update.py dist/update-manifest.json
