@@ -7,6 +7,11 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import kotlinx.coroutines.delay
+import it.xarber.tvhome.diagnostics.DeveloperAccess
+import io.github.jqssun.airplay.BuildConfig
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardActions
@@ -64,7 +69,19 @@ fun SettingsScreen(viewModel: MainViewModel) {
     val forceSwAac by viewModel.pref(Prefs.FORCE_SW_AAC).collectAsState()
     val syncClientVolume by viewModel.pref(Prefs.SYNC_CLIENT_VOLUME).collectAsState()
     val debugEnabled by viewModel.pref(Prefs.DEBUG_ENABLED).collectAsState()
-    val developerOptions by viewModel.pref(Prefs.DEVELOPER_OPTIONS).collectAsState()
+    val developerSession = remember { DeveloperAccess.SESSION }
+    var developerOptions by remember { mutableStateOf(developerSession.isUnlocked()) }
+    val lifecycleOwnerForDeveloper = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwnerForDeveloper) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_PAUSE) { developerSession.lock(); developerOptions = false }
+        }
+        lifecycleOwnerForDeveloper.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwnerForDeveloper.lifecycle.removeObserver(observer); developerSession.lock() }
+    }
+    LaunchedEffect(Unit) {
+        while (true) { developerOptions = developerSession.isUnlocked(); delay(250) }
+    }
     val keyAllowFrameDrop by viewModel.pref(Prefs.KEY_ALLOW_FRAME_DROP).collectAsState()
     val realtimeDecoderPriority by viewModel.pref(Prefs.KEY_PRIORITY).collectAsState()
     val lowLatency by viewModel.pref(Prefs.LOW_LATENCY).collectAsState()
@@ -84,6 +101,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .onPreviewKeyEvent { developerSession.interact(); false }
             .verticalScroll(rememberScrollState())
             .padding(vertical = 8.dp)
     ) {
@@ -240,13 +258,12 @@ fun SettingsScreen(viewModel: MainViewModel) {
             onCheckedChange = { viewModel.set(Prefs.SYNC_CLIENT_VOLUME, it) }
         )
 
-        SectionHeader(stringResource(R.string.section_developer))
-
-        SettingSwitch(
-            title = stringResource(R.string.setting_developer_options),
-            description = stringResource(R.string.setting_developer_options_desc),
-            checked = developerOptions,
-            onCheckedChange = { viewModel.set(Prefs.DEVELOPER_OPTIONS, it) }
+        ListItem(
+            headlineContent = { Text("MiTV Home ${BuildConfig.VERSION_NAME}") },
+            supportingContent = { Text("${BuildConfig.VERSION_CODE} · ${BuildConfig.SOURCE_COMMIT}") },
+            modifier = Modifier.clickable {
+                developerOptions = developerSession.tapVersion()
+            }.dpadFocus()
         )
 
         if (developerOptions) {

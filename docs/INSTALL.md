@@ -17,7 +17,7 @@ All Apps can occupy only position six. Sources and individual inputs can occupy 
 
 ## Phone remote
 
-Choose Remote in Control Center and scan the QR with a phone on the same network. When the browser requests pairing, enter the code shown briefly at the TV's upper left. The server runs only while Home is foreground.
+Choose Remote in Control Center and scan the QR with a phone on the same network. It includes the pairing code and pairs automatically, then closes the panel on the TV. The code is also displayed in that panel for manual entry. If the panel is closed, a new browser pairing request shows its code briefly at the upper left. The server runs only while Home is foreground.
 
 Port 80 is attempted first. If Android denies it, the QR includes port 8765. Omitting that port requires privileges unavailable on a stock MiTV-MOOQ0.
 

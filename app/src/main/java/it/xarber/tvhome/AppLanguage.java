@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 Xarber
 package it.xarber.tvhome;
 import android.content.Context;
 import android.content.res.Configuration;
@@ -8,6 +10,37 @@ public final class AppLanguage {
  private AppLanguage() {}
  private static final HashMap<String,String> IT=new HashMap<>();
  static {
+  IT.put("Restore previous preferences","Ripristina preferenze precedenti");
+  IT.put("Includes %d earlier updates in the full changelog","La cronologia completa include %d aggiornamenti precedenti");
+  IT.put("About MiTV Home","Informazioni su MiTV Home");
+  IT.put("Build","Build");
+  IT.put("Changelog","Cronologia versioni");
+  IT.put("What’s New","Novità");
+  IT.put("Fixes & Improvements","Correzioni e miglioramenti");
+  IT.put("Full changelog","Cronologia completa");
+  IT.put("Developer options","Opzioni sviluppatore");
+  IT.put("Temporary access","Accesso temporaneo");
+  IT.put("Open source","Codice sorgente");
+  IT.put("Unavailable","Non disponibile");
+  IT.put("Copy diagnostics","Copia diagnostica");
+  IT.put("Export diagnostics","Esporta diagnostica");
+  IT.put("Diagnostics copied","Diagnostica copiata");
+  IT.put("Developer changelog","Cronologia sviluppatore");
+  IT.put("Simulate notification","Simula notifica");
+  IT.put("Developer notification preview","Anteprima notifica sviluppatore");
+  IT.put("Revoke phone remotes","Revoca telecomandi dal telefono");
+  IT.put("Phone remotes revoked","Telecomandi dal telefono revocati");
+  IT.put("Close developer options","Chiudi opzioni sviluppatore");
+  IT.put("Export Home preferences","Esporta preferenze Home");
+  IT.put("Import Home preferences","Importa preferenze Home");
+  IT.put("Document picker unavailable","Selettore documenti non disponibile");
+  IT.put("Preferences exported","Preferenze esportate");
+  IT.put("Import","Importa");
+  IT.put("Cancel","Annulla");
+  IT.put("Invalid preferences file","File preferenze non valido");
+  IT.put("Could not read or write preferences","Impossibile leggere o scrivere le preferenze");
+  IT.put("Replace dock, input profiles, language and activity appearance? AirPlay identity and pairing credentials are preserved.","Sostituire dock, profili ingressi, lingua e aspetto delle attività? Identità AirPlay e credenziali di abbinamento vengono conservate.");
+
   IT.put("Customize input","Personalizza ingresso");
   IT.put("Pin to dock","Aggiungi al dock");
   IT.put("Dock position %d","Posizione %d del dock");
@@ -22,6 +55,8 @@ public final class AppLanguage {
   IT.put("Scan with your phone on the same Wi-Fi","Scansiona con il telefono sulla stessa rete Wi-Fi");
   IT.put("Open the phone remote","Apri il telecomando dal telefono");
   IT.put("Close","Chiudi");
+  IT.put("Pairing code","Codice di abbinamento");
+  IT.put("Scan to pair automatically","Scansiona per abbinare automaticamente");
   IT.put("Inputs","Ingressi");
   IT.put("Apps","App");
   IT.put("All apps","Tutte le app");
@@ -47,6 +82,12 @@ public final class AppLanguage {
   IT.put("Network","Rete");
   IT.put("Sound","Audio");
   IT.put("Remote","Telecomando");
+  IT.put("Connected remote","Telecomando connesso");
+  IT.put("Remote connected","Telecomando connesso");
+  IT.put("Appearance","Aspetto");
+  IT.put("Activity background","Sfondo delle attività");
+  IT.put("Black","Nero");
+  IT.put("Transparent","Trasparente");
   IT.put("Use a phone on the same Wi-Fi","Usa un telefono sulla stessa rete Wi-Fi");
   IT.put("AirPlay audio","Audio AirPlay");
   IT.put("AirPlay audio controls","Controlli audio AirPlay");

@@ -19,3 +19,8 @@
 /dist/
 
 .kotlin/
+
+/app/src/main/assets/build-metadata.json
+
+/app/src/main/assets/developer-changelog.txt
+__pycache__/

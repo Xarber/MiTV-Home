@@ -33,12 +33,13 @@ public:
         auto *out = static_cast<int16_t *>(audioData);
         mTimeline->read(out, numFrames);
 
+        // Analyze source PCM before sender gain, independently of listening volume.
+        mTimeline->publishWaveform(out, numFrames);
         const float gain = mClientGain.load(std::memory_order_relaxed);
         if (gain < 1.0f) {
             const size_t n = (size_t)numFrames * mChannels;
             for (size_t i = 0; i < n; i++) out[i] = (int16_t)(out[i] * gain);
         }
-        mTimeline->publishWaveform(out, numFrames);
         return oboe::DataCallbackResult::Continue;
     }
 

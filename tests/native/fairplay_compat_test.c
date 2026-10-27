@@ -1,0 +1,9 @@
+#include <assert.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
+#include "fairplay_compat.c"
+void logger_log(logger_t *logger,int level,const char *format,...){(void)logger;(void)level;(void)format;}
+int main(int argc,char **argv){assert(argc==3);unsigned char expected[142],request[16]={0x46,0x50,0x4c,0x59,2,1,1,0,0,0,0,4,2,0,2,0},reply[142],legacy[142];FILE *file=fopen(argv[1],"rb");assert(file&&fread(expected,1,142,file)==142);fclose(file);file=fopen(argv[2],"rb");unsigned char message[164],response[32],legacyResponse[32],cipher[72],key[16],legacyKey[16];assert(file&&fread(message,1,164,file)==164);fclose(file);for(int i=0;i<72;i++)cipher[i]=(unsigned char)i;fairplay_t *fp=fairplay_init(NULL),*baseline=fairplay_init(NULL);assert(fp&&baseline);
+for(int version=2;version<=3;version++){request[4]=version;for(int mode=0;mode<4;mode++){request[14]=mode;assert(fairplay_setup(fp,request,reply)==0);if(version==2){expected[13]=mode;assert(!memcmp(reply,expected,142));}else{assert(mitv_fairplay_setup_v3(baseline,request,legacy)==0);assert(!memcmp(reply,legacy,142));}}message[4]=version;assert(fairplay_handshake(fp,message,response)==0);assert(response[4]==version&&!memcmp(response+12,message+144,20));assert(fairplay_decrypt(fp,cipher,key)==0);unsigned char originalVersion=message[4];message[4]=3;assert(mitv_fairplay_handshake_v3(baseline,message,legacyResponse)==0);message[4]=originalVersion;assert(fairplay_decrypt(baseline,cipher,legacyKey)==0);assert(!memcmp(key,legacyKey,16));}
+request[14]=255;assert(fairplay_setup(fp,request,reply)==-1);request[14]=0;request[4]=9;assert(fairplay_setup(fp,request,reply)==-1);request[4]=2;request[0]=0;assert(fairplay_setup(fp,request,reply)==-1);fairplay_destroy(fp);fairplay_destroy(baseline);puts("FairPlay v2 captured replies, v3 regression, phase-two echo, AES-key regression and malformed mode checks passed.");return 0;}

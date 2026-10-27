@@ -395,7 +395,7 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         }
         val effectiveName = it.xarber.tvhome.DeviceName.read(this)
         advertisedDeviceName = effectiveName
-        log("AirPlay device name: $effectiveName")
+        log("AirPlay device name configured")
 
         val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
         wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "airplay:server").apply { acquire() }
@@ -481,7 +481,7 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         }
         if (prefs[Prefs.USB_ONLY]) {
             usbAdvertiser = UsbMdnsAdvertiser(services) { iface, addr ->
-                log(if (iface == null) "USB link down" else "USB link up on $iface (${addr?.hostAddress})")
+                log(if (iface == null) "USB link down" else "USB link up")
             }.apply { start() }
         } else {
             nsdManager?.register(services)
@@ -696,7 +696,7 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         launchVisualActivity()
         // claim media-button routing for keys that arrive as media-session events
         mediaSession?.isActive = true
-        log("AirPlay Video play: $location @ ${startPositionSeconds}s")
+        log("AirPlay video playback requested")
     }
 
     override fun onVideoScrub(positionSeconds: Float) {
@@ -885,7 +885,7 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         if (info.durationMs > 0) _durationMs.value = info.durationMs
         _updateMediaMetadata()
         _refreshDacpPlayer()
-        log("Track: ${info.artist} - ${info.title}")
+        log("Track metadata updated")
     }
 
     override fun onCoverArt(data: ByteArray) {
@@ -917,7 +917,7 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
 
     override fun onDacpId(dacpId: String, activeRemote: String) {
         dacpController?.update(dacpId, activeRemote)
-        log("DACP: $dacpId")
+        log("Playback control identity updated")
     }
 
     override fun onMirrorRunning(running: Boolean) {
