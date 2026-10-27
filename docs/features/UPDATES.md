@@ -39,3 +39,7 @@ Known Google Play/Amazon/Samsung installers are routed to their managed store in
 `home_updates` stores safe public candidate JSON, ETag, attempt/success/backoff times, preferences, notified tag, download/session ids and expected/result build. API JSON cache is app-private; temporary APK belongs only to this app. Preferences/backups do not export install sessions, receiver identity or signing keys. The updater has no production test-feed override or simulated install button. Host tests isolate synthetic policy data; real-device verification uses actual APK bytes and must be reported separately from simulated policy checks.
 
 References: Android DownloadManager and PackageInstaller.Session API documentation; GitHub Releases REST API and conditional-request best practices. SDK-specific APIs are guarded at 28/30/31; target/minimum SDK remain unchanged.
+
+## Reference-TV parser compatibility
+
+On the physical MiTV Android 10, getPackageArchiveInfo with GET_SIGNING_CERTIFICATES alone returned no certificate arrays; GET_SIGNATURES or both flags returned the real certificate. The verifier requests both supported flags on API 28+ and prefers SigningInfo when available, otherwise the returned legacy certificate. Missing certificates are still rejected. Real matching APK/hash/public-key mismatch checks were executed on the TV without installing through the test probe.
