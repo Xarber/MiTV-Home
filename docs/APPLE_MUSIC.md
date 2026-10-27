@@ -20,3 +20,21 @@ A related receiver documents the same macOS Music compatibility error when Music
 https://github.com/Jheenz/airplay-tv-receiver#compatibility-and-limitations
 
 If a sender still fails, choose the TV in macOS Control Center → Sound (or System Settings → Sound → Output), then play Music through system audio. That route can omit track metadata and artwork. The launcher uses a neutral gradient when the sender supplies no cover.
+
+## Live radio: what has actually been checked
+
+The user reports that radio and local-library playback work from iPad. Mac Music still fails. These sender paths must not be treated as equivalent.
+
+UxPlay issue #337 explicitly describes radio streaming from iOS with ALAC audio; its maintainer discusses the RAOP audio buffer, not a special radio codec:
+https://github.com/FDH2/UxPlay/issues/337
+
+UxPlay's documented direct HTTP Live Streaming support is currently limited to YouTube video. That is different from receiving audio decoded and transmitted by an iPad:
+https://github.com/FDH2/UxPlay#highlights
+
+The JObersi10 PhairPlay fork explicitly documents Mac Music FairPlay v2 failure even for local files. Its compatibility notes identify missing mode-specific v2 phase-one replies: the published capture supplies mode 2, and changing its mode byte is not sufficient for other modes:
+https://github.com/JObersi10/PhairPlay#why-macos-musicapp-doesnt-work
+
+MiTV traces captured v2 modes 0 and 2 completing the nominal handshake and then disconnecting before audio setup. Another sender reached SETUP/RECORD and ALAC format ct=2. The mode-0 path is therefore suspect; this is not proof of the precise reason for every failed live-radio attempt. Existing synthetic handshake tests only verify response framing and captured bytes, not valid end-to-end v2 session keys for all modes.
+
+A remote-control-only SETUP must not by itself be diagnosed as the cause of silence: Shairport Sync's maintainer notes these auxiliary connections are normal:
+https://github.com/mikebrady/shairport-sync/issues/2179

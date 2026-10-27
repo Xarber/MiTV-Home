@@ -50,6 +50,11 @@ public final class AppLanguage {
   IT.put("Sound","Audio");
   IT.put("Remote","Telecomando");
   IT.put("Connected remote","Telecomando connesso");
+  IT.put("Remote connected","Telecomando connesso");
+  IT.put("Appearance","Aspetto");
+  IT.put("Activity background","Sfondo delle attività");
+  IT.put("Black","Nero");
+  IT.put("Transparent","Trasparente");
   IT.put("Use a phone on the same Wi-Fi","Usa un telefono sulla stessa rete Wi-Fi");
   IT.put("AirPlay audio","Audio AirPlay");
   IT.put("AirPlay audio controls","Controlli audio AirPlay");
