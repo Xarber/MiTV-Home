@@ -2,7 +2,7 @@
 <p align="center">
 <a href="https://github.com/Xarber/MiTV-Home/actions/workflows/build.yml"><img src="https://github.com/Xarber/MiTV-Home/actions/workflows/build.yml/badge.svg?branch=main" alt="Build"></a>
 <a href="https://github.com/Xarber/MiTV-Home/releases"><img src="https://img.shields.io/github/v/release/Xarber/MiTV-Home?color=858bea" alt="Release"></a>
-<a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-abb5fa" alt="GPL 3"></a>
+<a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-abb5fa" alt="AGPL 3"></a>
 <img src="https://img.shields.io/badge/Android-8%2B-9acda9" alt="Android 8 or newer">
 </p>
 
@@ -24,17 +24,21 @@ A remote-first Android TV launcher with a six-item dock, fullscreen artwork, fas
 
 <p><img src="docs/assets/inputs.png" alt="Inputs and Live TV" width="49%"> <img src="docs/assets/apps.png" alt="App library" width="49%"></p>
 
-The first signed public release is pending CI validation. Source and branches are public; build/release automation is still being finalized.
+Release status is reported by GitHub Actions. APK/AAB publication requires successful builds and validation of the exact source commit. See [documentation](docs/INDEX.md).
 
 ![Expanded AirPlay audio controls](docs/assets/audio.png)
 
-**v1.3 adds FairPlay v2 handshake compatibility for Mac Music, with both v2/v3 handshake paths checked on the reference TV. Direct Mac Music playback confirmation is pending.**
+**Mac Music playback is unresolved. Experimental FairPlay handshake checks do not provide complete AirPlay 2 support.** iPad radio/local-library playback was reported working.
+
+## Settings and diagnostics
+
+About MiTV Home includes a permanent changelog, once-per-update highlights, source/license information and portable Home preferences. Triple-press its version to unlock developer diagnostics temporarily; navigation, backgrounding or 30 seconds without input locks access. Reports exclude credentials, network identity and media titles.
 
 ## Compatibility
 
 The physical reference device is a Xiaomi MiTV-MOOQ0 running Android 10. HDMI routing and the picture-settings shortcut are device-specific; other TVs may use their system input picker. Existing apps and TV services are preserved. This repository contains no debloat script.
 
-Android 8/API 26 or newer is required. CI compiles native libraries for ARMv7, ARM64, and x86_64. Other TVs and Google TV devices need their own hardware validation.
+Android 8/API 26 or newer is required. CI compiles native libraries for ARMv7, ARM64, x86, and x86_64. Other TVs and Google TV devices need their own hardware validation.
 
 AirPlay support comes from the integrated open-source receiver. Sender, codec, DRM, and network compatibility vary. This is not an Apple-certified product. Screen mirroring was tested on the reference TV; the compact audio indicator and focused expanded controls were also checked on the reference TV. Sender-specific artwork and track metadata still need broader validation.
 
@@ -50,9 +54,9 @@ For the macOS Music compatibility error and its system-audio workaround, see [Ap
 
 | Branch | Automatic build | GitHub Release assets |
 | --- | --- | --- |
-| `main` | Every push | The validated build for the exact commit is attached when a release targeting `main` is published |
-| `beta` | Every push; downloadable Actions artifact | Never |
-| `testing` | No workflow files | Never |
+| `main` | APK and AAB in parallel | Stable release only after all required checks succeed |
+| `beta` | APK and AAB in parallel | Prerelease only after all required checks succeed |
+| `testing` | No automatic build | Never |
 
 Stable APKs use the project's signing key, stored in Actions secrets. Local debug APKs use a different key, so Android will not accept a stable APK as an update to a debug installation. Preserve preferences before switching signing identities.
 
@@ -60,6 +64,6 @@ Stable APKs use the project's signing key, stored in Actions secrets. Local debu
 
 MiTV Home is a modified distribution of [jqssun/android-airplay-server](https://github.com/jqssun/android-airplay-server), extended with the launcher, input customization, phone remote, and integrated audio controls by Xarber, October 2026. Upstream history and notices are retained.
 
-The receiver includes [UxPlay](https://github.com/FDH2/UxPlay), [FFmpeg](https://ffmpeg.org/), [libplist](https://github.com/libimobiledevice/libplist), [OpenSSL](https://www.openssl.org/), and [Oboe](https://github.com/google/oboe). QR codes use [ZXing](https://github.com/zxing/zxing). See [third-party notices](docs/THIRD_PARTY.md) and [GPL-3.0](LICENSE).
+The receiver includes [UxPlay](https://github.com/FDH2/UxPlay), [FFmpeg](https://ffmpeg.org/), [libplist](https://github.com/libimobiledevice/libplist), [OpenSSL](https://www.openssl.org/), and [Oboe](https://github.com/google/oboe). QR codes use [ZXing](https://github.com/zxing/zxing). See [third-party notices](docs/THIRD_PARTY.md) and the [licensing decision](docs/decisions/0001-licensing-and-platform-scope.md). Original launcher modules use [AGPL-3.0](LICENSE); upstream [GPL-3.0](LICENSES/GPL-3.0.txt) and component notices remain.
 
 Apple, AirPlay, Apple TV, Xbox, PlayStation, Nintendo Switch, Wii U, and other names/logos belong to their owners and identify devices or installed apps. This is an independent project.

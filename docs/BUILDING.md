@@ -27,4 +27,6 @@ GitHub Actions requires four repository secrets:
 
 Keep a private backup of the keystore and passwords. They are never committed.
 
-Pushes to `main` or `beta` build a signed APK, run lint, and upload an artifact plus SHA-256 checksum. Publishing a release targeting `main` waits for the successful main build at the exact tagged commit, verifies its checksum, and attaches that signed APK to the release. Beta never publishes a release. The `testing` branch has no workflow files.
+Pushes to beta/main compile signed universal APK and AAB in parallel from all four supported ABIs, run validation and publish only after required jobs succeed. Testing has no automatic runs. See RELEASES.md for promotion and artifact naming.
+
+For an existing local SDK: `ANDROID_HOME=/path/to/sdk ./gradlew -PuseBundledNative :app:assembleDebug :app:lintDebug`. Native bundled previews are ARM-only and do not test C/C++ changes. CI generates build metadata and developer history for the exact commit.

@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "repository": "https://github.com/Xarber/MiTV-Home",
+  "artifactFilter": "android-universal.*\\.apk$",
+  "stable": {"includePrereleases": false},
+  "beta": {"includePrereleases": true},
+  "note": "Human-readable channel configuration, not an Obtainium import schema. Add the repository URL in Obtainium; select the APK filter. AAB is not directly installable."
+}
