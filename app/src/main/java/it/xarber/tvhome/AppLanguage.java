@@ -10,6 +10,8 @@ public final class AppLanguage {
  private AppLanguage() {}
  private static final HashMap<String,String> IT=new HashMap<>();
  static {
+  IT.put("Developer settings","Impostazioni sviluppatore");
+  IT.put("Update available — open About","Aggiornamento disponibile — apri Informazioni");
   IT.put("Updates","Aggiornamenti");
   IT.put("Release channel","Canale di rilascio");
   IT.put("Stable","Stabile");

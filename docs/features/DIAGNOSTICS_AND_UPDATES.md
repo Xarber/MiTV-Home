@@ -13,3 +13,9 @@ Export/import uses Android's document picker without broad storage access. Only 
 Diagnostics v2 records snapshot UTC from the local clock, identifies current Android API observations, and labels monotonic event records as observed or simulated-local-ui. Notification previews write no production preferences, analytics, or history; their only trace is the bounded diagnostic event ring.
 
 Physical-TV validation of the 1.6.0 upgrade from pre-baseline versions found too many intervening-release rows in the initial popup. Earlier updates now collapse into a single row with a real feature summary and reveal their full icon-led list on request. Feature disclosure uses the feature label/icon plus accessible expanded/collapsed state rather than repeating a verbose hint on every card. About → What's New reopens current notes without changing the seen-version baseline.
+
+## Explicit developer on/off override
+
+The user's latest task-specific behavior overrides the earlier expiring-access default: three presses on the About build/version reveal a Developer options toggle. Its enabled flag is persisted in home_developer. When enabled, Developer settings appears in Control Center and stays enabled until switched off. The transient 30-second/navigation/background session controls only the hidden toggle's initial reveal; it does not turn an enabled developer configuration off. The receiver's settings surface shares the same persisted flag. This flag is deliberately excluded from portable presentation backups.
+
+Updates is nested only under About; the duplicate Control Center Updates entry was removed at the user's request.

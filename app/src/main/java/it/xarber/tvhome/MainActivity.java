@@ -31,20 +31,24 @@ public final class MainActivity extends Activity {
         it.xarber.tvhome.updates.UpdateCandidate offer=updates.candidate;
         if(offer!=null&&!updates.checking&&!updates.stale&&!updates.preferences.getString("notified","").equals(offer.tag)){
             updates.preferences.edit().putString("notified",offer.tag).apply();
-            showNotice(tr("Update available — open Updates in Control Center"),6000);
+            showNotice(tr("Update available — open About"),6000);
         }
     }
 
-    View developerEntry;
+    View developerEntry,developerToggleEntry;
+    boolean developerEnabled(){return it.xarber.tvhome.diagnostics.DeveloperAccess.enabled(this);}
     final Runnable expireDeveloper = () -> { if (!developerSession.isUnlocked()) hideDeveloperTools(); };
     boolean updatePresented;
     static final int EXPORT_HOME = 501, IMPORT_HOME = 502;
     void event(it.xarber.tvhome.diagnostics.Diagnostics.Event event) { it.xarber.tvhome.diagnostics.Diagnostics.record(event); }
     void hideDeveloperTools() {
-        developerSession.lock(); handler.removeCallbacks(expireDeveloper);
-        if (developerEntry != null && developerEntry.getParent() instanceof android.view.ViewGroup) ((android.view.ViewGroup)developerEntry.getParent()).removeView(developerEntry);
-        developerEntry = null;
-        if (developerPanel != null) { developerPanel.dismiss(); developerPanel = null; }
+        developerSession.lock();handler.removeCallbacks(expireDeveloper);
+        if(!developerEnabled()){
+            if(developerToggleEntry!=null&&developerToggleEntry.getParent() instanceof ViewGroup)((ViewGroup)developerToggleEntry.getParent()).removeView(developerToggleEntry);
+            if(developerEntry!=null&&developerEntry.getParent() instanceof ViewGroup)((ViewGroup)developerEntry.getParent()).removeView(developerEntry);
+            if(developerPanel!=null){developerPanel.dismiss();developerPanel=null;}
+        }
+        developerToggleEntry=null;
     }
     void developerInput(){developerSession.interact();if(developerSession.isUnlocked()){handler.removeCallbacks(expireDeveloper);handler.postDelayed(expireDeveloper,30_000);}}
     @Override public void onUserInteraction() { super.onUserInteraction(); developerInput(); }
@@ -377,9 +381,9 @@ public final class MainActivity extends Activity {
         Intent i=pm.getLeanbackLaunchIntentForPackage("com.mediatek.wwtv.tvcenter");if(i==null)i=pm.getLaunchIntentForPackage("com.mediatek.wwtv.tvcenter");if(i!=null)start(i);else showNotice(tr(preview?"Preview: this emulator has no broadcast tuner":"Live TV is unavailable"),4500);
     }
     void showInputs(){LinearLayout rows=dialog("Inputs");for(int n=1;n<=3;n++){Entry e=sources.get(n);if(e==null){e=action("hdmi"+n,"HDMI "+n,"hdmi",hdmiArt);e.port=n;decorateInput(e);}final Entry target=e;addControl(rows,e.label,e.inputId.isEmpty()?"Not registered on this device":e.state==0?"Connected":"No signal",()->{closePanel();openInput(target);});}addControl(rows,"Live TV","Broadcast channels",()->{closePanel();openLive();});panel.show();focusFirst(rows);}
-    LinearLayout dialog(String title){if(panel!=null && panel.isShowing())panel.dismiss();else panelOrigin=getCurrentFocus();capturePopupBackdrop();panel=new Dialog(this);panel.setOnDismissListener(dialog->{popupBackdrop=null;if(remotePanel==dialog){remotePanel=null;remotePairCode=null;remoteQr=null;remoteQrPayload="";}});panel.setOnKeyListener((dialog,key,event)->{developerInput();if((key==KeyEvent.KEYCODE_DPAD_CENTER || key==KeyEvent.KEYCODE_ENTER) && event.getAction()==KeyEvent.ACTION_UP && SystemClock.uptimeMillis()<suppressConfirmUntil){suppressConfirmUntil=0;return true;}if(event.getAction()==KeyEvent.ACTION_DOWN && event.getRepeatCount()==0)suppressConfirmUntil=0;return key==KeyEvent.KEYCODE_BACK && handleBack(event);});LinearLayout rows=new LinearLayout(this);rows.setOrientation(LinearLayout.VERTICAL);rows.setClipChildren(false);rows.setClipToPadding(false);rows.setPadding(dp(26),dp(26),dp(26),dp(24));rows.setBackground(new FrostedDock(rows,true));TextView heading=text(title,27,WHITE);heading.setMinHeight(dp(50));heading.setPadding(0,0,0,dp(12));rows.addView(heading,lp(-1,-2));ScrollView dialogScroll=new ScrollView(this);dialogScroll.setClipChildren(false);dialogScroll.setClipToPadding(false);dialogScroll.addView(rows);panel.setContentView(dialogScroll);Window w=panel.getWindow();if(w!=null){w.setBackgroundDrawableResource(android.R.color.transparent);w.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);WindowManager.LayoutParams p=w.getAttributes();p.width=dp(325);p.height=-2;p.gravity=Gravity.RIGHT|Gravity.CENTER_VERTICAL;p.x=dp(30);p.dimAmount=.38f;w.setAttributes(p);w.setWindowAnimations(getResources().getIdentifier("HomePanelMotion","style",getPackageName()));}return rows;}
+    LinearLayout dialog(String title){if(panel!=null && panel.isShowing())panel.dismiss();else panelOrigin=getCurrentFocus();capturePopupBackdrop();panel=new Dialog(this);panel.setOnDismissListener(dialog->{if(panel==dialog)popupBackdrop=null;if(remotePanel==dialog){remotePanel=null;remotePairCode=null;remoteQr=null;remoteQrPayload="";}});panel.setOnKeyListener((dialog,key,event)->{developerInput();if((key==KeyEvent.KEYCODE_DPAD_CENTER || key==KeyEvent.KEYCODE_ENTER) && event.getAction()==KeyEvent.ACTION_UP && SystemClock.uptimeMillis()<suppressConfirmUntil){suppressConfirmUntil=0;return true;}if(event.getAction()==KeyEvent.ACTION_DOWN && event.getRepeatCount()==0)suppressConfirmUntil=0;return key==KeyEvent.KEYCODE_BACK && handleBack(event);});LinearLayout rows=new LinearLayout(this);rows.setOrientation(LinearLayout.VERTICAL);rows.setClipChildren(false);rows.setClipToPadding(false);rows.setPadding(dp(26),dp(26),dp(26),dp(24));TextView heading=text(title,27,WHITE);heading.setMinHeight(dp(50));heading.setPadding(0,0,0,dp(12));rows.addView(heading,lp(-1,-2));PopupViewport viewport=new PopupViewport(this,rows,Math.max(dp(1),(root.getHeight()>0?root.getHeight():getResources().getDisplayMetrics().heightPixels)-dp(60)));viewport.setBackground(new FrostedDock(viewport,true));panel.setContentView(viewport);Window w=panel.getWindow();if(w!=null){w.setBackgroundDrawableResource(android.R.color.transparent);w.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);WindowManager.LayoutParams p=w.getAttributes();p.width=Math.min(dp(325),getResources().getDisplayMetrics().widthPixels-dp(60));p.height=-2;p.gravity=Gravity.RIGHT|Gravity.CENTER_VERTICAL;p.x=dp(30);p.dimAmount=.38f;w.setAttributes(p);w.setWindowAnimations(getResources().getIdentifier("HomePanelMotion","style",getPackageName()));}return rows;}
     void addControl(LinearLayout rows,String label,String hint,Runnable action){TextView v=button(label+(hint.isEmpty()?"":"\n"+hint),action);v.setTextSize(14);v.setGravity(Gravity.CENTER_VERTICAL);v.setPadding(dp(16),dp(10),dp(10),dp(10));v.setLineSpacing(dp(2),1f);v.setMinHeight(dp(59));v.setBackground(new FrostedDock(v,true));View.OnFocusChangeListener feedback=v.getOnFocusChangeListener();v.setOnFocusChangeListener((view,focused)->{if(feedback!=null)feedback.onFocusChange(view,focused);v.setBackground(new FrostedDock(v,true));});LinearLayout.LayoutParams p=lp(-1,-2);p.topMargin=dp(8);rows.addView(v,p);}
-    void focusFirst(LinearLayout rows){rows.post(()->{for(int i=1;i<rows.getChildCount();i++){View child=rows.getChildAt(i);if(child.isFocusable()){child.requestFocus();break;}}});}
+    void focusFirst(LinearLayout rows){PopupViewport.prepareFocusableText(rows);rows.post(()->{for(int i=1;i<rows.getChildCount();i++){View child=rows.getChildAt(i);if(child.isFocusable()){child.requestFocus();break;}}});}
     void closePanel(){pendingPanelFocus=panelOrigin;if(panel!=null)panel.dismiss();}
     void addControlIcon(LinearLayout rows,String label,String hint,String icon,Runnable action){
         addControl(rows,label,hint,action);TextView v=(TextView)rows.getChildAt(rows.getChildCount()-1);
@@ -396,17 +400,22 @@ public final class MainActivity extends Activity {
         addControlIcon(rows,"Language",AppLanguage.italian(this)?"Italiano":"English","language",()->{closePanel();showLanguage();});
         addControlIcon(rows,"Remote","Use a phone on the same Wi-Fi","remote",()->{closePanel();showRemoteAddress();});
         addControlIcon(rows,"Appearance","Activity background","controls",()->{closePanel();showActivityAppearance();});
-        addControlIcon(rows,"Updates",io.github.jqssun.airplay.BuildConfig.VERSION_NAME,"history",()->{closePanel();updatePanels.showSettings();});
         addControlIcon(rows,"About MiTV Home",io.github.jqssun.airplay.BuildConfig.VERSION_NAME,"controls",()->{closePanel();showAbout();});
-        if(developerSession.isUnlocked()){addControlIcon(rows,"Developer options","Temporary access","controls",()->{closePanel();showDeveloperOptions();});developerEntry=rows.getChildAt(rows.getChildCount()-1);}
+        if(developerEnabled()){addControlIcon(rows,"Developer settings","","code",()->{closePanel();showDeveloperOptions();});developerEntry=rows.getChildAt(rows.getChildCount()-1);}
         addControlIcon(rows,"TV settings","All settings","controls",()->{closePanel();openSettings(Settings.ACTION_SETTINGS);});
         panel.show();focusFirst(rows);
     }
     void showAbout(){
         LinearLayout rows=dialog("About MiTV Home");
         addControl(rows,"MiTV Home "+io.github.jqssun.airplay.BuildConfig.VERSION_NAME,"Build "+io.github.jqssun.airplay.BuildConfig.VERSION_CODE,()->{
-            if(developerSession.tapVersion()){handler.removeCallbacks(expireDeveloper);handler.postDelayed(expireDeveloper,30_000);closePanel();showDeveloperOptions();}
+            if(developerSession.tapVersion()){handler.removeCallbacks(expireDeveloper);handler.postDelayed(expireDeveloper,30_000);closePanel();showAbout();}
         });
+        if(developerSession.isUnlocked()||developerEnabled()){
+            addControlIcon(rows,"Developer options",tr(developerEnabled()?"On":"Off"),"controls",()->{
+                it.xarber.tvhome.diagnostics.DeveloperAccess.setEnabled(this,!developerEnabled());closePanel();showAbout();
+                if(developerToggleEntry!=null){View toggle=developerToggleEntry;toggle.post(()->{if(toggle.isAttachedToWindow())toggle.requestFocus();});}
+            });developerToggleEntry=rows.getChildAt(rows.getChildCount()-1);
+        }
         if(getSharedPreferences("home_restore",0).contains("previous"))addControl(rows,"Restore previous preferences","",()->{try{String previous=getSharedPreferences("home_restore",0).getString("previous","");HomePreferences.restore(this,getPreferences(0),previous);closePanel();recreate();}catch(Exception error){showNotice(tr("Invalid preferences file"),3500);}});
         addControlIcon(rows,"Updates","","history",()->{closePanel();updatePanels.showSettings();});
         addControl(rows,"What’s New","",()->{closePanel();showWhatsNew();});
@@ -428,7 +437,7 @@ public final class MainActivity extends Activity {
     }
     void showWhatsNew(){LinearLayout rows=dialog("What’s New");ReleasePanels.appendUpdate(this,rows,io.github.jqssun.airplay.BuildConfig.VERSION_CODE-1);addControlIcon(rows,"Full changelog","","history",()->{closePanel();showChangelog(false);});addControl(rows,"Done","",this::closePanel);panel.show();focusFirst(rows);}
     void showChangelog(boolean developer){
-        if(developer&&!developerSession.isUnlocked())return;
+        if(developer&&!developerEnabled())return;
         LinearLayout rows=dialog(developer?"Developer changelog":"Changelog");
         if(developer){TextView body=text(readAsset("developer-changelog.txt"),12,WHITE);body.setLineSpacing(dp(4),1);body.setFocusable(true);body.setTextIsSelectable(true);rows.addView(body,lp(-1,-2));developerPanel=panel;}
         else ReleasePanels.appendHistory(this,rows);
@@ -436,10 +445,10 @@ public final class MainActivity extends Activity {
     }
     void showRelease(org.json.JSONObject release){LinearLayout rows=dialog("MiTV Home "+release.optString("version"));ReleasePanels.appendRelease(this,rows,release);addControlIcon(rows,"Full changelog","","history",()->{closePanel();showChangelog(false);});addControl(rows,"Done","",this::closePanel);panel.show();focusFirst(rows);}
     String diagnosticReport(){return it.xarber.tvhome.diagnostics.Diagnostics.report(this,nativeReceiver!=null,remoteServer!=null);}
-    void showDeveloperDetails(){if(!developerSession.isUnlocked())return;LinearLayout rows=dialog("Diagnostic details");developerPanel=panel;TextView details=text(diagnosticReport(),11,MUTED);details.setTextIsSelectable(true);rows.addView(details,lp(-1,-2));addControl(rows,"Done","",this::closePanel);panel.show();focusFirst(rows);}
+    void showDeveloperDetails(){if(!developerEnabled())return;LinearLayout rows=dialog("Diagnostic details");developerPanel=panel;TextView details=text(diagnosticReport(),11,MUTED);details.setTextIsSelectable(true);rows.addView(details,lp(-1,-2));addControl(rows,"Done","",this::closePanel);panel.show();focusFirst(rows);}
     void showDeveloperOptions(){
-        if(!developerSession.isUnlocked())return;event(it.xarber.tvhome.diagnostics.Diagnostics.Event.DEVELOPER_OPENED);
-        LinearLayout rows=dialog("Developer options");developerPanel=panel;
+        if(!developerEnabled())return;event(it.xarber.tvhome.diagnostics.Diagnostics.Event.DEVELOPER_OPENED);
+        LinearLayout rows=dialog("Developer settings");developerPanel=panel;
         TextView version=text("v"+io.github.jqssun.airplay.BuildConfig.VERSION_NAME+" · "+io.github.jqssun.airplay.BuildConfig.VERSION_CODE,15,WHITE);rows.addView(version,lp(-1,-2));
         addControlIcon(rows,"Diagnostic details","","info",()->{closePanel();showDeveloperDetails();});
         addControlIcon(rows,"Copy diagnostics","","code",()->{android.content.ClipboardManager clipboard=(android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE);clipboard.setPrimaryClip(ClipData.newPlainText("MiTV Home diagnostics",diagnosticReport()));showNotice(tr("Diagnostics copied"),2500);});
