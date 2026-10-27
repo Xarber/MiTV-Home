@@ -8,6 +8,6 @@ Artifacts include app/version/platform/channel/variant/short commit in names. AP
 
 Corresponding-source archives include repository sources, build scripts, patches and pinned recursive submodule source, excluding Git internals/build output/secrets. Original launcher code is AGPL; upstream licenses remain. The Home remote links to the public source repository; matching release source is attached with binaries.
 
-Obtainium tracks public GitHub Releases: choose MiTV-Home with the APK asset filter `android-universal` and enable prereleases only for beta. See distribution/obtainium.json for channel hints and releases/latest for stable downloads. No iOS AltSource/IPA or mutable metadata 1.0 release is generated because there is no iOS application or configured source consumer. No Play/App Store submission occurs automatically.
+Obtainium tracks public GitHub Releases: choose MiTV-Home with the APK asset filter `android-universal` and enable prereleases only for beta. See distribution/README.md for fully configured stable/beta import links and JSON, and releases/latest for stable downloads. No iOS AltSource/IPA or mutable metadata 1.0 release is generated because there is no iOS application or configured source consumer. No Play/App Store submission occurs automatically.
 
 When a build exceeds three minutes, report its link/status and stop actively waiting. A queued/running build is not a release. Never publish failed/incomplete packages or claim simulator coverage validates native source.

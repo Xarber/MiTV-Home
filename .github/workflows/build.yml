@@ -182,4 +182,5 @@ jobs:
           if git rev-parse --verify "refs/tags/$TAG" >/dev/null 2>&1; then test "$(git rev-list -n 1 "$TAG")" = "$GITHUB_SHA"; fi
           python3 scripts/release.py notes > "$RUNNER_TEMP/release-notes.md"
           cp distribution/obtainium.json dist/obtainium.json
-          gh release create "$TAG" --target "$GITHUB_SHA" --title "MiTV Home $VERSION ($MITV_BUILD_CHANNEL)" --notes-file "$RUNNER_TEMP/release-notes.md" "${RELEASE_ARGS[@]}" dist/*.apk dist/*.aab dist/*.tar.gz dist/SHA256SUMS.txt dist/obtainium.json
+          cp distribution/obtainium-beta.json dist/obtainium-beta.json
+          gh release create "$TAG" --target "$GITHUB_SHA" --title "MiTV Home $VERSION ($MITV_BUILD_CHANNEL)" --notes-file "$RUNNER_TEMP/release-notes.md" "${RELEASE_ARGS[@]}" dist/*.apk dist/*.aab dist/*.tar.gz dist/SHA256SUMS.txt dist/obtainium.json dist/obtainium-beta.json

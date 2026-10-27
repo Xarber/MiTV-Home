@@ -99,7 +99,7 @@ final class HomeRemoteServer implements Runnable {
         catch (RemoteRequest.Invalid error) { respond(client, error.status, "text/plain", "Request rejected"); return; }
         String method = request.method, path = request.path, json = request.body;
         if (method.equals("GET") && (path.equals("/") || path.equals("/index.html"))) {
-            try (InputStream page = context.getAssets().open("remote.html")) { respond(client, 200, "text/html; charset=utf-8", new String(readAll(page), StandardCharsets.UTF_8)); }
+            try (InputStream page = context.getAssets().open("remote.html")) { respond(client, 200, "text/html; charset=utf-8", new String(readAll(page), StandardCharsets.UTF_8).replace("https://github.com/Xarber/MiTV-Home\"", "https://github.com/Xarber/MiTV-Home/tree/" + io.github.jqssun.airplay.BuildConfig.SOURCE_COMMIT + "\"")); }
             return;
         }
         if (method.equals("POST") && path.equals("/pair/start")) {

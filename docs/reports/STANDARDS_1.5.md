@@ -20,3 +20,15 @@ Android-only scope is explicit. No Apple target, store submission, OTA, plugin l
 ## Pending checks and limits
 
 Final simulator recheck, preference import/export document-provider flow, end-to-end remote validation, full source-built four-ABI APK/AAB signing/package validation and remote workflow statuses are recorded below as execution completes. Bundled local native libraries do not contain the new native log-level edit. A full source build is required for that edit. No fresh physical-TV or Mac Music test in this batch; old device confirmations are not new evidence. Do not call a queued/running build a success or a published release.
+
+## Final local/simulator validation
+
+- Final debug build/lint passed in 25s (53 tasks); version 1.5.0/code 15 installed in the running StudioTV ARM64 emulator, preserving app data.
+- Fresh screenshots verified the corrected compact upgrade popup, visible heading/buttons, Italian About/version/commit and developer report. Upgrade simulation backed up/restored only the release-history baseline; original baseline restored and popup did not repeat.
+- Developer triple-press opened the hidden diagnostics; after >30s without input the panel closed. Host tests independently cover activity input extending access and tab/background locking. Receiver settings now use the same shared transient session instead of a permanent toggle.
+- Real emulator HTTP tests passed root/source link, unauthenticated rejection, hostile Origin rejection, PIN pairing, QR panel dismissal, one-use PIN rotation, command validation and explicit presence disconnect. No PIN/token was printed or published.
+- Android app_process probe passed Home preference validation against the real Android JSON implementation (valid export shape, wrong schema/language/type/field/profile/slot and oversized data). Probe reads no actual preferences. Document-picker import/export interaction is still untested.
+- actionlint 1.7.12 passed the workflow; Python scripts compiled; host/release consistency and git whitespace checks passed. Private vulnerability reporting enabled. Branch protection confirmed: no deletion/force pushes; beta/main require PR and host checks.
+- Public channel JSON and deep links follow Obtainium's official app configuration format; actual Obtainium import was not executed.
+
+Full native source-built APK/AAB/signing verification remains the remote pipeline's responsibility. Native log-level change is not verified by the bundled-library simulator build. Physical TV, first-ever clean installation, touchscreen receiver developer settings and Mac Music were not re-tested. No stable release is claimed here.
