@@ -409,6 +409,7 @@ public final class MainActivity extends Activity {
         });
         if(getSharedPreferences("home_restore",0).contains("previous"))addControl(rows,"Restore previous preferences","",()->{try{String previous=getSharedPreferences("home_restore",0).getString("previous","");HomePreferences.restore(this,getPreferences(0),previous);closePanel();recreate();}catch(Exception error){showNotice(tr("Invalid preferences file"),3500);}});
         addControlIcon(rows,"Updates","","history",()->{closePanel();updatePanels.showSettings();});
+        addControl(rows,"What’s New","",()->{closePanel();showWhatsNew();});
         addControl(rows,"Changelog","",()->{closePanel();showChangelog(false);});
         addControl(rows,"Export Home preferences","",()->{closePanel();preferencesDocument(false);});
         addControl(rows,"Import Home preferences","",()->{closePanel();preferencesDocument(true);});
@@ -425,6 +426,7 @@ public final class MainActivity extends Activity {
         addControlIcon(rows,"Full changelog","","history",()->{closePanel();showChangelog(false);});
         addControl(rows,"Done","",this::closePanel);panel.show();focusFirst(rows);updatePresented=true;ReleaseHistory.markSeen(this);
     }
+    void showWhatsNew(){LinearLayout rows=dialog("What’s New");ReleasePanels.appendUpdate(this,rows,io.github.jqssun.airplay.BuildConfig.VERSION_CODE-1);addControlIcon(rows,"Full changelog","","history",()->{closePanel();showChangelog(false);});addControl(rows,"Done","",this::closePanel);panel.show();focusFirst(rows);}
     void showChangelog(boolean developer){
         if(developer&&!developerSession.isUnlocked())return;
         LinearLayout rows=dialog(developer?"Developer changelog":"Changelog");
