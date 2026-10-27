@@ -55,3 +55,10 @@ v1.7.2 is committed development work. It is not built, released or installed yet
 The TV retains v1.7.1. Physical PIN display, authenticated pairing/playback and the
 updated discovery list remain unverified. Do not present the upstream report or
 fake-receiver tests as physical-TV proof.
+
+The existing authorized GitHub pipeline was also submitted after the storage
+blocker, reusing successful native dependencies. This does not complete the user's
+local-build request. Remote run for commit `dbc5b4d`:
+https://github.com/Xarber/MiTV-Home/actions/runs/40604486783
+
+No build success or installation is claimed for that in-progress run.
