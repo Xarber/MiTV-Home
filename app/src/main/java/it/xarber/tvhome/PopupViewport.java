@@ -56,6 +56,8 @@ final class PopupViewport extends FrameLayout {
                     if(event.getAction()==KeyEvent.ACTION_DOWN)scrollBy(0,direction*dp(60));
                     return true;
                 }
+                if(event.getAction()==KeyEvent.ACTION_DOWN){View next=focused.focusSearch(direction<0?View.FOCUS_UP:View.FOCUS_DOWN);if(next!=null&&next!=focused)next.requestFocus();}
+                return true;
             }
             return super.dispatchKeyEvent(event);
         }

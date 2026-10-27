@@ -10,6 +10,7 @@ All preferences use app-private SharedPreferences; OS backup is disabled. No acc
 | `home_restore` | `previous`: last presentation snapshot before import | Persistent, no receiver credentials |
 | Receiver `settings` | Typed settings from Kotlin Prefs; receiver private identity/key material | Persistent, excluded from Home export |
 | HTTP server memory | Up to 16 random 192-bit tokens; six-digit PIN/expiry; authenticated heartbeat timestamps | Destroyed when Home remote stops |
+| `home_developer` | Explicit `enabled` opt-in; excluded from presentation exports | Persistent until switched off |
 | Developer session memory | Triple-press count, monotonic last input, unlock state | Cleared on timeout/navigation/background |
 | Diagnostics memory | Last 64 enum events with monotonic timestamp | Process lifetime; no arbitrary payloads |
 

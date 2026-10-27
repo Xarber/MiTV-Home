@@ -1,6 +1,6 @@
 # Developer tools, updates and portable settings
 
-Control Center → About MiTV Home shows version/build and exact source commit, release history, licenses and preference export/import. Triple-press the version row within four seconds to open Developer options. It uses the same focusable, scrollable frosted popup controls; developer access remains in memory, expires after 30 seconds without input and locks on page/category navigation or backgrounding. A later visit requires another triple press. No external intent or persistent preference unlocks it.
+Control Center → About MiTV Home shows version/build and exact source commit, release history, licenses and preference export/import. Triple-press the version row within four seconds to reveal a Developer options toggle. Enabling it persists the opt-in and adds Developer settings to Control Center. The hidden reveal session expires after 30 seconds/navigation/backgrounding; the explicitly enabled setting stays on until switched off. No external intent enables it.
 
 The developer landing panel is a compact icon-led menu. Diagnostic details opens the longer report on request; copy/export still use the complete safe report. Authenticated phone-remote actions extend temporary access just like physical input. Revocation consequences remain visible.
 
