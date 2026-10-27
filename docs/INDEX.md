@@ -7,6 +7,8 @@
 - [Remote API](API.md): requests, authentication and errors.
 - [Extension design](PLUGIN_SYSTEM.md): future plugin boundaries and restrictions.
 - [Development](DEVELOPMENT.md), [building](BUILDING.md), [testing](TESTING.md), [releases](RELEASES.md).
+- [Paired Apple TV development and compatibility](features/PAIRED_APPLE_TV.md).
+- [Updater and popup validation](reports/UPDATER_AND_POPUPS_1.6.md).
 - [Bounded TV popups](features/POPUPS.md).
 - [Developer tools and changelog](features/DIAGNOSTICS_AND_UPDATES.md), [automatic APK updates](features/UPDATES.md).
 - [Android TV compatibility](platforms/ANDROID_TV.md), [installation and restoration](INSTALL.md).
