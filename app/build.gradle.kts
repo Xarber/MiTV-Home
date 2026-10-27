@@ -6,6 +6,7 @@ plugins {
 }
 
 import java.util.Properties
+import java.time.Instant
 
 val localProps = Properties().apply {
     rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use(::load)
@@ -15,7 +16,21 @@ listOf("storeFile" to "MITV_STORE_FILE", "storePassword" to "MITV_STORE_PASSWORD
     providers.environmentVariable(variable).orNull?.let { localProps.setProperty(property, it) }
 }
 
-val allAbis = listOf("arm64-v8a", "armeabi-v7a", "x86_64")
+fun gitValue(vararg args: String): String = try {
+    val process = ProcessBuilder("git", *args).directory(rootDir).redirectErrorStream(true).start()
+    val result = process.inputStream.bufferedReader().readText().trim()
+    if (process.waitFor() == 0) result else "unknown"
+} catch (_: Exception) { "unknown" }
+fun buildString(value: String): String = "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", " ").replace("\r", " ") + "\""
+val archivedSource = Properties().apply {
+    rootProject.file("source-build.properties").takeIf { it.exists() }?.inputStream()?.use(::load)
+}
+val sourceCommit = providers.environmentVariable("GITHUB_SHA").getOrElse(archivedSource.getProperty("commit", gitValue("rev-parse", "HEAD")))
+val buildChannel = providers.environmentVariable("MITV_BUILD_CHANNEL").getOrElse(archivedSource.getProperty("channel", gitValue("branch", "--show-current")))
+val buildEpoch = providers.environmentVariable("SOURCE_DATE_EPOCH").orNull ?: archivedSource.getProperty("epoch", gitValue("show", "-s", "--format=%ct", "HEAD"))
+val buildDate = buildEpoch.toLongOrNull()?.let { Instant.ofEpochSecond(it).toString() } ?: "unknown"
+val allAbis = if (project.hasProperty("useBundledNative")) listOf("arm64-v8a", "armeabi-v7a")
+    else listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
 
 android {
     namespace = "io.github.jqssun.airplay"
@@ -37,8 +52,12 @@ android {
         applicationId = providers.gradleProperty("homeApplicationId").getOrElse("it.xarber.mitvhome")
         minSdk = 26
         targetSdk = 34
-        versionCode = 14
-        versionName = "1.4"
+        versionCode = 15
+        versionName = "1.5.0"
+        buildConfigField("String", "SOURCE_COMMIT", buildString(sourceCommit))
+        buildConfigField("String", "BUILD_CHANNEL", buildString(buildChannel))
+        buildConfigField("String", "BUILD_DATE", buildString(buildDate))
+        buildConfigField("String", "BUILD_VARIANT", buildString("github-extended"))
 
         externalNativeBuild {
             cmake {
@@ -49,7 +68,7 @@ android {
     }
 
     if (!project.hasProperty("useBundledNative")) {
-        sourceSets.getByName("main").jniLibs.setSrcDirs(emptyList<String>())
+        sourceSets.getByName("main").jniLibs.directories.clear()
         externalNativeBuild { cmake { path = file("src/main/cpp/CMakeLists.txt") } }
     }
 
@@ -90,23 +109,50 @@ android {
     buildFeatures {
         compose = true
         prefab = true
+        buildConfig = true
     }
 }
 
+// Generate ignored assets before merging Android resources. This also works from release source archives.
+val generateHomeBuildInfo = tasks.register("generateHomeBuildInfo") {
+    inputs.property("commit", sourceCommit)
+    inputs.property("channel", buildChannel)
+    inputs.property("date", buildDate)
+    inputs.file(rootProject.file("app/src/main/assets/release-history.json"))
+    outputs.files(file("src/main/assets/build-metadata.json"), file("src/main/assets/developer-changelog.txt"))
+    doLast {
+        file("src/main/assets/build-metadata.json").writeText("""
+            {"version":"1.5.0","code":15,"commit":${buildString(sourceCommit)},"channel":${buildString(buildChannel)},"variant":"github-extended","date":${buildString(buildDate)}}
+        """.trimIndent()+"\n")
+        val history = gitValue("log", "--reverse", "--format=%H %ad %s%n%b", "--date=short", "98cbd64^..HEAD")
+        val historyFile = file("src/main/assets/developer-changelog.txt")
+        if (history != "unknown") historyFile.writeText("MiTV Home developer history\nLegacy subjects are retained verbatim.\n\n"+history+"\n")
+        else if (!historyFile.exists()) historyFile.writeText("Source commit: $sourceCommit\nSee CHANGELOG.md and corresponding release source.\n")
+    }
+}
+tasks.named("preBuild").configure { dependsOn(generateHomeBuildInfo) }
+
 tasks.register("applyUxplayPatches") {
     doLast {
-        fun git(vararg args: String): String {
+        fun git(vararg args: String): Pair<Int, String> {
             val proc = ProcessBuilder("git", "-C", "$projectDir/src/main/cpp/third_party/UxPlay", *args)
                 .redirectErrorStream(true).start()
             val out = proc.inputStream.bufferedReader().readText()
-            check(proc.waitFor() == 0) { "git ${args.joinToString(" ")} failed:\n$out" }
-            return out
+            return proc.waitFor() to out
         }
         val patches = file("src/main/cpp/patches/UxPlay").listFiles { f -> f.extension == "patch" }!!.sorted()
-        val touched = patches.flatMap { git("apply", "--numstat", it.path).trim().lines() }
-            .map { it.substringAfterLast("\t") }.distinct()
-        git("checkout", "--", *touched.toTypedArray())
-        patches.forEach { git("apply", "--unidiff-zero", it.path) }
+        val source = file("src/main/cpp/third_party/UxPlay")
+        if (source.resolve(".git").exists()) {
+            // Only reset files owned by the checked-in patch series in this pinned dependency.
+            val touched = patches.flatMap { git("apply", "--numstat", it.path).also { result -> check(result.first == 0) { result.second } }.second.trim().lines() }
+                .map { it.substringAfterLast("\t") }.distinct()
+            git("checkout", "--", *touched.toTypedArray()).also { check(it.first == 0) { it.second } }
+        }
+        patches.forEach { patch ->
+            if (git("apply", "--reverse", "--check", "--unidiff-zero", patch.path).first != 0) {
+                git("apply", "--unidiff-zero", patch.path).also { check(it.first == 0) { it.second } }
+            }
+        }
     }
 }
 
