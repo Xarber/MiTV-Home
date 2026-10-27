@@ -48,7 +48,7 @@ final class UpdatePanels {
         String checked=updates.lastSuccess()>0?DateFormat.getDateTimeInstance(DateFormat.SHORT,DateFormat.SHORT).format(new Date(updates.lastSuccess())):host.tr("Never checked");
         status.setText(host.tr(updates.status)+"\n"+host.tr("Last successful check")+": "+checked+(updates.stale?"\n"+host.tr("Cached — not a current check"):""));
         if(updates.downloadId()>=0){String amount=size(Math.max(0,updates.downloaded));if(updates.total>0)amount+=" / "+size(updates.total)+" · "+size(Math.max(0,updates.total-updates.downloaded))+" "+host.tr("remaining");if(updates.speed>0)amount+="\n"+size(updates.speed)+"/s";progress.setText(amount);}else progress.setText("");
-        if(action!=null){action.setText(host.tr(updates.ready?"Install update":"Update Now"));action.setEnabled(!updates.verifying);}
+        if(action!=null){action.setText(host.tr(updates.ready?"Install update":"Update Now"));action.setEnabled(!updates.verifying&&!updates.installing);}
     }
     private TextView label(LinearLayout rows,String value){TextView view=host.text(value,13,MainActivity.MUTED);view.setLineSpacing(host.dp(3),1);view.setPadding(0,host.dp(5),0,host.dp(5));rows.addView(view,host.lp(-1,-2));return view;}
     private String size(long bytes){return android.text.format.Formatter.formatFileSize(host,bytes);}

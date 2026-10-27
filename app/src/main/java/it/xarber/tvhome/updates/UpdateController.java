@@ -174,7 +174,7 @@ public final class UpdateController {
             finally{polling.set(false);changed();}
         });
     }
-    public synchronized void cancel(){clearDownload();status="Download cancelled";changed();}
+    public synchronized void cancel(){if(installing||preferences.getInt("install_session",-1)>=0){status="Installation needs confirmation";changed();return;}clearDownload();status="Download cancelled";changed();}
     private void clearDownload(){long id=downloadId();if(id>=0)try{((DownloadManager)context.getSystemService(Context.DOWNLOAD_SERVICE)).remove(id);}catch(Exception ignored){}preferences.edit().remove("download_id").remove("await_permission").apply();File file=apk();if(file!=null)file.delete();ready=false;downloaded=0;total=-1;speed=0;}
     public synchronized void install(){
         if(managedStore()){openStore();return;}
@@ -187,14 +187,16 @@ public final class UpdateController {
         }
         preferences.edit().remove("await_permission").apply();installing=true;status="Preparing Android installer…";changed();
         worker.execute(()->{
-            int id=-1;
+            int id=-1;final long originalDownload=downloadId();
             try{
                 UpdateVerifier.verify(context,apk(),candidate);PackageInstaller installer=context.getPackageManager().getPackageInstaller();
                 PackageInstaller.SessionParams params=new PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL);params.setAppPackageName(context.getPackageName());params.setSize(candidate.size);
                 if(Build.VERSION.SDK_INT>=31)params.setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_REQUIRED);
                 id=installer.createSession(params);preferences.edit().putInt("install_session",id).putLong("install_expected",candidate.code).putString("install_result","Installation needs confirmation").apply();
                 try(PackageInstaller.Session session=installer.openSession(id)){
-                    try(InputStream input=new FileInputStream(apk());OutputStream output=session.openWrite("base.apk",0,candidate.size)){byte[] bytes=new byte[65536];int count;while((count=input.read(bytes))!=-1)output.write(bytes,0,count);session.fsync(output);}
+                    java.security.MessageDigest digest=java.security.MessageDigest.getInstance("SHA-256");long copied=0;
+                    try(InputStream input=new FileInputStream(apk());OutputStream output=session.openWrite("base.apk",0,candidate.size)){byte[] bytes=new byte[65536];int count;while((count=input.read(bytes))!=-1){output.write(bytes,0,count);digest.update(bytes,0,count);copied+=count;}session.fsync(output);}
+                    if(copied!=candidate.size||!UpdateVerifier.hex(digest.digest()).equalsIgnoreCase(candidate.sha256)||downloadId()!=originalDownload)throw new IOException("Update changed while staging");
                     Intent callback=new Intent(context,UpdateInstallReceiver.class).setAction(context.getPackageName()+".UPDATE_INSTALL_RESULT");
                     PendingIntent result=PendingIntent.getBroadcast(context,id,callback,PendingIntent.FLAG_UPDATE_CURRENT|(Build.VERSION.SDK_INT>=31?PendingIntent.FLAG_MUTABLE:0));
                     session.commit(result.getIntentSender());
