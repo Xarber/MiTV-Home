@@ -2,9 +2,9 @@
 
 Read AGENTS.md and ARCHITECTURE.md first. Clone recursively onto a local filesystem; keep signing material outside the checkout. Use existing JDK/Android tools (see BUILDING.md). Do not install SDKs or emulators without approval.
 
-1. Branch from testing; plan affected modules and acceptance criteria.
+1. Inspect version pins, documentation and relevant history. Plan affected modules, regression risks and acceptance criteria; use testing or a temporary feature branch/worktree.
 2. Implement one coherent change, update relevant docs and Conventional Commit it.
-3. Push completed changes to testing, which has no automatic builds.
+3. Integrate completed temporary branches into testing, resolve conflicts, then push. Testing has no automatic full builds/releases.
 4. After a batch run host checks, build/lint and emulator checks. Record actual results.
 5. Open testing→beta PR. Beta builds release APK/AAB in parallel, validates/signs and publishes a prerelease only after all required jobs succeed.
 6. Review the exact beta artifacts and compatibility report, then promote beta→main by PR for stable publication.

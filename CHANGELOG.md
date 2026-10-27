@@ -2,6 +2,14 @@
 
 Generated from `app/src/main/assets/release-history.json`. Legacy versions reflect repository history; dates describe implementation, not a verified public release.
 
+## 1.5.1 — 2026-10-27
+
+Clearer changelog cards with contextual icons and expandable details; compact developer tools.
+
+### Fixes & Improvements
+
+Remote interactions keep temporary developer access active. Diagnostics identify observation time and local-only simulations. Existing dock, AirPlay and pairing behavior is preserved.
+
 ## 1.5.0 — 2026-10-27
 
 Developer tools, a permanent changelog and portable Home preferences.

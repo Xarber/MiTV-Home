@@ -13,17 +13,18 @@ import java.util.ArrayDeque;
 /** Bounded, allowlisted event history: never accepts arbitrary sender or network strings. */
 public final class Diagnostics {
     public enum Event { HOME_CREATED, HOME_RESUMED, HOME_PAUSED, PAGE_CHANGED, REMOTE_STARTED,
-        REMOTE_STOPPED, REMOTE_PAIRED, REMOTE_FAILED, DEVELOPER_OPENED, SETTINGS_EXPORTED, SETTINGS_IMPORTED }
+        REMOTE_STOPPED, REMOTE_PAIRED, REMOTE_FAILED, DEVELOPER_OPENED, SETTINGS_EXPORTED, SETTINGS_IMPORTED, SIMULATION_PREVIEW }
     private static final ArrayDeque<String> EVENTS = new ArrayDeque<>();
     public static synchronized void record(Event event) {
         if (EVENTS.size() == 64) EVENTS.removeFirst();
-        EVENTS.addLast(android.os.SystemClock.elapsedRealtime() + " " + event.name());
+        EVENTS.addLast(android.os.SystemClock.elapsedRealtime() + " " + (event == Event.SIMULATION_PREVIEW ? "[simulated-local-ui] " : "[observed] ") + event.name());
     }
     public static synchronized String report(Context context, boolean receiverReady, boolean remoteReady) {
         ConnectivityManager manager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkCapabilities network = manager == null ? null : manager.getNetworkCapabilities(manager.getActiveNetwork());
         String transport = network == null ? "offline" : network.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ? "wifi" : network.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) ? "ethernet" : "other";
-        StringBuilder text = new StringBuilder("MiTV Home diagnostics v1\n")
+        StringBuilder text = new StringBuilder("MiTV Home diagnostics v2\n")
+            .append("snapshot_utc=").append(java.time.Instant.now()).append("\nsource=local Android APIs; current snapshot\n")
             .append("version=").append(BuildConfig.VERSION_NAME).append(" (").append(BuildConfig.VERSION_CODE).append(")\n")
             .append("commit=").append(BuildConfig.SOURCE_COMMIT).append("\nbranch=").append(BuildConfig.BUILD_CHANNEL)
             .append("\nbuilt=").append(BuildConfig.BUILD_DATE).append("\nvariant=").append(BuildConfig.BUILD_VARIANT)

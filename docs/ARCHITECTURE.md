@@ -11,7 +11,7 @@ MiTV Home is a native Android TV application, not a React Native project. Its pa
 | `DeviceName` | System-assigned friendly receiver name with fallbacks |
 | `HomeRemoteServer`, `RemoteRequest` | Foreground-only paired phone remote, bounded HTTP validation, presence expiration |
 | `HomePreferences` | Versioned presentation export/import with allowlist and previous-state snapshot |
-| `ReleaseHistory` | Shared localized release history, upgrade baseline and once-per-version presentation |
+| `ReleaseHistory` / `ReleasePanels` | Shared localized release data and baseline; host-rendered icon/disclosure presentation |
 | `diagnostics.DeveloperSession`, `Diagnostics` | Temporary access and bounded safe event export |
 | Kotlin `AirPlayService` / bridge | Foreground service, mDNS, session state, metadata, audio/video routing and native callbacks |
 | C/C++ engine / UxPlay | Receiver protocol, clocking, codecs, PCM output, six-band signal analysis |
