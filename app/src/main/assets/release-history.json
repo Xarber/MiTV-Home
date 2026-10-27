@@ -2,6 +2,48 @@
   "schema": 1,
   "releases": [
     {
+      "version": "1.7.0",
+      "code": 18,
+      "date": "2026-10-27",
+      "critical": false,
+      "highlights": {
+        "en": "Pair an Apple TV to show its playback and available controls in the music activity.",
+        "it": "Abbina Apple TV per mostrare la riproduzione e i controlli disponibili nell’attività musicale."
+      },
+      "fixes": {
+        "en": "Keeps local AirPlay audio priority, protects saved pairing credentials and hides unavailable remote controls.",
+        "it": "Mantiene la priorità dell’audio AirPlay locale, protegge le credenziali e nasconde i controlli remoti non disponibili."
+      },
+      "compatibility": {
+        "en": "Apple TV interoperability requires device testing. Metadata, artwork and controls depend on tvOS and the playing app. This client does not fix Mac Music receiver compatibility.",
+        "it": "L’interoperabilità Apple TV richiede test sul dispositivo. Metadati, copertina e controlli dipendono da tvOS e dall’app. Questo client non risolve la compatibilità del ricevitore con Musica sul Mac."
+      },
+      "features": [
+        {
+          "icon": "airplay",
+          "label": {
+            "en": "Paired Apple TV",
+            "it": "Apple TV abbinata"
+          },
+          "detail": {
+            "en": "Discover, PIN-pair and observe an Apple TV directly from the launcher without an always-on PC.",
+            "it": "Trova, abbina con PIN e osserva Apple TV dal launcher senza un PC sempre acceso."
+          }
+        },
+        {
+          "icon": "sound",
+          "label": {
+            "en": "Remote playback activity",
+            "it": "Attività di riproduzione remota"
+          },
+          "detail": {
+            "en": "Reuses the music activity with supplied artwork and controls; remote bars are a playback animation, not measured sound.",
+            "it": "Riutilizza l’attività musicale con copertina e controlli disponibili; le barre remote sono un’animazione, non una misura audio."
+          }
+        }
+      ]
+    },
+    {
       "version": "1.6.0",
       "code": 17,
       "date": "2026-10-27",

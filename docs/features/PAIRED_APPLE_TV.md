@@ -30,9 +30,41 @@ it does not pretend that pydantic-core supports Python's limited ABI.
 - No credentials in backups, logs or screenshots; no automatic pairing.
 - Test lifecycle, disconnects, reconnect backoff and the user's actual tvOS version.
 
-Until those checks pass this is build infrastructure, not an implemented feature.
+The adapter and UI are implemented on the development branch; until those checks pass the feature is not device-validated or released.
 
 Primary references: [pyatv protocols](https://pyatv.dev/documentation/protocols/),
 [pyatv features](https://pyatv.dev/documentation/supported_features/),
 [Chaquopy Android](https://chaquo.com/chaquopy/doc/current/android.html),
 [Chaquopy cross builder](https://github.com/chaquo/chaquopy/blob/6e365e30f7199468d9fffe628fe9f0a7658fdbb3/server/pypi/README-old.md).
+
+## Adapter implementation (not yet device-validated)
+
+`paired_apple_tv.py` owns one asyncio protocol loop. Only explicit scan and pairing
+operations discover/select devices; the paired device reconnects while Home is
+foreground. pyatv's AirPlay pairing creates the credentials used for its MRP tunnel.
+Transport commands are gated by actual reported feature availability. No system
+volume fallback is substituted for an unsupported Apple TV volume API.
+
+`PairedPlayback` owns the worker, bounded requests, multicast lock and reconnect
+backoff. `PairingStore` encrypts the selected identity and credentials with Android
+Keystore AES/GCM, authenticated with the application identifier. Its AtomicFile is
+inside `noBackupFilesDir`; portable Home exports contain no remote credentials.
+Unreadable credentials are retained for explicit removal, not silently replaced.
+
+`PairedPlaybackPanels` uses existing bounded settings popups, localized PIN input
+and three-minute pairing expiry. Removing a pairing deletes the app's credential;
+it does not remotely revoke other Apple TV clients or reset the device.
+
+The launcher reuses its existing music chip and expanded control panel. Local
+receiver audio has priority. External snapshots expose source-supplied title,
+artist, optional artwork, transport availability, position/duration and observation
+time. Absent fields remain absent in the protocol contract. Artwork is bounded by
+bytes and dimensions before decoding. Stale snapshots do not keep activities alive.
+Remote waveform bars are a deterministic playback animation with an accessibility
+label; local audio retains its actual PCM bands. Reduced-motion keeps remote bars
+still. Popups close on a source change so an old control cannot target a new source.
+
+Pausing Home disconnects observation and releases multicast; no always-on PC,
+external account, server upload or new Android permission is used. Python initializes
+only after discovery or a saved pairing reconnect. Network errors return redacted
+error codes. Protocol debug logging is disabled. App destruction closes the client.

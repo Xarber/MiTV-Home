@@ -2,6 +2,14 @@
 
 Generated from `app/src/main/assets/release-history.json`. Legacy versions reflect repository history; dates describe implementation, not a verified public release.
 
+## 1.7.0 — 2026-10-27
+
+Pair an Apple TV to show its playback and available controls in the music activity.
+
+### Fixes & Improvements
+
+Keeps local AirPlay audio priority, protects saved pairing credentials and hides unavailable remote controls.
+
 ## 1.6.0 — 2026-10-27
 
 Discover GitHub updates in Home, read release notes and download verified APKs inside the launcher.

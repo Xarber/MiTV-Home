@@ -8,3 +8,5 @@ javac -d "$check_dir" app/src/main/java/it/xarber/tvhome/diagnostics/DeveloperSe
 java -cp "$check_dir" it.xarber.tvhome.HostChecks
 java -cp "$check_dir" it.xarber.tvhome.updates.UpdatePolicyChecks
 python3 scripts/release.py check
+
+python3 -m unittest discover -s tests/python -v

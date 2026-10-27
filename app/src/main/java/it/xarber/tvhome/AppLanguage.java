@@ -10,6 +10,23 @@ public final class AppLanguage {
  private AppLanguage() {}
  private static final HashMap<String,String> IT=new HashMap<>();
  static {
+  IT.put("Paired AirPlay device","Dispositivo AirPlay abbinato");
+  IT.put("No paired device","Nessun dispositivo abbinato");
+  IT.put("Show Apple TV playback and controls in the music activity. Artwork and controls depend on the playing app.","Mostra la riproduzione di Apple TV nell’attività musicale. Copertina e controlli dipendono dall’app in riproduzione.");
+  IT.put("Saved pairing cannot be read. Remove it and pair again.","Impossibile leggere l’abbinamento salvato. Rimuovilo e ripeti l’abbinamento.");
+  IT.put("Remove pairing","Rimuovi abbinamento");
+  IT.put("Find Apple TV","Cerca Apple TV");
+  IT.put("Searching on this network…","Ricerca nella rete…");
+  IT.put("Could not connect — try again","Connessione non riuscita — riprova");
+  IT.put("No Apple TV found on this network","Nessuna Apple TV trovata nella rete");
+  IT.put("Choose Apple TV","Scegli Apple TV");
+  IT.put("Pair Apple TV","Abbina Apple TV");
+  IT.put("Connecting…","Connessione…");
+  IT.put("Enter the four-digit code shown on your Apple TV. Pairing expires after three minutes.","Inserisci il codice di quattro cifre mostrato su Apple TV. L’abbinamento scade dopo tre minuti.");
+  IT.put("Pair","Abbina");
+  IT.put("Enter four digits","Inserisci quattro cifre");
+  IT.put("Pairing failed — go back and try again","Abbinamento non riuscito — torna indietro e riprova");
+  IT.put("Playback animation","Animazione di riproduzione");
   IT.put("Developer settings","Impostazioni sviluppatore");
   IT.put("Update available — open About","Aggiornamento disponibile — apri Informazioni");
   IT.put("Updates","Aggiornamenti");

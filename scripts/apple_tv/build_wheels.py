@@ -77,7 +77,7 @@ def main():
             data = wheel.read_bytes()
             (args.output / wheel.name).write_bytes(data)
             records.append({"file": wheel.name, "sha256": hashlib.sha256(data).hexdigest()})
-    args.output.joinpath("provenance.json").write_text(json.dumps({"chaquopy": CHAQUOPY_COMMIT, "target": TARGET, "abi": args.abi, "wheels": records}, indent=2) + "\n")
+    args.output.joinpath(f"provenance-{args.abi}.json").write_text(json.dumps({"chaquopy": CHAQUOPY_COMMIT, "target": TARGET, "abi": args.abi, "wheels": records}, indent=2) + "\n")
 
 if __name__ == "__main__":
     main()
