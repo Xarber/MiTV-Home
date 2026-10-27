@@ -77,7 +77,9 @@ public final class UpdateController {
     private boolean compatible(UpdateCandidate offer)throws Exception{return UpdatePolicy.accepts(BuildConfig.VERSION_CODE,offer.code,channel,offer.channel,BuildConfig.BUILD_VARIANT,offer.variant,Build.VERSION.SDK_INT,offer.minimumSdk,UpdateVerifier.installedSigner(context),offer.signer);}
     public synchronized void check(boolean manual){
         long now=System.currentTimeMillis();
-        if(checking||now<preferences.getLong("rate_limit_until",0)||!manual&&now-preferences.getLong("last_attempt",0)<6*60*60*1000L)return;
+        if(checking)return;
+        if(now<preferences.getLong("rate_limit_until",0)){status="GitHub rate limit — try later";changed();return;}
+        long last=preferences.getLong("last_attempt",0);if(!manual&&now>=last&&now-last<6*60*60*1000L)return;
         if(managedStore()){status="Updates are managed by your app store";changed();return;}
         checking=true;status="Checking for updates…";preferences.edit().putLong("last_attempt",now).apply();changed();
         worker.execute(()->{
@@ -92,7 +94,7 @@ public final class UpdateController {
                     FileOutputStream output=null;try{output=cache.startWrite();output.write(list.getBytes(java.nio.charset.StandardCharsets.UTF_8));cache.finishWrite(output);}catch(Exception failure){if(output!=null)cache.failWrite(output);throw failure;}
                     preferences.edit().putString("etag",reply.etag).apply();
                 }
-                JSONArray releases=new JSONArray(list);UpdateCandidate newest=null;boolean signingMismatch=false;
+                JSONArray releases=new JSONArray(list);UpdateCandidate newest=null;boolean signingMismatch=false,incomplete=false;
                 for(int i=0;i<releases.length();i++){
                     JSONObject release=releases.getJSONObject(i);String tag=release.optString("tag_name");
                     if(release.optBoolean("draft")||!tag.startsWith("v")||!channel.equals("beta")&&release.optBoolean("prerelease"))continue;
@@ -101,13 +103,14 @@ public final class UpdateController {
                     for(int n=0;n<assets.length();n++){JSONObject asset=assets.getJSONObject(n);if(asset.optString("name").equals("update-manifest.json"))manifest=asset.optString("browser_download_url");}
                     if(!UpdatePolicy.manifestUrl(manifest,tag))continue;
                     UpdateCandidate offer;
-                    try{offer=new UpdateCandidate(new JSONObject(fetch(manifest,"",65536).body));}catch(Exception invalid){continue;}
+                    try{offer=new UpdateCandidate(new JSONObject(fetch(manifest,"",65536).body));}catch(Exception invalid){incomplete=true;continue;}
                     if(!offer.tag.equals(tag)||!offer.channel.equals(release.optBoolean("prerelease")?"beta":"stable"))continue;
                     boolean actualAsset=false;for(int n=0;n<assets.length();n++){JSONObject asset=assets.getJSONObject(n);if(offer.url.equals(asset.optString("browser_download_url"))&&offer.size==asset.optLong("size"))actualAsset=true;}
                     if(!actualAsset)continue;
                     if(offer.code>BuildConfig.VERSION_CODE&&!offer.signer.equalsIgnoreCase(UpdateVerifier.installedSigner(context)))signingMismatch=true;
                     if(compatible(offer)&&(newest==null||offer.code>newest.code))newest=offer;
                 }
+                if(newest==null&&incomplete)throw new IOException("Incomplete release check");
                 // Keep a download bound to its original manifest until it is cancelled/installed.
                 if(downloadId()<0){candidate=newest;preferences.edit().putString("candidate",newest==null?"":newest.json.toString()).apply();}
                 stale=false;preferences.edit().putLong("last_success",System.currentTimeMillis()).apply();
