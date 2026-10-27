@@ -2,6 +2,58 @@
   "schema": 1,
   "releases": [
     {
+      "version": "1.5.1",
+      "code": 16,
+      "date": "2026-10-27",
+      "highlights": {
+        "en": "Clearer changelog cards with contextual icons and expandable details; compact developer tools.",
+        "it": "Schede novità più chiare con icone contestuali e dettagli espandibili; strumenti sviluppatore compatti."
+      },
+      "fixes": {
+        "en": "Remote interactions keep temporary developer access active. Diagnostics identify observation time and local-only simulations. Existing dock, AirPlay and pairing behavior is preserved.",
+        "it": "Le interazioni dal telecomando mantengono attivo l’accesso sviluppatore temporaneo. La diagnostica distingue istante di osservazione e simulazioni locali. Comportamento di dock, AirPlay e abbinamento conservato."
+      },
+      "features": [
+        {
+          "icon": "history",
+          "label": {
+            "en": "Clearer release notes",
+            "it": "Novità più chiare"
+          },
+          "detail": {
+            "en": "Each release groups features with contextual icons; fixes stay in one expandable section.",
+            "it": "Ogni versione raggruppa le funzionalità con icone contestuali; le correzioni restano in una sezione espandibile."
+          }
+        },
+        {
+          "icon": "info",
+          "label": {
+            "en": "Details on demand",
+            "it": "Dettagli su richiesta"
+          },
+          "detail": {
+            "en": "Select a feature to expand its explanation. Compatibility information remains visible in release details.",
+            "it": "Seleziona una funzionalità per espanderne la spiegazione. La compatibilità resta visibile nei dettagli della versione."
+          }
+        },
+        {
+          "icon": "code",
+          "label": {
+            "en": "Compact developer tools",
+            "it": "Strumenti sviluppatore compatti"
+          },
+          "detail": {
+            "en": "A short menu opens detailed diagnostics only on request. Triple-press access and idle expiry are unchanged.",
+            "it": "Un menu compatto apre la diagnostica dettagliata solo su richiesta. Accesso con tre pressioni e scadenza per inattività invariati."
+          }
+        }
+      ],
+      "compatibility": {
+        "en": "Direct Mac Music playback remains unresolved. Android TV hardware support varies by device.",
+        "it": "La riproduzione diretta da Musica sul Mac resta da risolvere. Il supporto hardware Android TV dipende dal dispositivo."
+      }
+    },
+    {
       "version": "1.5.0",
       "code": 15,
       "date": "2026-10-27",
@@ -12,6 +64,45 @@
       "fixes": {
         "en": "Stronger remote request validation, private diagnostic exports and reproducible release builds.",
         "it": "Richieste del telecomando più sicure, diagnostica privata e build riproducibili."
+      },
+      "features": [
+        {
+          "icon": "code",
+          "label": {
+            "en": "Developer tools",
+            "it": "Strumenti sviluppatore"
+          },
+          "detail": {
+            "en": "Triple-press the version in About to temporarily access safe diagnostics, simulations and remote revocation.",
+            "it": "Premi tre volte la versione in Informazioni per accedere temporaneamente a diagnostica, simulazioni e revoca dei telecomandi."
+          }
+        },
+        {
+          "icon": "history",
+          "label": {
+            "en": "Release history",
+            "it": "Cronologia versioni"
+          },
+          "detail": {
+            "en": "Read previous releases in Settings and see a summary once after each native update.",
+            "it": "Consulta le versioni precedenti nelle impostazioni e visualizza un riepilogo una volta dopo ogni aggiornamento nativo."
+          }
+        },
+        {
+          "icon": "transfer",
+          "label": {
+            "en": "Portable Home preferences",
+            "it": "Preferenze Home trasferibili"
+          },
+          "detail": {
+            "en": "Export and validate dock, input profiles, language and activity appearance with a recoverable import.",
+            "it": "Esporta e valida dock, profili ingressi, lingua e aspetto delle attività con importazione ripristinabile."
+          }
+        }
+      ],
+      "compatibility": {
+        "en": "Direct Mac Music playback remains unresolved. Android TV hardware support varies by device.",
+        "it": "La riproduzione diretta da Musica sul Mac resta da risolvere. Il supporto hardware Android TV dipende dal dispositivo."
       }
     },
     {
@@ -25,6 +116,45 @@
       "fixes": {
         "en": "Six frequency bands, album-color gradients, inset artwork and focused playback controls. Mac Music playback remains unresolved.",
         "it": "Sei bande audio, gradienti dalla copertina e controlli con focus. La riproduzione da Musica sul Mac resta da risolvere."
+      },
+      "features": [
+        {
+          "icon": "sound",
+          "label": {
+            "en": "Music activity details",
+            "it": "Dettagli attività musica"
+          },
+          "detail": {
+            "en": "Focus the music activity to reveal supplied artwork and title; expand it for playback controls.",
+            "it": "Porta il focus sull’attività musica per vedere copertina e titolo ricevuti; espandila per i controlli di riproduzione."
+          }
+        },
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Connected remote activity",
+            "it": "Attività telecomando connesso"
+          },
+          "detail": {
+            "en": "An authenticated phone heartbeat shows the connected remote activity. Stale presence expires.",
+            "it": "L’attività telecomando appare con un heartbeat autenticato del telefono. La presenza non aggiornata scade."
+          }
+        },
+        {
+          "icon": "controls",
+          "label": {
+            "en": "Activity appearance",
+            "it": "Aspetto delle attività"
+          },
+          "detail": {
+            "en": "Choose black or transparent activity backgrounds without changing the dock layout.",
+            "it": "Scegli uno sfondo nero o trasparente per le attività senza cambiare la disposizione del dock."
+          }
+        }
+      ],
+      "compatibility": {
+        "en": "Direct Mac Music playback remains unresolved. Android TV hardware support varies by device.",
+        "it": "La riproduzione diretta da Musica sul Mac resta da risolvere. Il supporto hardware Android TV dipende dal dispositivo."
       }
     },
     {
@@ -38,6 +168,23 @@
       "fixes": {
         "en": "Experimental FairPlay v2 handshake framing; this does not provide complete AirPlay 2 or guarantee Mac Music playback.",
         "it": "Handshake sperimentale FairPlay v2: non equivale ad AirPlay 2 completo e non garantisce Musica sul Mac."
+      },
+      "features": [
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Automatic QR pairing",
+            "it": "Abbinamento QR automatico"
+          },
+          "detail": {
+            "en": "Scan the short-lived code, pair once and close the QR window automatically.",
+            "it": "Scansiona il codice temporaneo, abbina il dispositivo e chiudi automaticamente la finestra QR."
+          }
+        }
+      ],
+      "compatibility": {
+        "en": "Direct Mac Music playback remains unresolved. Android TV hardware support varies by device.",
+        "it": "La riproduzione diretta da Musica sul Mac resta da risolvere. Il supporto hardware Android TV dipende dal dispositivo."
       }
     },
     {
@@ -51,6 +198,45 @@
       "fixes": {
         "en": "Three animated navigation stops, Italian and English, and fresh popup backdrops.",
         "it": "Tre punti di navigazione animati, italiano e inglese, sfondi aggiornati per i popup."
+      },
+      "features": [
+        {
+          "icon": "apps",
+          "label": {
+            "en": "Customizable dock",
+            "it": "Dock personalizzabile"
+          },
+          "detail": {
+            "en": "Arrange six positions; All Apps is available in the final slot and Sources can be moved.",
+            "it": "Organizza sei posizioni: Tutte le app è disponibile nell’ultimo posto e Ingressi può essere spostato."
+          }
+        },
+        {
+          "icon": "inputs",
+          "label": {
+            "en": "HDMI shortcuts",
+            "it": "Scorciatoie HDMI"
+          },
+          "detail": {
+            "en": "Pin registered HDMI inputs and Live TV. Unsupported devices retain the system input-picker fallback.",
+            "it": "Aggiungi ingressi HDMI registrati e TV in diretta. Sui dispositivi non supportati resta il selettore ingressi di sistema."
+          }
+        },
+        {
+          "icon": "airplay",
+          "label": {
+            "en": "Integrated AirPlay",
+            "it": "AirPlay integrato"
+          },
+          "detail": {
+            "en": "The receiver starts with Home and may stay in the background; supported video and mirroring open fullscreen.",
+            "it": "Il ricevitore si avvia con la Home e può restare in background; video e duplicazione supportati si aprono a schermo intero."
+          }
+        }
+      ],
+      "compatibility": {
+        "en": "Direct Mac Music playback remains unresolved. Android TV hardware support varies by device.",
+        "it": "La riproduzione diretta da Musica sul Mac resta da risolvere. Il supporto hardware Android TV dipende dal dispositivo."
       }
     }
   ]

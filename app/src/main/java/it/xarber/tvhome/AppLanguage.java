@@ -10,6 +10,17 @@ public final class AppLanguage {
  private AppLanguage() {}
  private static final HashMap<String,String> IT=new HashMap<>();
  static {
+  IT.put("Expanded","Espanso");
+  IT.put("Collapsed","Compresso");
+  IT.put("Diagnostic details","Dettagli diagnostici");
+  IT.put("Local preview only","Solo anteprima locale");
+  IT.put("Disconnects all paired phone remotes","Disconnette tutti i telecomandi abbinati");
+  IT.put("Feature details","Dettagli della funzionalità");
+  IT.put("Compatibility","Compatibilità");
+  IT.put("More information","Ulteriori informazioni");
+  IT.put("Earlier updates","Aggiornamenti precedenti");
+  IT.put("Current release","Versione attuale");
+
   IT.put("Restore previous preferences","Ripristina preferenze precedenti");
   IT.put("Includes %d earlier updates in the full changelog","La cronologia completa include %d aggiornamenti precedenti");
   IT.put("About MiTV Home","Informazioni su MiTV Home");

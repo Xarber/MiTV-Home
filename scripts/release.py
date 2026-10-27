@@ -23,6 +23,12 @@ def history():
         assert re.fullmatch(r'\d{4}-\d{2}-\d{2}', item['date'])
         for field in ('highlights', 'fixes'):
             assert set(item[field]) == {'en', 'it'} and all(item[field].values())
+        assert item.get('features'), 'Every release requires descriptive feature rows'
+        for feature in item['features']:
+            assert feature['icon'] in {'code','history','transfer','sound','remote','controls','apps','inputs','airplay','info'}
+            for field in ('label','detail'):
+                assert set(feature[field]) == {'en','it'} and all(feature[field].values())
+        assert set(item['compatibility']) == {'en','it'}
     return data['releases']
 
 def metadata():
