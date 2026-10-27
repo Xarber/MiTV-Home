@@ -3,6 +3,7 @@
 - [Architecture](ARCHITECTURE.md): components, ownership and data flow.
 - [Features](FEATURES.md): implemented behavior and limitations.
 - [Data model](DATA_MODEL.md): preferences, release history and transient sessions.
+- [Security architecture](SECURITY.md) and [local connectivity/provenance](SYNC.md).
 - [Remote API](API.md): requests, authentication and errors.
 - [Extension design](PLUGIN_SYSTEM.md): future plugin boundaries and restrictions.
 - [Development](DEVELOPMENT.md), [building](BUILDING.md), [testing](TESTING.md), [releases](RELEASES.md).
