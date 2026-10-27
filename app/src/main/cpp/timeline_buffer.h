@@ -217,9 +217,15 @@ public:
           // of largest reachable cushion + one throttle window of overshoot (trims are
           // throttled), 2x slack
           mRing(2 * capOf(mTracker.ceil()) + (size_t)sampleRate * TRIM_THROTTLE_MS / 1000 * channels) {
-        const float cutoffs[5] = {100.0f, 300.0f, 1000.0f, 3000.0f, 8000.0f};
-        for (size_t band = 0; band < 5; ++band)
-            mSpectrumAlpha[band] = 1.0f - std::exp(-6.28318530718f * std::min(cutoffs[band], sampleRate * .45f) / sampleRate);
+        const float centers[6] = {55.0f, 180.0f, 600.0f, 2000.0f, 6500.0f, 15000.0f};
+        for (size_t band = 0; band < 6; ++band) {
+            const float omega = 6.28318530718f * std::min(centers[band], sampleRate * .45f) / sampleRate;
+            const float alpha = std::sin(omega) / (2.0f * 1.3f);
+            const float a0 = 1.0f + alpha;
+            mBandB0[band] = alpha / a0;
+            mBandA1[band] = -2.0f * std::cos(omega) / a0;
+            mBandA2[band] = (1.0f - alpha) / a0;
+        }
     }
 
     void noteOutputBufferFrames(int frames) { mTracker.noteOutputBufferFrames(frames); }
@@ -232,16 +238,13 @@ public:
         for (int32_t frame = 0; frame < frames; ++frame) {
             for (int channel = 0; channel < channels; ++channel) {
                 const float sample = pcm[(size_t)frame * mChannels + channel] / 32768.0f;
-                float previous = 0.0f;
-                for (size_t band = 0; band < 5; ++band) {
-                    float &low = mSpectrumState[channel][band];
-                    low += mSpectrumAlpha[band] * (sample - low);
-                    const float signal = low - previous;
+                for (size_t band = 0; band < 6; ++band) {
+                    float *state = mBandState[channel][band];
+                    const float signal = mBandB0[band] * sample + state[0];
+                    state[0] = -mBandA1[band] * signal + state[1];
+                    state[1] = -mBandB0[band] * sample - mBandA2[band] * signal;
                     energy[band] += signal * signal;
-                    previous = low;
                 }
-                const float treble = sample - previous;
-                energy[5] += treble * treble;
             }
         }
         const uint32_t base = mWaveWrite.load(std::memory_order_relaxed);
@@ -424,8 +427,10 @@ private:
     DelayTracker mTracker;               // owns cushion policy; read live each read()
     SpscRing mRing;
     TimelineMetrics mMetrics;
-    float mSpectrumAlpha[5]{};
-    float mSpectrumState[8][5]{};
+    float mBandB0[6]{};
+    float mBandA1[6]{};
+    float mBandA2[6]{};
+    float mBandState[8][6][2]{};
     float mSpectrumEnvelope[6]{};
     std::array<std::atomic<float>, WAVEFORM_SIZE> mWaveform{};
     std::atomic<uint32_t> mWaveWrite{0};

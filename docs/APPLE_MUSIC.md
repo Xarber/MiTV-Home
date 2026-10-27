@@ -10,7 +10,7 @@ https://github.com/joerg-krause/shairplay/blob/d5f0953d2380502366592e30a0a59fe38
 The Android implementation and version-matched phase-two handling were cross-checked against:
 https://github.com/mazer666/PhairPlay/blob/main/app/src/main/kotlin/com/phairplay/airplay/handshake/FairPlay.kt
 
-Validation: host regression tests passed for v2, v3, key handling, and malformed requests. Both complete handshake phases for both versions also passed against the physical TV over RTSP. End-to-end playback directly from the user's Mac Music app still needs confirmation.
+Validation: host regression tests passed for v2, v3, key handling, and malformed requests. Both complete handshake phases for both versions also passed against the physical TV over RTSP. On the user's Mac, Music connects to the receiver but does not play audio (tested with the free Chill station). End-to-end Mac Music playback remains unresolved; successful handshake tests do not establish playback compatibility.
 
 This implements the missing FairPlay v2 transport handshake. Modern AirPlay 2 multi-room playback, HomeKit pairing, PTP synchronization, and buffered-stream support are separate features and are not claimed by this change.
 
