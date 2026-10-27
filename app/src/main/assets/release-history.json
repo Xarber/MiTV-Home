@@ -2,6 +2,59 @@
   "schema": 1,
   "releases": [
     {
+      "version": "1.6.0",
+      "code": 17,
+      "date": "2026-10-27",
+      "critical": false,
+      "highlights": {
+        "en": "Discover GitHub updates in Home, read release notes and download verified APKs inside the launcher.",
+        "it": "Scopri gli aggiornamenti GitHub nella Home, leggi le novità e scarica APK verificati nel launcher."
+      },
+      "fixes": {
+        "en": "Cached checks, channel and signing compatibility, metered-network preferences and Android installation confirmation preserve existing app data.",
+        "it": "Controlli con cache, compatibilità di canale e firma, preferenze di rete e conferma Android preservano i dati esistenti."
+      },
+      "compatibility": {
+        "en": "Updates require the same signing identity. Development-signed installations cannot accept the public release key. Mac Music remains unresolved.",
+        "it": "Gli aggiornamenti richiedono la stessa identità di firma. Le installazioni con firma di sviluppo non accettano la chiave pubblica di rilascio. Musica sul Mac resta da risolvere."
+      },
+      "features": [
+        {
+          "icon": "history",
+          "label": {
+            "en": "Automatic update discovery",
+            "it": "Ricerca automatica aggiornamenti"
+          },
+          "detail": {
+            "en": "Checks GitHub Releases on launch and periodically on foreground return, with caching and stable/beta filtering.",
+            "it": "Controlla GitHub Releases all’avvio e periodicamente al ritorno in primo piano, con cache e filtri stabile/beta."
+          }
+        },
+        {
+          "icon": "transfer",
+          "label": {
+            "en": "Download inside Home",
+            "it": "Scarica nella Home"
+          },
+          "detail": {
+            "en": "Read release notes while DownloadManager retrieves the universal APK with progress, network recovery and cancellation.",
+            "it": "Leggi le novità mentre DownloadManager scarica l’APK universale con avanzamento, recupero della rete e annullamento."
+          }
+        },
+        {
+          "icon": "shield",
+          "label": {
+            "en": "Verified Android installation",
+            "it": "Installazione Android verificata"
+          },
+          "detail": {
+            "en": "Checks checksum, package, version, architecture and the installed signing identity, then opens Android’s official confirmation flow.",
+            "it": "Verifica checksum, pacchetto, versione, architettura e identità di firma installata, poi apre la conferma ufficiale Android."
+          }
+        }
+      ]
+    },
+    {
       "version": "1.5.1",
       "code": 16,
       "date": "2026-10-27",

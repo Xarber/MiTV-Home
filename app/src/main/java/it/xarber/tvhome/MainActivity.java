@@ -24,6 +24,17 @@ import java.io.*;
 public final class MainActivity extends Activity {
     final it.xarber.tvhome.diagnostics.DeveloperSession developerSession = it.xarber.tvhome.diagnostics.DeveloperAccess.SESSION;
     Dialog developerPanel;
+    it.xarber.tvhome.updates.UpdateController updates;
+    UpdatePanels updatePanels;
+    void updatesChanged(){
+        if(!resumed)return;if(updatePanels!=null)updatePanels.refresh();
+        it.xarber.tvhome.updates.UpdateCandidate offer=updates.candidate;
+        if(offer!=null&&!updates.checking&&!updates.stale&&!updates.preferences.getString("notified","").equals(offer.tag)){
+            updates.preferences.edit().putString("notified",offer.tag).apply();
+            showNotice(tr("Update available — open Updates in Control Center"),6000);
+        }
+    }
+
     View developerEntry;
     final Runnable expireDeveloper = () -> { if (!developerSession.isUnlocked()) hideDeveloperTools(); };
     boolean updatePresented;
@@ -80,7 +91,7 @@ public final class MainActivity extends Activity {
     @Override public void onCreate(Bundle b){
         super.onCreate(b);pm=getPackageManager();event(it.xarber.tvhome.diagnostics.Diagnostics.Event.HOME_CREATED);
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
-        activityBackground=getPreferences(0).getBoolean("activity-background",true);
+        activityBackground=getPreferences(0).getBoolean("activity-background",true);updates=it.xarber.tvhome.updates.UpdateController.get(this);updatePanels=new UpdatePanels(this,updates);updates.observe(this::updatesChanged);
         preview=Build.MODEL.startsWith("sdk_") || Build.FINGERPRINT.contains("generic");
         hdmiArt=asset("icon_hdmi");tvArt=asset("icon_live_tv");appsArt=asset("icon_apps");controlsArt=asset("icon_controls");
         
@@ -106,9 +117,9 @@ public final class MainActivity extends Activity {
         scroll.setOnScrollChangeListener((v,x,y,oldx,oldy)->{scroll.settleGap();if(page.equals("home") && dockBand!=null)dockBand.setVisibility(scroll.libraryStop()>0 && y>=scroll.libraryStop()?View.INVISIBLE:View.VISIBLE);if(page.equals("home")&&inputsSection!=null)inputsSection.setVisibility(y>=scroll.appsStop()?View.INVISIBLE:View.VISIBLE);boolean show=page.equals("library") || y>dp(90);if(show!=libraryVisible){libraryVisible=show;updateBackdrop();}});
         scroll.addView(content,new ScrollView.LayoutParams(-1,-2));root.addView(scroll);libraryTopMask=new View(this);libraryTopMask.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM,new int[]{0xff080b13,0xf0080b13,0x00080b13}));libraryTopMask.setVisibility(View.GONE);root.addView(libraryTopMask,new FrameLayout.LayoutParams(-1,dp(88),Gravity.TOP));setContentView(root);
     }
-    @Override public void onResume(){super.onResume();ensureReceiver();resumed=true;startHomeRemote();handler.removeCallbacks(tick);handler.post(tick);handler.removeCallbacks(audioTick);handler.post(audioTick);if(loaded)refreshSources();event(it.xarber.tvhome.diagnostics.Diagnostics.Event.HOME_RESUMED);root.postDelayed(this::maybeShowUpdate,700);}
-    @Override public void onPause(){hideDeveloperTools();event(it.xarber.tvhome.diagnostics.Diagnostics.Event.HOME_PAUSED);resumed=false;handler.removeCallbacks(tick);handler.removeCallbacks(audioTick);stopHomeRemote();if(audioPopup!=null&&audioPopup.isShowing())audioPopup.dismiss();audioExpanded=false;if(receiverBound){unbindService(receiverConnection);receiverBound=false;nativeReceiver=null;}super.onPause();}
-    @Override public void onDestroy(){handler.removeCallbacks(holdBack);handler.removeCallbacks(audioTick);scroll.cancelSnap();stopHomeRemote();if(receiverRegistered)unregisterReceiver(changes);worker.shutdownNow();super.onDestroy();}
+    @Override public void onResume(){super.onResume();ensureReceiver();resumed=true;startHomeRemote();handler.removeCallbacks(tick);handler.post(tick);handler.removeCallbacks(audioTick);handler.post(audioTick);if(loaded)refreshSources();event(it.xarber.tvhome.diagnostics.Diagnostics.Event.HOME_RESUMED);root.postDelayed(this::maybeShowUpdate,700);updates.resume();}
+    @Override public void onPause(){if(updates!=null)updates.pause();hideDeveloperTools();event(it.xarber.tvhome.diagnostics.Diagnostics.Event.HOME_PAUSED);resumed=false;handler.removeCallbacks(tick);handler.removeCallbacks(audioTick);stopHomeRemote();if(audioPopup!=null&&audioPopup.isShowing())audioPopup.dismiss();audioExpanded=false;if(receiverBound){unbindService(receiverConnection);receiverBound=false;nativeReceiver=null;}super.onPause();}
+    @Override public void onDestroy(){if(updates!=null)updates.observe(null);handler.removeCallbacks(holdBack);handler.removeCallbacks(audioTick);scroll.cancelSnap();stopHomeRemote();if(receiverRegistered)unregisterReceiver(changes);worker.shutdownNow();super.onDestroy();}
     void resetHome(){android.util.Log.d("MiTVFocus","Home requested");handler.removeCallbacks(holdBack);backPending=false;backHeld=false;pendingPanelFocus=null;panelOrigin=null;if(panel!=null)panel.dismiss();lastFocus="inputs";dockFocus="inputs";homeFocusPending=true;renderHome();scroll.post(()->{scroll.cancelSnap();scroll.scrollTo(0,0);View first=focusViews.get("inputs");if(first!=null)first.requestFocus();if(root.hasWindowFocus())homeFocusPending=false;});}
     @Override public void onNewIntent(Intent i){super.onNewIntent(i);setIntent(i);resetHome();}
     @Override public void onWindowFocusChanged(boolean hasFocus){super.onWindowFocusChanged(hasFocus);if(!hasFocus || (panel!=null && panel.isShowing()))return;if(homeFocusPending && page.equals("home")){homeFocusPending=false;pendingPanelFocus=null;root.post(()->{View v=focusViews.get("inputs");if(v!=null)v.requestFocus();scroll.cancelSnap();scroll.scrollTo(0,0);});}else if(pendingPanelFocus!=null){View v=pendingPanelFocus;pendingPanelFocus=null;root.post(()->{if(v.isAttachedToWindow())v.requestFocus();});}}
@@ -385,6 +396,7 @@ public final class MainActivity extends Activity {
         addControlIcon(rows,"Language",AppLanguage.italian(this)?"Italiano":"English","language",()->{closePanel();showLanguage();});
         addControlIcon(rows,"Remote","Use a phone on the same Wi-Fi","remote",()->{closePanel();showRemoteAddress();});
         addControlIcon(rows,"Appearance","Activity background","controls",()->{closePanel();showActivityAppearance();});
+        addControlIcon(rows,"Updates",io.github.jqssun.airplay.BuildConfig.VERSION_NAME,"history",()->{closePanel();updatePanels.showSettings();});
         addControlIcon(rows,"About MiTV Home",io.github.jqssun.airplay.BuildConfig.VERSION_NAME,"controls",()->{closePanel();showAbout();});
         if(developerSession.isUnlocked()){addControlIcon(rows,"Developer options","Temporary access","controls",()->{closePanel();showDeveloperOptions();});developerEntry=rows.getChildAt(rows.getChildCount()-1);}
         addControlIcon(rows,"TV settings","All settings","controls",()->{closePanel();openSettings(Settings.ACTION_SETTINGS);});
@@ -396,6 +408,7 @@ public final class MainActivity extends Activity {
             if(developerSession.tapVersion()){handler.removeCallbacks(expireDeveloper);handler.postDelayed(expireDeveloper,30_000);closePanel();showDeveloperOptions();}
         });
         if(getSharedPreferences("home_restore",0).contains("previous"))addControl(rows,"Restore previous preferences","",()->{try{String previous=getSharedPreferences("home_restore",0).getString("previous","");HomePreferences.restore(this,getPreferences(0),previous);closePanel();recreate();}catch(Exception error){showNotice(tr("Invalid preferences file"),3500);}});
+        addControlIcon(rows,"Updates","","history",()->{closePanel();updatePanels.showSettings();});
         addControl(rows,"Changelog","",()->{closePanel();showChangelog(false);});
         addControl(rows,"Export Home preferences","",()->{closePanel();preferencesDocument(false);});
         addControl(rows,"Import Home preferences","",()->{closePanel();preferencesDocument(true);});

@@ -2,6 +2,14 @@
 
 Generated from `app/src/main/assets/release-history.json`. Legacy versions reflect repository history; dates describe implementation, not a verified public release.
 
+## 1.6.0 — 2026-10-27
+
+Discover GitHub updates in Home, read release notes and download verified APKs inside the launcher.
+
+### Fixes & Improvements
+
+Cached checks, channel and signing compatibility, metered-network preferences and Android installation confirmation preserve existing app data.
+
 ## 1.5.1 — 2026-10-27
 
 Clearer changelog cards with contextual icons and expandable details; compact developer tools.
