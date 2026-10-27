@@ -1,0 +1,185 @@
+name: Build MiTV Home
+on:
+  push:
+    branches: [beta, main]
+    paths-ignore: ['docs/**', '**.md', '.editorconfig', '.github/ISSUE_TEMPLATE/**', '.github/PULL_REQUEST_TEMPLATE.md']
+  pull_request:
+    branches: [beta, main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: mitv-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  checks:
+    name: Host and release checks
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: scripts/check-host.sh
+
+  android:
+    name: Android ${{ matrix.format }}
+    if: github.event_name != 'pull_request'
+    strategy:
+      fail-fast: false
+      matrix:
+        format: [apk, aab]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      MITV_BUILD_CHANNEL: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v5
+      - name: Install native build tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends nasm
+          SDK_MANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n 1)"
+          test -x "$SDK_MANAGER"
+          "$SDK_MANAGER" 'platforms;android-37.0' 'build-tools;37.0.0' 'ndk;27.0.12077973' 'cmake;3.22.1'
+      - name: Embed exact commit and history
+        run: |
+          python3 scripts/release.py generate
+          python3 scripts/release.py metadata
+      - name: Prepare existing release signing key
+        env:
+          KEYSTORE: ${{ secrets.MITV_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$KEYSTORE"
+          umask 077
+          printf '%s' "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/mitv-release.jks"
+      - name: Compile release from native source
+        env:
+          MITV_STORE_FILE: ${{ runner.temp }}/mitv-release.jks
+          MITV_STORE_PASSWORD: ${{ secrets.MITV_STORE_PASSWORD }}
+          MITV_KEY_ALIAS: ${{ secrets.MITV_KEY_ALIAS }}
+          MITV_KEY_PASSWORD: ${{ secrets.MITV_KEY_PASSWORD }}
+          PACKAGE_FORMAT: ${{ matrix.format }}
+        run: |
+          if [ "$PACKAGE_FORMAT" = apk ]; then
+            ./gradlew :app:assembleRelease :app:lintRelease --console=plain --stacktrace
+          else
+            ./gradlew :app:bundleRelease :app:lintRelease --console=plain --stacktrace
+          fi
+      - name: Verify signed packages and embedded provenance
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PACKAGE_FORMAT: ${{ matrix.format }}
+        run: |
+          mkdir -p dist
+          VERSION="$(python3 -c 'import json; print(json.load(open("app/src/main/assets/build-metadata.json"))["version"])')"
+          CODE="$(python3 -c 'import json; print(json.load(open("app/src/main/assets/build-metadata.json"))["code"])')"
+          SHORT_SHA="${GITHUB_SHA:0:7}"
+          if [ "$PACKAGE_FORMAT" = apk ]; then
+            FILE="dist/MiTV-Home-v${VERSION}-android-universal-${MITV_BUILD_CHANNEL}-github-extended-${SHORT_SHA}.apk"
+            cp app/build/outputs/apk/release/app-release.apk "$FILE"
+            "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --verbose "$FILE"
+            "$ANDROID_HOME/build-tools/37.0.0/aapt2" dump badging "$FILE" > "$RUNNER_TEMP/badging.txt"
+            grep -F "name='it.xarber.mitvhome'" "$RUNNER_TEMP/badging.txt"
+            grep -F "versionCode='$CODE'" "$RUNNER_TEMP/badging.txt"
+            grep -F "versionName='$VERSION'" "$RUNNER_TEMP/badging.txt"
+            ! grep -q 'application-debuggable' "$RUNNER_TEMP/badging.txt"
+          else
+            FILE="dist/MiTV-Home-v${VERSION}-android-${MITV_BUILD_CHANNEL}-github-extended-${SHORT_SHA}.aab"
+            cp app/build/outputs/bundle/release/app-release.aab "$FILE"
+            jarsigner -verify "$FILE" | tee "$RUNNER_TEMP/aab-signature.txt"
+            grep -q 'jar verified' "$RUNNER_TEMP/aab-signature.txt"
+            gh api repos/google/bundletool/releases/tags/1.18.3 > "$RUNNER_TEMP/bundletool-release.json"
+            python3 scripts/fetch_bundletool.py "$RUNNER_TEMP/bundletool-release.json" "$RUNNER_TEMP/bundletool.jar"
+            java -jar "$RUNNER_TEMP/bundletool.jar" validate --bundle="$FILE"
+            java -jar "$RUNNER_TEMP/bundletool.jar" dump manifest --bundle="$FILE" --module=base > "$RUNNER_TEMP/bundle-manifest.xml"
+            python3 scripts/validate_manifest.py "$RUNNER_TEMP/bundle-manifest.xml" "$VERSION" "$CODE"
+          fi
+          python3 scripts/release.py validate --file "$FILE" --kind "$PACKAGE_FORMAT"
+      - uses: actions/upload-artifact@v5
+        with:
+          name: MiTV-Home-${{ github.ref_name }}-${{ matrix.format }}-${{ github.sha }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Retain lint reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: lint-${{ matrix.format }}-${{ github.sha }}
+          path: app/build/reports/lint-results-release.*
+          if-no-files-found: ignore
+      - name: Remove signing material
+        if: always()
+        run: rm -f "$RUNNER_TEMP/mitv-release.jks"
+
+  source:
+    name: Corresponding source
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: recursive
+      - run: |
+          mkdir -p dist
+          python3 scripts/source_archive.py "dist/MiTV-Home-source-${GITHUB_SHA:0:7}.tar.gz"
+          cd dist
+          sha256sum *.tar.gz > SOURCE-SHA256SUMS.txt
+      - uses: actions/upload-artifact@v5
+        with:
+          name: MiTV-Home-${{ github.ref_name }}-source-${{ github.sha }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    name: Publish validated channel
+    if: github.event_name != 'pull_request' && (github.ref_name == 'main' || github.ref_name == 'beta')
+    needs: [checks, android, source]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v6
+        with:
+          pattern: MiTV-Home-${{ github.ref_name }}-*-${{ github.sha }}
+          path: dist
+          merge-multiple: true
+      - name: Publish exact validated artifact collection
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MITV_BUILD_CHANNEL: ${{ github.ref_name }}
+        run: |
+          cd dist
+          test "$(find . -maxdepth 1 -name '*.apk' | wc -l)" -eq 1
+          test "$(find . -maxdepth 1 -name '*.aab' | wc -l)" -eq 1
+          test "$(find . -maxdepth 1 -name '*.tar.gz' | wc -l)" -eq 1
+          sha256sum --check ./*.sha256 SOURCE-SHA256SUMS.txt
+          sha256sum ./*.apk ./*.aab ./*.tar.gz > SHA256SUMS.txt
+          cd ..
+          VERSION="$(python3 -c 'import json; print(json.load(open("app/src/main/assets/release-history.json"))["releases"][0]["version"])')"
+          CODE="$(python3 -c 'import json; print(json.load(open("app/src/main/assets/release-history.json"))["releases"][0]["code"])')"
+          TAG="v${VERSION}"
+          RELEASE_ARGS=()
+          if [ "$MITV_BUILD_CHANNEL" = beta ]; then TAG="${TAG}-beta.${CODE}.${GITHUB_SHA:0:7}"; RELEASE_ARGS+=(--prerelease --latest=false); fi
+          # A build must never retarget/overwrite an existing release or version tag.
+          if gh release view "$TAG" >/dev/null 2>&1; then echo "Release already exists: $TAG; bump version before publishing." >&2; exit 1; fi
+          if git rev-parse --verify "refs/tags/$TAG" >/dev/null 2>&1; then test "$(git rev-list -n 1 "$TAG")" = "$GITHUB_SHA"; fi
+          python3 scripts/release.py notes > "$RUNNER_TEMP/release-notes.md"
+          cp distribution/obtainium.json dist/obtainium.json
+          gh release create "$TAG" --target "$GITHUB_SHA" --title "MiTV Home $VERSION ($MITV_BUILD_CHANNEL)" --notes-file "$RUNNER_TEMP/release-notes.md" "${RELEASE_ARGS[@]}" dist/*.apk dist/*.aab dist/*.tar.gz dist/SHA256SUMS.txt dist/obtainium.json
