@@ -50,6 +50,8 @@ android {
     }
 
     defaultConfig {
+        // Chaquopy reads supported architectures from defaultConfig.
+        ndk { abiFilters += allAbis }
         applicationId = providers.gradleProperty("homeApplicationId").getOrElse("it.xarber.mitvhome")
         minSdk = 26
         targetSdk = 34
@@ -75,14 +77,10 @@ android {
     }
 
     buildTypes {
-        debug {
-            ndk { abiFilters += allAbis }
-        }
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfigs.findByName("release")?.let { signingConfig = it }
-            ndk { abiFilters += allAbis }
         }
         // debuggable build with HWASan (arm64) + UBSan in native code
         create("sanitize") {

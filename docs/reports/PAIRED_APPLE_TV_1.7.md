@@ -21,13 +21,14 @@
   integrity records and rejection of native/disguised ELF binaries.
 - Existing host regression checks and workflow static validation passed.
 
-## Build in progress
+## Initial full-build result
 
 Full APK/AAB workflow for application commit `f2bb5a8`:
 https://github.com/Xarber/MiTV-Home/actions/runs/40578289224
 
-Its portable dependency job and all four native dependency jobs passed. APK/AAB
-compilation was queued at the last check. No application release was published.
+Its portable dependency job and all four native dependency jobs passed. APK and AAB
+failed during Gradle configuration: Chaquopy could not see the architecture filters
+placed only in build types. No application release was published.
 Additional test/report/source-availability changes after this commit do not change
 its application implementation; final artifacts must retain their actual commit.
 
@@ -42,3 +43,18 @@ its application implementation; final artifacts must retain their actual commit.
 
 No installation was performed for this feature. The TV's existing launcher and
 Live TV session were left intact. The simulator was not used.
+
+## Build configuration correction
+
+Moved the existing architecture list into `android.defaultConfig.ndk.abiFilters`,
+as required by Chaquopy 17.2. Removed duplicate debug/release declarations; retained
+the sanitizer build's explicit ARM64 selection. Normal universal builds retain
+ARMv7, ARM64, x86 and x86_64. Bundled previews retain their existing two ARM ABIs.
+No SDK, dependency version, minimum OS, application identifier or signing key changed.
+
+Actual Gradle 9.8.1 configuration checks passed locally for both bundled-native and
+normal full-source configurations. These were `help` tasks, not APK compilation.
+Existing host checks, seven Python tests, workflow static validation and diff checks
+also passed. Full APK/AAB compilation remains necessary after this correction.
+
+Reference: https://chaquo.com/chaquopy/doc/current/android.html#android-abis
