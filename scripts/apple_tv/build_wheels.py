@@ -38,6 +38,13 @@ def main():
     # cross configuration for pydantic-core, which does not support the limited ABI.
     tool = pypi / "build-wheel.py"
     source = tool.read_text()
+    # New target archives also contain libpython3.so. The legacy builder creates
+    # libpython.so once per glob match, so restrict it to the selected minor ABI.
+    old = '        for filename in os.listdir(reqs_lib_dir):\n'
+    new = old + '            if filename == "libpython3.so":\n                continue\n'
+    if old not in source:
+        raise RuntimeError("Pinned Python link hook changed")
+    source = source.replace(old, new)
     anchor = '    @contextmanager\n    def env_vars(self):'
     addition = '''        if self.package == "pydantic_core":
             config = f"{self.build_dir}/pyo3-cross.txt"
