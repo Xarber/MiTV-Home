@@ -54,6 +54,8 @@ def main():
                         "--wheel-dir", str(args.output), f"{name}=={version}"], env=env, check=True)
     for wheel in args.output.glob("zeroconf-*-linux_*.whl"):
         portable_zeroconf(wheel)
+    from patch_pyatv import build
+    build(args.output)
     records = []
     for wheel in args.output.glob("*.whl"):
         if not wheel.name.endswith("-none-any.whl"):

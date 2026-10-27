@@ -11,6 +11,7 @@ from unittest.mock import AsyncMock, patch
 path = pathlib.Path(__file__).resolve().parents[2] / "app/src/main/python/paired_apple_tv.py"
 spec = importlib.util.spec_from_file_location("paired_apple_tv", path)
 module = importlib.util.module_from_spec(spec)
+sys.path.insert(0,str(path.parent))
 spec.loader.exec_module(module)
 
 

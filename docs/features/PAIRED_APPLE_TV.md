@@ -93,3 +93,28 @@ The controller owns monotonic expiry and protocol cleanup even while HDMI is sho
 An old attempt's timer cannot cancel a replacement attempt or a completed pairing.
 If the operating system kills the entire app process, restart the unfinished pairing;
 completed encrypted credentials and the chosen input remain in app storage.
+
+## tvOS 27 PIN display compatibility
+
+Pinned pyatv 0.18.0 omits `X-Apple-Client-Name` during HAP pair setup. The tvOS 27
+no-code report and focused upstream PR document that a receiver can generate a
+passcode but suppress its UI without this early header. We rebuild the exact PyPI
+source with the three-file fix from upstream PR 2894, commit
+`fa9ef01dce9928e6be959b7f9b67d14a0c722b06`. The patch, source checksum and wheel
+checksum are recorded; Gradle installs this explicit wheel, not an arbitrary fork.
+MIT notices are retained. Headers are copied per pairing, so names do not leak
+between attempts or into verification/transient/legacy authentication paths.
+This fix targets code display, not separate post-PIN or playback errors.
+
+## Excluding software receivers
+
+Discovery and saved-device reconnect reject addresses belonging to this Android
+host, `mitvhome=receiver-v1` or `preview-v1` advertisements, and the exact shared
+legacy UxPlay fingerprint (`AppleTV3,2` plus UxPlay's fixed generic `pi` value).
+The receiver advertises its marker in Kotlin's existing NSD registration path;
+its Apple-compatible model and native C/C++ libraries remain unchanged. This also
+covers future preview instances. Older previews are recognized by the legacy
+fingerprint. Names are never used for filtering, and genuine old Apple TVs are not
+excluded merely because their model matches the software receiver's model.
+These are compatibility filters, not cryptographic identity proof; real control
+still requires explicit selection and authenticated pairing.

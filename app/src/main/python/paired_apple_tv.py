@@ -12,6 +12,7 @@ import logging
 import os
 import threading
 import time
+from receiver_discovery import eligible_apple_tv
 
 os.environ.setdefault("CRYPTOGRAPHY_OPENSSL_NO_LEGACY", "1")
 # Protocol debug messages can contain credentials and personal metadata.
@@ -54,7 +55,7 @@ class Client:
             await self._cancel_pairing()
             found = await pyatv.scan(self.loop, timeout=5, protocol=Protocol.AirPlay)
             # AirPlay speakers and this launcher's own receiver are not Apple TVs.
-            found = [item for item in found if "appletv" in str(item.device_info.model_str or "").replace(" ", "").lower()]
+            found = [item for item in found if self._eligible(item, data)]
             self.devices = {str(index): item for index, item in enumerate(found)}
             return {"devices": [{"id": key, "name": item.name} for key, item in self.devices.items()]}
         if operation == "pair_begin":
@@ -82,6 +83,7 @@ class Client:
         if operation == "connect":
             await self._disconnect()
             found = await pyatv.scan(self.loop, timeout=5, identifier=data["identifier"], protocol=Protocol.AirPlay)
+            found = [item for item in found if self._eligible(item, data)]
             if not found:
                 return {"error": "device_unavailable"}
             config = found[0]
@@ -124,6 +126,13 @@ class Client:
                 return {"error": "unsupported"}
             return {"status": "sent"}
         return {"error": "unsupported"}
+
+    @staticmethod
+    def _eligible(item, data):
+        from pyatv.const import Protocol
+        service = item.get_service(Protocol.AirPlay)
+        return service is not None and eligible_apple_tv(item.device_info.model_str, item.address,
+            service.properties, data.get("excluded_addresses", []))
 
     async def _cancel_pairing(self):
         if self.pairing:

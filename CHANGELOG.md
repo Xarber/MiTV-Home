@@ -2,6 +2,14 @@
 
 Generated from `app/src/main/assets/release-history.json`. Legacy versions reflect repository history; dates describe implementation, not a verified public release.
 
+## 1.7.2 — 2026-10-28
+
+Send the client name required for tvOS 27 pairing codes and hide software receivers from Apple TV discovery.
+
+### Fixes & Improvements
+
+Filters this launcher’s local addresses, marked receiver/preview instances and the legacy UxPlay simulated Apple TV fingerprint without relying on device names.
+
 ## 1.7.1 — 2026-10-28
 
 Choose the Apple TV HDMI input and return Home to enter its pairing code.

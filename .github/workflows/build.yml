@@ -74,6 +74,10 @@ jobs:
         with:
           python-version: '3.11'
       - run: python scripts/apple_tv/build_pure_wheels.py --output wheels
+      - name: Verify tvOS 27 pairing header on every handshake request
+        env:
+          MITV_PYATV_WHEEL: wheels/pyatv-0.18.0-py3-none-any.whl
+        run: python -m unittest discover -s tests/python -p test_tvos27_pairing_headers.py -v
       - uses: actions/upload-artifact@v5
         with:
           name: apple-tv-wheels-pure-${{ github.sha }}

@@ -18,6 +18,10 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import org.json.JSONObject;
+import org.json.JSONArray;
+import java.net.NetworkInterface;
+import java.net.Inet4Address;
+import java.util.Collections;
 
 /** Home-scoped native remote playback. Local receiver playback is a separate source. */
 public final class PairedPlayback {
@@ -73,6 +77,7 @@ public final class PairedPlayback {
         if(closed||busy){callback.accept(error("busy"));return;}long requestToken=pairing.token();busy=true;
         worker.execute(()->{JSONObject result;
             try{lockMulticast();
+                if(operation.equals("scan"))data.put("excluded_addresses",localAddresses());
                 if(operation.equals("pair_begin"))pairing.clear();
                 if(operation.equals("pair_finish")&&!pairing.pending()){call("cancel_pairing",new JSONObject());result=error("pairing_expired");}
                 else result=call(operation,data);
@@ -90,12 +95,19 @@ public final class PairedPlayback {
     public void cancelPairing(){pairing.clear();worker.execute(()->{if(client!=null)call("cancel_pairing",new JSONObject());if(!foreground)releaseMulticast();});}
     public void unpair(){pairing.clear();worker.execute(()->{if(client!=null)call("disconnect",new JSONObject());store.clear();paired=false;storageError=false;deviceName="";resetState();releaseMulticast();notifyChange();});}
     public void command(String action,Double volume){try{JSONObject value=new JSONObject().put("action",action);if(volume!=null)value.put("value",volume);request("command",value,result->{});}catch(Exception ignored){}}
+    private JSONArray localAddresses(){
+        JSONArray addresses=new JSONArray();
+        try{for(NetworkInterface network:Collections.list(NetworkInterface.getNetworkInterfaces()))
+            for(java.net.InetAddress address:Collections.list(network.getInetAddresses()))
+                if(address instanceof Inet4Address&&!address.isLoopbackAddress())addresses.put(address.getHostAddress());
+        }catch(Exception ignored){}return addresses;
+    }
     private void resetState(){state=new JSONObject();artwork=null;artEncoded=null;observed=0;}
     private void poll(){
         if(closed||!foreground||!paired||pairing.pending()||busy||SystemClock.elapsedRealtime()<retryAt)return;
         try{
             lockMulticast();JSONObject next;
-            if(!state.optString("status").equals("connected")){JSONObject credentials=store.read();if(credentials==null)return;next=call("connect",credentials);}else next=call("state",new JSONObject());
+            if(!state.optString("status").equals("connected")){JSONObject credentials=store.read();if(credentials==null)return;credentials.put("excluded_addresses",localAddresses());next=call("connect",credentials);}else next=call("state",new JSONObject());
             if(next.has("error")||!next.optString("status").equals("connected")){resetState();failures++;retryAt=SystemClock.elapsedRealtime()+Math.min(60000,2000L<<Math.min(5,failures));releaseMulticast();notifyChange();return;}
             failures=0;state=next;observed=SystemClock.elapsedRealtime();String encoded=next.optString("artwork","");
             if(!encoded.equals(artEncoded)){artEncoded=encoded;artwork=null;if(!encoded.isEmpty()&&encoded.length()<700000){byte[] bytes=Base64.decode(encoded,Base64.DEFAULT);BitmapFactory.Options options=new BitmapFactory.Options();options.inJustDecodeBounds=true;BitmapFactory.decodeByteArray(bytes,0,bytes.length,options);if(options.outWidth>0&&options.outHeight>0&&options.outWidth<=1024&&options.outHeight<=1024)artwork=BitmapFactory.decodeByteArray(bytes,0,bytes.length);}}

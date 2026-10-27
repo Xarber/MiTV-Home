@@ -2,6 +2,48 @@
   "schema": 1,
   "releases": [
     {
+      "version": "1.7.2",
+      "code": 20,
+      "date": "2026-10-28",
+      "critical": false,
+      "highlights": {
+        "en": "Send the client name required for tvOS 27 pairing codes and hide software receivers from Apple TV discovery.",
+        "it": "Invia il nome client richiesto dai codici di abbinamento di tvOS 27 e nascondi i ricevitori software dalla ricerca Apple TV."
+      },
+      "fixes": {
+        "en": "Filters this launcher’s local addresses, marked receiver/preview instances and the legacy UxPlay simulated Apple TV fingerprint without relying on device names.",
+        "it": "Filtra gli indirizzi locali del launcher, i ricevitori e le anteprime contrassegnati e l’identità simulata UxPlay precedente senza usare i nomi dei dispositivi."
+      },
+      "compatibility": {
+        "en": "The tvOS 27 patch targets PIN display only. Successful authenticated playback still requires device validation.",
+        "it": "La correzione tvOS 27 riguarda solo la visualizzazione del PIN. La riproduzione autenticata richiede ancora verifica sul dispositivo."
+      },
+      "features": [
+        {
+          "icon": "airplay",
+          "label": {
+            "en": "tvOS 27 pairing compatibility",
+            "it": "Compatibilità abbinamento tvOS 27"
+          },
+          "detail": {
+            "en": "Adds a per-attempt client-name header to every AirPlay HAP pairing request using the focused upstream fix.",
+            "it": "Aggiunge il nome client a ogni richiesta di abbinamento AirPlay HAP usando la correzione upstream mirata."
+          }
+        },
+        {
+          "icon": "shield",
+          "label": {
+            "en": "Real Apple TV discovery",
+            "it": "Ricerca Apple TV reali"
+          },
+          "detail": {
+            "en": "Excludes launcher receivers and preview instances while keeping genuine devices with duplicate names or older model identifiers.",
+            "it": "Esclude ricevitori e anteprime del launcher mantenendo dispositivi reali con nomi duplicati o modelli precedenti."
+          }
+        }
+      ]
+    },
+    {
       "version": "1.7.1",
       "code": 19,
       "date": "2026-10-28",

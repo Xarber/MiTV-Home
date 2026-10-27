@@ -55,8 +55,8 @@ android {
         applicationId = providers.gradleProperty("homeApplicationId").getOrElse("it.xarber.mitvhome")
         minSdk = 26
         targetSdk = 34
-        versionCode = 19
-        versionName = "1.7.1"
+        versionCode = 20
+        versionName = "1.7.2"
         buildConfigField("String", "SOURCE_COMMIT", buildString(sourceCommit))
         buildConfigField("String", "BUILD_CHANNEL", buildString(buildChannel))
         buildConfigField("String", "BUILD_DATE", buildString(buildDate))
@@ -71,6 +71,11 @@ android {
         }
     }
 
+    if (project.hasProperty("useBundledNative")) {
+        providers.gradleProperty("bundledNativeRoot").orNull?.let { nativeRoot ->
+            sourceSets.getByName("main").jniLibs.setSrcDirs(listOf(file(nativeRoot)))
+        }
+    }
     if (!project.hasProperty("useBundledNative")) {
         sourceSets.getByName("main").jniLibs.directories.clear()
         externalNativeBuild { cmake { path = file("src/main/cpp/CMakeLists.txt") } }
@@ -122,7 +127,7 @@ val generateHomeBuildInfo = tasks.register("generateHomeBuildInfo") {
     outputs.files(file("src/main/assets/build-metadata.json"), file("src/main/assets/developer-changelog.txt"))
     doLast {
         file("src/main/assets/build-metadata.json").writeText("""
-            {"version":"1.7.1","code":19,"commit":${buildString(sourceCommit)},"channel":${buildString(buildChannel)},"variant":"github-extended","date":${buildString(buildDate)}}
+            {"version":"1.7.2","code":20,"commit":${buildString(sourceCommit)},"channel":${buildString(buildChannel)},"variant":"github-extended","date":${buildString(buildDate)}}
         """.trimIndent()+"\n")
         val history = gitValue("log", "--reverse", "--format=%H %ad %s%n%b", "--date=short", "98cbd64^..HEAD")
         val historyFile = file("src/main/assets/developer-changelog.txt")
@@ -195,7 +200,7 @@ chaquopy {
     defaultConfig {
         version = "3.11"
         pip {
-            install("pyatv==0.18.0")
+            install(rootProject.file("build/apple-tv-wheels/pyatv-0.18.0-py3-none-any.whl").absolutePath)
             install("pydantic==2.14.1")
             install("cryptography==50.0.2")
             options("--find-links", rootProject.file("build/apple-tv-wheels").absolutePath)

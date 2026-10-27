@@ -29,3 +29,10 @@ and notices. Upstream-supported pure-Python builds avoid optional C extensions f
 HTTP/discovery helpers; native encryption and validation libraries are cross-built
 for Android. No unlicensed Go implementation was copied. The application remains
 AGPL-3.0-only for original contributions.
+
+pyatv 0.18.0 is locally patched for tvOS 27 PIN display using the three-file MIT
+change from https://github.com/postlund/pyatv/pull/2894 at
+`fa9ef01dce9928e6be959b7f9b67d14a0c722b06`. The patch is included under
+`scripts/apple_tv/patches`; it preserves upstream licensing and is not an upgrade
+to an unpinned fork. Build metadata records both original source and patched-wheel
+hashes. Header-boundary tests exercise the actual patched wheel.
