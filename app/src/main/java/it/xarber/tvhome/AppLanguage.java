@@ -22,6 +22,8 @@ public final class AppLanguage {
   IT.put("Scan with your phone on the same Wi-Fi","Scansiona con il telefono sulla stessa rete Wi-Fi");
   IT.put("Open the phone remote","Apri il telecomando dal telefono");
   IT.put("Close","Chiudi");
+  IT.put("Pairing code","Codice di abbinamento");
+  IT.put("Scan to pair automatically","Scansiona per abbinare automaticamente");
   IT.put("Inputs","Ingressi");
   IT.put("Apps","App");
   IT.put("All apps","Tutte le app");

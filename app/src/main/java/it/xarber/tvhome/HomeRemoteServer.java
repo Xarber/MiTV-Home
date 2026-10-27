@@ -20,7 +20,7 @@ final class HomeRemoteServer implements Runnable {
     private final Commands commands;
     private volatile String pin;
     private volatile boolean running = true;
-    private volatile String token = "";
+    private final java.util.LinkedHashSet<String> tokens = new java.util.LinkedHashSet<>();
     private volatile long pairingDeadline = System.currentTimeMillis() + 5 * 60 * 1000L;
     private int failedPairAttempts;
     private long pairWindowStart;
@@ -40,11 +40,12 @@ final class HomeRemoteServer implements Runnable {
     synchronized void rotatePairing() {
         pin = String.format(Locale.US, "%06d", new SecureRandom().nextInt(1_000_000));
         pairingDeadline = System.currentTimeMillis() + 5 * 60 * 1000L;
-        failedPairAttempts = 0; pairWindowStart = 0; token = "";
+        failedPairAttempts = 0; pairWindowStart = 0;
     }
     synchronized boolean pairingExpired() { return System.currentTimeMillis() > pairingDeadline; }
     private synchronized void announcePairRequest() {
         long now = System.currentTimeMillis();
+        if (pairingExpired()) rotatePairing();
         if (now - lastPairNoticeAt < 3000) return;
         lastPairNoticeAt = now;
         commands.run("pair-request");
@@ -126,13 +127,21 @@ final class HomeRemoteServer implements Runnable {
                 }
             }
             byte[] secret = new byte[24]; new SecureRandom().nextBytes(secret);
-            token = android.util.Base64.encodeToString(secret, android.util.Base64.NO_WRAP | android.util.Base64.NO_PADDING | android.util.Base64.URL_SAFE);
+            String token = android.util.Base64.encodeToString(secret, android.util.Base64.NO_WRAP | android.util.Base64.NO_PADDING | android.util.Base64.URL_SAFE);
+            synchronized (this) {
+                if (tokens.size() >= 16) tokens.remove(tokens.iterator().next());
+                tokens.add(token);
+                rotatePairing();
+            }
             respond(client, 200, "application/json", new JSONObject().put("token", token).toString());
+            commands.run("paired");
             return;
         }
         if (method.equals("POST") && path.equals("/api/key")) {
             JSONObject request = new JSONObject(json);
-            if (token.isEmpty() || !MessageDigest.isEqual(token.getBytes(StandardCharsets.UTF_8), request.optString("token").getBytes(StandardCharsets.UTF_8))) {
+            boolean authenticated;
+            synchronized (this) { authenticated = tokens.contains(request.optString("token")); }
+            if (!authenticated) {
                 respond(client, 401, "application/json", "{\"error\":\"Pair this remote again\"}"); return;
             }
             String command = request.optString("command", "");
@@ -157,7 +166,7 @@ final class HomeRemoteServer implements Runnable {
         byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
         String reason = status == 200 ? "OK" : status == 400 ? "Bad Request" : status == 401 ? "Unauthorized" : status == 403 ? "Forbidden" : "Not Found";
         OutputStream out = client.getOutputStream();
-        out.write(("HTTP/1.1 " + status + " " + reason + "\r\nContent-Type: " + type + "\r\nContent-Length: " + bytes.length + "\r\nCache-Control: no-store\r\nConnection: close\r\nX-Content-Type-Options: nosniff\r\n\r\n").getBytes(StandardCharsets.ISO_8859_1));
+        out.write(("HTTP/1.1 " + status + " " + reason + "\r\nContent-Type: " + type + "\r\nContent-Length: " + bytes.length + "\r\nCache-Control: no-store\r\nConnection: close\r\nX-Content-Type-Options: nosniff\r\nReferrer-Policy: no-referrer\r\n\r\n").getBytes(StandardCharsets.ISO_8859_1));
         out.write(bytes); out.flush();
     }
 }

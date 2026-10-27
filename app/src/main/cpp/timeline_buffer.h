@@ -207,7 +207,7 @@ private:
  */
 class TimelineBuffer {
 public:
-    static constexpr size_t WAVEFORM_SIZE = 5;
+    static constexpr size_t WAVEFORM_SIZE = 6;
     // cushion policy lives in mTracker; timeline reads mTracker.target() live
     TimelineBuffer(int sampleRate, int channels, int staticCushionMs, int percentilePct)
         : mSampleRate(sampleRate),
@@ -217,23 +217,23 @@ public:
           // of largest reachable cushion + one throttle window of overshoot (trims are
           // throttled), 2x slack
           mRing(2 * capOf(mTracker.ceil()) + (size_t)sampleRate * TRIM_THROTTLE_MS / 1000 * channels) {
-        const float cutoffs[4] = {125.0f, 400.0f, 1600.0f, 5000.0f};
-        for (size_t band = 0; band < 4; ++band)
+        const float cutoffs[5] = {100.0f, 300.0f, 1000.0f, 3000.0f, 8000.0f};
+        for (size_t band = 0; band < 5; ++band)
             mSpectrumAlpha[band] = 1.0f - std::exp(-6.28318530718f * std::min(cutoffs[band], sampleRate * .45f) / sampleRate);
     }
 
     void noteOutputBufferFrames(int frames) { mTracker.noteOutputBufferFrames(frames); }
 
-    // Five real frequency bands, bass to treble; fixed arithmetic on the audio callback.
+    // Six real frequency bands, bass to treble; fixed arithmetic on the audio callback.
     void publishWaveform(const int16_t *pcm, int32_t frames) {
         if (!pcm || frames <= 0 || mChannels <= 0) return;
         const int channels = std::min(mChannels, 8);
-        double energy[5] = {};
+        double energy[6] = {};
         for (int32_t frame = 0; frame < frames; ++frame) {
             for (int channel = 0; channel < channels; ++channel) {
                 const float sample = pcm[(size_t)frame * mChannels + channel] / 32768.0f;
                 float previous = 0.0f;
-                for (size_t band = 0; band < 4; ++band) {
+                for (size_t band = 0; band < 5; ++band) {
                     float &low = mSpectrumState[channel][band];
                     low += mSpectrumAlpha[band] * (sample - low);
                     const float signal = low - previous;
@@ -241,14 +241,14 @@ public:
                     previous = low;
                 }
                 const float treble = sample - previous;
-                energy[4] += treble * treble;
+                energy[5] += treble * treble;
             }
         }
         const uint32_t base = mWaveWrite.load(std::memory_order_relaxed);
-        for (size_t band = 0; band < 5; ++band) {
+        for (size_t band = 0; band < 6; ++band) {
             const float rms = (float)std::sqrt(energy[band] / ((double)frames * channels));
             float &level = mSpectrumEnvelope[band];
-            level += (rms > level ? .45f : .08f) * (rms - level);
+            level += (rms > level ? .8f : .3f) * (rms - level);
             mWaveform[band].store(level, std::memory_order_relaxed);
         }
         mWaveWrite.store(base + WAVEFORM_SIZE, std::memory_order_release);
@@ -424,9 +424,9 @@ private:
     DelayTracker mTracker;               // owns cushion policy; read live each read()
     SpscRing mRing;
     TimelineMetrics mMetrics;
-    float mSpectrumAlpha[4]{};
-    float mSpectrumState[8][4]{};
-    float mSpectrumEnvelope[5]{};
+    float mSpectrumAlpha[5]{};
+    float mSpectrumState[8][5]{};
+    float mSpectrumEnvelope[6]{};
     std::array<std::atomic<float>, WAVEFORM_SIZE> mWaveform{};
     std::atomic<uint32_t> mWaveWrite{0};
     bool mPriming = true;                // stream start: buffer output to build cushion

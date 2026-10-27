@@ -19,14 +19,16 @@ A remote-first Android TV launcher with a six-item dock, fullscreen artwork, fas
 - **Fullscreen banners.** App artwork takes priority; source banners use centered device logos. Translucent surfaces and strong library shading keep controls readable. Popups capture and blur the current screen when opened; their backdrop is discarded on dismissal.
 - **Remote ergonomics.** Hold OK on an item for its menu. Hold Back for Control Center. A downward All Apps hint leads from Inputs to the app grid.
 - **Compact status.** Time, date, and an expanding, single-line network bubble.
-- **Integrated AirPlay.** The receiver starts with Home and can remain active in the background. Audio uses a small upper-left circle with five real frequency bands, from bass to treble and a focused popup with playback/volume controls; supported video and screen mirroring open fullscreen.
-- **Phone remote.** Scan the QR in Control Center. A browser pairing request shows its code in a small notification at the upper left.
+- **Integrated AirPlay.** The receiver starts with Home and can remain active in the background. Audio uses a small upper-left circle with six volume-independent frequency bars, from bass to treble and a focused popup with playback/volume controls; supported video and screen mirroring open fullscreen.
+- **Phone remote.** Scan the QR in Control Center to pair automatically. The code is also visible in the panel, which closes after pairing. Requests made while the panel is closed show a notification at the upper left.
 
 <p><img src="docs/assets/inputs.png" alt="Inputs and Live TV" width="49%"> <img src="docs/assets/apps.png" alt="App library" width="49%"></p>
 
 The first signed public release is pending CI validation. Source and branches are public; build/release automation is still being finalized.
 
 ![Expanded AirPlay audio controls](docs/assets/audio.png)
+
+**v1.3 adds FairPlay v2 handshake compatibility for Mac Music, with both v2/v3 handshake paths checked on the reference TV. Direct Mac Music playback confirmation is pending.**
 
 ## Compatibility
 
@@ -36,11 +38,13 @@ Android 8/API 26 or newer is required. CI compiles native libraries for ARMv7, A
 
 AirPlay support comes from the integrated open-source receiver. Sender, codec, DRM, and network compatibility vary. This is not an Apple-certified product. Screen mirroring was tested on the reference TV; the compact audio indicator and focused expanded controls were also checked on the reference TV. Sender-specific artwork and track metadata still need broader validation.
 
-The phone remote runs while Home is foreground. It tries HTTP port 80 first. Stock Android can restrict privileged ports; on the reference TV the working fallback is **8765**. The QR always contains the actual address. Opening the QR panel does not show a pairing code; a client must request pairing.
+The phone remote runs while Home is foreground. It tries HTTP port 80 first. Stock Android can restrict privileged ports; on the reference TV the working fallback is **8765**. The QR always contains the actual address. The QR includes a short-lived pairing code in its URL fragment, which the browser clears before pairing.
 
 ## Install
 
 Get the APK from [Releases](https://github.com/Xarber/MiTV-Home/releases/latest), install it, and select MiTV Home as your Home app. See [Install & restore](docs/INSTALL.md) for ADB and rollback steps. Keep the original launcher installed.
+
+For the macOS Music compatibility error and its system-audio workaround, see [Apple Music on macOS](docs/APPLE_MUSIC.md). Artwork colors are available when the sender supplies a cover.
 
 ## Development channels
 
