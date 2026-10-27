@@ -2,6 +2,48 @@
   "schema": 1,
   "releases": [
     {
+      "version": "1.7.1",
+      "code": 19,
+      "date": "2026-10-28",
+      "critical": false,
+      "highlights": {
+        "en": "Choose the Apple TV HDMI input and return Home to enter its pairing code.",
+        "it": "Scegli l’ingresso HDMI di Apple TV e torna alla Home per inserire il codice di abbinamento."
+      },
+      "fixes": {
+        "en": "Pending pairing survives HDMI switching and Home recreation. Only unfinished code entry expires after three minutes; saved pairing has no application expiry timer.",
+        "it": "L’abbinamento in corso sopravvive al cambio HDMI e alla ricreazione della Home. Solo l’inserimento del codice scade dopo tre minuti; l’abbinamento salvato non ha un timer di scadenza nell’app."
+      },
+      "compatibility": {
+        "en": "HDMI selection uses registered TV inputs with no default port. A complete app-process restart requires starting an unfinished pairing again. Apple TV interoperability still requires physical pairing tests.",
+        "it": "La selezione HDMI usa gli ingressi registrati dalla TV senza porta predefinita. Dopo il riavvio completo del processo occorre ricominciare un abbinamento incompleto. L’interoperabilità Apple TV richiede ancora test fisici di abbinamento."
+      },
+      "features": [
+        {
+          "icon": "inputs",
+          "label": {
+            "en": "Choose your HDMI input",
+            "it": "Scegli il tuo ingresso HDMI"
+          },
+          "detail": {
+            "en": "Select any registered physical HDMI input, remember its identity and change it from paired-device settings. No port is selected automatically.",
+            "it": "Seleziona un ingresso HDMI fisico registrato, memorizzane l’identità e cambialo nelle impostazioni del dispositivo abbinato. Nessuna porta viene scelta automaticamente."
+          }
+        },
+        {
+          "icon": "airplay",
+          "label": {
+            "en": "Read the code and return",
+            "it": "Leggi il codice e torna"
+          },
+          "detail": {
+            "en": "Show pairing code switches to the selected HDMI. Press Home to restore PIN entry within the original three-minute window.",
+            "it": "Mostra codice di abbinamento apre l’HDMI scelto. Premi Home per ripristinare l’inserimento entro i tre minuti originali."
+          }
+        }
+      ]
+    },
+    {
       "version": "1.7.0",
       "code": 18,
       "date": "2026-10-27",

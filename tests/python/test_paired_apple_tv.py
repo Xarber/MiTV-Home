@@ -33,6 +33,19 @@ class AdapterChecks(unittest.IsolatedAsyncioTestCase):
     async def asyncTearDown(self):
         self.patch.stop()
 
+    async def test_pairing_stops_previous_observation_before_starting_new_session(self):
+        closed = []
+        self.client.device = types.SimpleNamespace(close=lambda: closed.append(True) or set())
+        self.client.devices = {"chosen": types.SimpleNamespace(name="Selected TV")}
+        pairing = types.SimpleNamespace(begin=AsyncMock(), close=AsyncMock())
+        sys.modules["pyatv"].pair = AsyncMock(return_value=pairing)
+        result = await self.client._dispatch("pair_begin", {"id": "chosen"})
+        self.assertEqual(closed, [True])
+        self.assertIsNone(self.client.device)
+        self.assertIs(self.client.pairing, pairing)
+        pairing.begin.assert_awaited_once()
+        self.assertEqual(result, {"status": "pin_required", "name": "Selected TV"})
+
     async def test_invalid_pin_never_calls_pairing(self):
         self.client.pairing = types.SimpleNamespace(pin=AsyncMock())
         for pin in ["", "123", "12345", "１２３４", "x234"]:

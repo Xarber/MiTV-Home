@@ -58,7 +58,7 @@ class Client:
             self.devices = {str(index): item for index, item in enumerate(found)}
             return {"devices": [{"id": key, "name": item.name} for key, item in self.devices.items()]}
         if operation == "pair_begin":
-            await self._cancel_pairing()
+            await self._disconnect()
             self.selected = self.devices[data["id"]]
             self.pairing = await pyatv.pair(self.selected, Protocol.AirPlay, self.loop, name="MiTV Home")
             await self.pairing.begin()

@@ -10,6 +10,13 @@ public final class AppLanguage {
  private AppLanguage() {}
  private static final HashMap<String,String> IT=new HashMap<>();
  static {
+  IT.put("HDMI input","Ingresso HDMI");
+  IT.put("Choose HDMI input","Scegli ingresso HDMI");
+  IT.put("Show pairing code","Mostra codice di abbinamento");
+  IT.put("Change HDMI input","Cambia ingresso HDMI");
+  IT.put("No HDMI inputs registered on this TV","Nessun ingresso HDMI registrato su questa TV");
+  IT.put("Press Home to return and enter the code","Premi Home per tornare e inserire il codice");
+  IT.put("You have three minutes to enter the code. The saved pairing does not expire. Show Apple TV on its HDMI input, note the code, then press Home to return here.","Hai tre minuti per inserire il codice. L’abbinamento salvato non scade. Mostra Apple TV sul suo ingresso HDMI, annota il codice e premi Home per tornare qui.");
   IT.put("Paired AirPlay device","Dispositivo AirPlay abbinato");
   IT.put("No paired device","Nessun dispositivo abbinato");
   IT.put("Show Apple TV playback and controls in the music activity. Artwork and controls depend on the playing app.","Mostra la riproduzione di Apple TV nell’attività musicale. Copertina e controlli dipendono dall’app in riproduzione.");

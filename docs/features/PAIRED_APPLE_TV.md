@@ -52,7 +52,8 @@ inside `noBackupFilesDir`; portable Home exports contain no remote credentials.
 Unreadable credentials are retained for explicit removal, not silently replaced.
 
 `PairedPlaybackPanels` uses existing bounded settings popups, localized PIN input
-and three-minute pairing expiry. Removing a pairing deletes the app's credential;
+and a three-minute pending PIN-entry window. Completed pairing credentials have no
+application expiry timer. Removing a pairing deletes the app's credential;
 it does not remotely revoke other Apple TV clients or reset the device.
 
 The launcher reuses its existing music chip and expanded control panel. Local
@@ -64,7 +65,31 @@ Remote waveform bars are a deterministic playback animation with an accessibilit
 label; local audio retains its actual PCM bands. Reduced-motion keeps remote bars
 still. Popups close on a source change so an old control cannot target a new source.
 
-Pausing Home disconnects observation and releases multicast; no always-on PC,
+Pausing Home disconnects observation and releases multicast, except that an explicit
+pending pairing remains alive until its original three-minute deadline; no always-on PC,
 external account, server upload or new Android permission is used. Python initializes
 only after discovery or a saved pairing reconnect. Network errors return redacted
-error codes. Protocol debug logging is disabled. App destruction closes the client.
+error codes. Protocol debug logging is disabled. The application-scoped controller survives Home
+activity recreation; background polling is canceled. Process termination discards
+only unfinished protocol state, so a pending attempt must then be restarted.
+
+
+## Pairing on the same television
+
+Choose **HDMI input** in paired-device settings. There is deliberately no default.
+The chooser enumerates Android's registered physical HDMI inputs, including ports
+beyond the launcher's legacy three-port presentation when the platform exposes them.
+Existing customized source labels are reused where available; other inputs use
+system/custom labels. The stable input ID is saved in `paired_device_ui` preferences.
+If that input disappears, a new explicit choice is required; no other port is selected.
+
+Start pairing, then choose **Show pairing code**. If no input was selected, first
+choose one. The launcher switches using its existing input-opening path. Note the
+code displayed by Apple TV and press Home. The PIN-entry popup is restored, including
+after Home activity recreation, without extending the original deadline. The PIN
+itself is never retained. The HDMI choice can be changed in Settings or the PIN popup.
+
+The controller owns monotonic expiry and protocol cleanup even while HDMI is shown.
+An old attempt's timer cannot cancel a replacement attempt or a completed pairing.
+If the operating system kills the entire app process, restart the unfinished pairing;
+completed encrypted credentials and the chosen input remain in app storage.

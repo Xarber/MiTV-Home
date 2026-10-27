@@ -19,3 +19,9 @@ Export schema 1 contains `schema`, `language`, and `home` allowlisted presentati
 `app/src/main/assets/release-history.json` contains version/code/date, English/Italian highlights/fixes, per-feature icon/label/detail and visible compatibility notes. Generated CHANGELOG.md and user update UI consume it. CI generates developer commit history and provenance for the exact source commit; these are distinct from a user-friendly feature summary.
 
 Updater state is isolated in home_updates (public candidate, check timestamps/ETag/backoff, download/session ids, preferences and install result). Update API cache is an AtomicFile; transient APKs are app-owned external files. No credentials or receiver settings enter update metadata. See features/UPDATES.md for validation and lifecycle contracts.
+
+
+External Apple TV pairing keeps only the selected HDMI input ID in
+`paired_device_ui` SharedPreferences (no default input). This device-specific UI
+choice is separate from encrypted Apple TV credentials and portable Home exports.
+Pending pairing name/deadline/generation are process-local; the PIN is never saved.

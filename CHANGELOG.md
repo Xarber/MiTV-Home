@@ -2,6 +2,14 @@
 
 Generated from `app/src/main/assets/release-history.json`. Legacy versions reflect repository history; dates describe implementation, not a verified public release.
 
+## 1.7.1 — 2026-10-28
+
+Choose the Apple TV HDMI input and return Home to enter its pairing code.
+
+### Fixes & Improvements
+
+Pending pairing survives HDMI switching and Home recreation. Only unfinished code entry expires after three minutes; saved pairing has no application expiry timer.
+
 ## 1.7.0 — 2026-10-27
 
 Pair an Apple TV to show its playback and available controls in the music activity.

@@ -14,16 +14,21 @@ import com.chaquo.python.Python;
 import com.chaquo.python.android.AndroidPlatform;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import org.json.JSONObject;
 
 /** Home-scoped native remote playback. Local receiver playback is a separate source. */
 public final class PairedPlayback {
+    private static PairedPlayback shared;
+    public static synchronized PairedPlayback get(Context context){if(shared==null||shared.closed)shared=new PairedPlayback(context);return shared;}
+    private ScheduledFuture<?> monitorJob;
     private final Context context;
     private final PairingStore store;
     private final Handler main=new Handler(Looper.getMainLooper());
     private final ScheduledExecutorService worker=Executors.newSingleThreadScheduledExecutor();
+    private final PairingAttempt pairing=new PairingAttempt(SystemClock::elapsedRealtime);
     private PyObject client;
     private WifiManager.MulticastLock multicast;
     private volatile boolean foreground,closed,busy;
@@ -36,22 +41,24 @@ public final class PairedPlayback {
     private volatile boolean paired,storageError;
     private long observed;
     private Runnable observer;
-    public PairedPlayback(Context context){
+    private PairedPlayback(Context context){
         this.context=context.getApplicationContext();store=new PairingStore(this.context);
         worker.execute(()->{try{JSONObject value=store.read();paired=value!=null;if(value!=null)deviceName=value.optString("name");}catch(Exception error){storageError=true;}notifyChange();});
-        worker.scheduleWithFixedDelay(this::poll,1,2,TimeUnit.SECONDS);
     }
     public void observe(Runnable callback){observer=callback;}
     public boolean paired(){return paired;}
+    public boolean pairingPending(){return pairing.pending();}
+    public String pairingName(){return pairing.name();}
+    public long pairingRemaining(){return pairing.remaining();}
     public boolean busy(){return busy;}
     public boolean storageError(){return storageError;}
     public String name(){return deviceName;}
     public JSONObject state(){return state;}
     public Bitmap artwork(){return artwork;}
     public boolean active(){return foreground&&SystemClock.elapsedRealtime()-observed<12000&&Math.abs(System.currentTimeMillis()/1000.-state.optDouble("observed_at",0))<12&&state.optBoolean("active");}
-    public void resume(){foreground=true;retryAt=0;}
-    public void pause(){foreground=false;worker.execute(()->{if(client!=null&&!busy)call("disconnect",new JSONObject());resetState();releaseMulticast();});}
-    public void close(){closed=true;foreground=false;observer=null;worker.execute(()->{if(client!=null)call("shutdown",new JSONObject());releaseMulticast();});worker.shutdown();}
+    public void resume(){foreground=true;retryAt=0;if(monitorJob==null||monitorJob.isCancelled())monitorJob=worker.scheduleWithFixedDelay(this::poll,0,2,TimeUnit.SECONDS);}
+    public void pause(){foreground=false;if(monitorJob!=null)monitorJob.cancel(false);worker.execute(()->{if(client!=null&&!pairing.pending())call("disconnect",new JSONObject());resetState();if(!pairing.pending())releaseMulticast();});}
+    public void close(){pairing.clear();closed=true;foreground=false;observer=null;worker.execute(()->{if(client!=null)call("shutdown",new JSONObject());releaseMulticast();});worker.shutdown();}
     private void notifyChange(){main.post(()->{if(!closed&&observer!=null)observer.run();});}
     private void lockMulticast(){if(multicast!=null)return;WifiManager wifi=(WifiManager)context.getSystemService(Context.WIFI_SERVICE);if(wifi!=null){multicast=wifi.createMulticastLock("MiTVAppleTVDiscovery");multicast.setReferenceCounted(false);multicast.acquire();}}
     private void releaseMulticast(){if(multicast!=null){if(multicast.isHeld())multicast.release();multicast=null;}}
@@ -63,19 +70,29 @@ public final class PairedPlayback {
     }
     private static JSONObject error(String key){JSONObject result=new JSONObject();try{result.put("error",key);}catch(Exception ignored){}return result;}
     public void request(String operation,JSONObject data,Consumer<JSONObject> callback){
-        if(closed||busy){callback.accept(error("busy"));return;}busy=true;
+        if(closed||busy){callback.accept(error("busy"));return;}long requestToken=pairing.token();busy=true;
         worker.execute(()->{JSONObject result;
-            try{lockMulticast();result=call(operation,data);
+            try{lockMulticast();
+                if(operation.equals("pair_begin"))pairing.clear();
+                if(operation.equals("pair_finish")&&!pairing.pending()){call("cancel_pairing",new JSONObject());result=error("pairing_expired");}
+                else result=call(operation,data);
+                if(operation.equals("pair_begin")&&result.optString("status").equals("pin_required")){
+                    long token=pairing.begin(result.optString("name"));
+                    worker.schedule(()->{if(pairing.expire(token)){call("cancel_pairing",new JSONObject());if(!foreground)releaseMulticast();notifyChange();}},PairingAttempt.TIMEOUT_MS,TimeUnit.MILLISECONDS);
+                }
+                if(operation.equals("pair_finish")&&result.has("credentials")&&requestToken!=pairing.token())result=error("pairing_canceled");
+                if(operation.equals("cancel_pairing")||operation.equals("scan")||operation.equals("pair_finish"))pairing.clear();
                 if(operation.equals("pair_finish")&&result.has("credentials")){store.save(result);paired=true;storageError=false;deviceName=result.optString("name");result=new JSONObject().put("status","paired");retryAt=0;}
             }catch(Exception error){result=error("storage_failed");}
             busy=false;JSONObject safe=result;main.post(()->{if(!closed){callback.accept(safe);notifyChange();}});
         });
     }
-    public void unpair(){worker.execute(()->{if(client!=null)call("disconnect",new JSONObject());store.clear();paired=false;storageError=false;deviceName="";resetState();releaseMulticast();notifyChange();});}
+    public void cancelPairing(){pairing.clear();worker.execute(()->{if(client!=null)call("cancel_pairing",new JSONObject());if(!foreground)releaseMulticast();});}
+    public void unpair(){pairing.clear();worker.execute(()->{if(client!=null)call("disconnect",new JSONObject());store.clear();paired=false;storageError=false;deviceName="";resetState();releaseMulticast();notifyChange();});}
     public void command(String action,Double volume){try{JSONObject value=new JSONObject().put("action",action);if(volume!=null)value.put("value",volume);request("command",value,result->{});}catch(Exception ignored){}}
     private void resetState(){state=new JSONObject();artwork=null;artEncoded=null;observed=0;}
     private void poll(){
-        if(closed||!foreground||!paired||busy||SystemClock.elapsedRealtime()<retryAt)return;
+        if(closed||!foreground||!paired||pairing.pending()||busy||SystemClock.elapsedRealtime()<retryAt)return;
         try{
             lockMulticast();JSONObject next;
             if(!state.optString("status").equals("connected")){JSONObject credentials=store.read();if(credentials==null)return;next=call("connect",credentials);}else next=call("state",new JSONObject());
