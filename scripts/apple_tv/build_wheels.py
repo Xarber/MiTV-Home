@@ -45,6 +45,8 @@ def main():
     if old not in source:
         raise RuntimeError("Pinned Python link hook changed")
     source = source.replace(old, new)
+    source = source.replace('python_executable=f"{self.build_env}/bin/python"',
+                            'python_executable=f"{self.build_env}/bin/python{self.python}"')
     anchor = '    @contextmanager\n    def env_vars(self):'
     addition = '''        if self.package == "pydantic_core":
             config = f"{self.build_dir}/pyo3-cross.txt"
