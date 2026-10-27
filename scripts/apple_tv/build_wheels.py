@@ -59,7 +59,7 @@ def main():
         raise RuntimeError("Pinned build tool no longer matches cross configuration hook")
     tool.write_text(source.replace(anchor, addition + anchor))
     for package, version in VERSIONS.items():
-        recipe = args.work.resolve() / "recipes" / package
+        recipe = pypi / "packages" / ("mitv-" + package)
         recipe.mkdir(parents=True)
         requirements = "  build: [rust]\n" if package != "cffi" else ""
         requirements += "  host: [openssl]\n" if package == "cryptography" else "  host: [chaquopy-libffi 3.3]\n" if package == "cffi" else ""
