@@ -6,12 +6,41 @@ on:
   pull_request:
     branches: [beta, main]
   workflow_dispatch:
+    inputs:
+      apple_tv_preflight:
+        description: Build Android Apple TV client dependencies only
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
   group: mitv-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 jobs:
+  apple-tv-runtime:
+    name: Apple TV runtime ${{ matrix.abi }}
+    if: github.event_name == 'workflow_dispatch' && inputs.apple_tv_preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        abi: [armeabi-v7a, arm64-v8a, x86, x86_64]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Install wheel build utilities
+        run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends patchelf
+      - name: Cross-compile pinned dependencies
+        run: python scripts/apple_tv/build_wheels.py --abi '${{ matrix.abi }}' --work "$RUNNER_TEMP/apple-tv" --output wheels
+      - uses: actions/upload-artifact@v5
+        with:
+          name: apple-tv-wheels-${{ matrix.abi }}-${{ github.sha }}
+          path: wheels/
+          if-no-files-found: error
+
   checks:
     name: Host and release checks
     runs-on: ubuntu-24.04
@@ -27,7 +56,7 @@ jobs:
 
   android:
     name: Android ${{ matrix.format }}
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && !inputs.apple_tv_preflight
     strategy:
       fail-fast: false
       matrix:
@@ -128,7 +157,7 @@ jobs:
 
   source:
     name: Corresponding source
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && !inputs.apple_tv_preflight
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
@@ -148,7 +177,7 @@ jobs:
 
   publish:
     name: Publish validated channel
-    if: github.event_name != 'pull_request' && (github.ref_name == 'main' || github.ref_name == 'beta')
+    if: github.event_name != 'pull_request' && !inputs.apple_tv_preflight && (github.ref_name == 'main' || github.ref_name == 'beta')
     needs: [checks, android, source]
     runs-on: ubuntu-24.04
     permissions:
