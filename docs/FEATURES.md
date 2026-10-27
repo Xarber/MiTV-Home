@@ -10,6 +10,8 @@
 - About: version/commit footer, persistent icon-led changelog with expandable feature/fix details, once-per-update What's New (suppressed on first install), licenses and source link, export/import presentation preferences.
 - Hidden developer tools: version triple press, 30s inactivity expiry, background/tab lock, safe report copy/share, allowlisted event history, notification simulation and remote revocation.
 
+- GitHub updater: launch/foreground checks, cached release metadata, channel filtering, icon-based notes, DownloadManager progress/cancel, APK validation and official Android installer. Installed signing identity must match. See [update contracts and limits](features/UPDATES.md).
+
 ## Limits
 
 Mac Music playback is unresolved; do not advertise complete AirPlay 2/FairPlay v2 support. User reported iPad radio and local library working. DRM/photo/sender-specific modes require actual validation. Live HDMI/tuner behavior depends on TV manufacturer APIs. No external plugin loader, iOS app, OTA engine, root/port bypass, debloating or store submission is implemented.

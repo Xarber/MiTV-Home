@@ -24,3 +24,9 @@ Use contextual icons for short lists and focusable disclosure controls for long 
 Review only the affected modules and state that scope. For regressions compare known-working commits before rewriting. Distinguish calculated PCM bands, supplied metadata, current local observations, cached artwork and simulated local previews; never label missing information as measured zero or production history.
 
 Simulations must remain local, labeled and out of production storage/analytics/external actions. See docs/SECURITY.md and docs/SYNC.md. Report exact emulator/physical-device evidence separately. Preserve rollback APKs and preferences; do not equate build/release publication with TV deployment.
+
+## Priority, exceptions and update policy
+
+Apply actual system/developer constraints first. Within project instructions, prefer explicit current task instructions, then repository architecture/approved decisions, then universal defaults, then general conventions. More specific/recent instructions resolve same-level conflicts; ask only for material unresolved or risky decisions. Preserve data, signing identity and existing public GitHub channel authorization. Temporary branches remain allowed, but integrate completed work into testing before beta/main promotion. No workflow migration or new distribution destination is implied by new universal defaults.
+
+Android TV has no iOS/Expo target; those build/update requirements are inapplicable. Do not fabricate Apple packages or add OTA. APK updates use GitHub's public release manifest, installed signing identity, SHA-256/package/version/SDK/ABI checks and official Android installation confirmation. Development-key installations cannot silently move to the release key. See docs/features/UPDATES.md. Never embed a GitHub token or bypass Android prompts.
