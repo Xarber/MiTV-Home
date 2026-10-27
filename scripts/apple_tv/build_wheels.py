@@ -48,7 +48,7 @@ def main():
     source = source.replace('python_executable=f"{self.build_env}/bin/python"',
                             'python_executable=f"{self.build_env}/bin/python{self.python}"')
     anchor = '    @contextmanager\n    def env_vars(self):'
-    addition = '''        if self.package == "pydantic_core":
+    addition = '''        if self.package in ("pydantic_core", "cryptography"):
             config = f"{self.build_dir}/pyo3-cross.txt"
             with open(config, "w") as out:
                 out.write("implementation=CPython\\nversion=3.11\\nshared=true\\nabi3=false\\n"

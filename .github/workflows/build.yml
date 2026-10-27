@@ -41,6 +41,23 @@ jobs:
           path: wheels/
           if-no-files-found: error
 
+  apple-tv-pure:
+    name: Apple TV portable Python dependencies
+    if: github.event_name == 'workflow_dispatch' && inputs.apple_tv_preflight
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - run: python scripts/apple_tv/build_pure_wheels.py --output wheels
+      - uses: actions/upload-artifact@v5
+        with:
+          name: apple-tv-wheels-pure-${{ github.sha }}
+          path: wheels/
+          if-no-files-found: error
+
   checks:
     name: Host and release checks
     runs-on: ubuntu-24.04
