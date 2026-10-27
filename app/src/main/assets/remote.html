@@ -11,9 +11,14 @@ let token=localStorage.getItem('mitv-token')||'';
 const status=document.querySelector('#status'),form=document.querySelector('#pair'),pinInput=document.querySelector('#pin');
 const embeddedPin=new URLSearchParams(location.hash.slice(1)).get('pair');
 if(embeddedPin!==null)history.replaceState(null,'',location.pathname);
-async function pair(pin){status.textContent='Pairing…';try{const r=await fetch('/pair',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin})});const data=await r.json();if(!r.ok)throw new Error(data.error||'Could not pair');token=data.token;localStorage.setItem('mitv-token',token);status.textContent='Paired. Remote is ready.';pinInput.value='';document.querySelector('#pair button').textContent='Re-pair'}catch(err){status.textContent=err.message}}
+async function pair(pin){status.textContent='Pairing…';try{const r=await fetch('/pair',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin})});const data=await r.json();if(!r.ok)throw new Error(data.error||'Could not pair');token=data.token;presence();localStorage.setItem('mitv-token',token);status.textContent='Paired. Remote is ready.';pinInput.value='';document.querySelector('#pair button').textContent='Re-pair'}catch(err){status.textContent=err.message}}
 form.addEventListener('submit',event=>{event.preventDefault();pair(pinInput.value)});
 if(embeddedPin&&/^\d{6}$/.test(embeddedPin)){pair(embeddedPin)}else if(token){document.querySelector('#pair button').textContent='Re-pair';status.textContent='Remote paired. Open this page again to reconnect.'}else{fetch('/pair/start',{method:'POST'}).then(()=>status.textContent='Pairing requested. Check the TV for the code.').catch(()=>status.textContent='TV is unreachable. Keep its Home screen open on this Wi-Fi.')}
 async function send(command){if(!token){status.textContent='Pair first using the code shown on your TV.';return}try{const r=await fetch('/api/key',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,command})});if(r.status===401){token='';localStorage.removeItem('mitv-token');status.textContent='Pair again using the code shown on your TV.';fetch('/pair/start',{method:'POST'})}}catch(_){status.textContent='TV is unreachable. Keep its Home screen open on this Wi-Fi.'}}
+async function presence(disconnect=false){if(!token)return;try{const r=await fetch('/api/presence',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token,disconnect}),keepalive:disconnect});if(r.status===401){token='';localStorage.removeItem('mitv-token');status.textContent='Pair again using the code shown on your TV.'}}catch(_){}}
+setInterval(()=>{if(!document.hidden)presence()},5000);
+document.addEventListener('visibilitychange',()=>presence(document.hidden));
+window.addEventListener('pagehide',()=>presence(true));
+if(token)presence();
 document.querySelectorAll('[data-cmd]').forEach(button=>button.addEventListener('click',()=>send(button.dataset.cmd)));
 </script></body></html>

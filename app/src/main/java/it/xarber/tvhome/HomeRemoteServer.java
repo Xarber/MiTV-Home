@@ -28,6 +28,8 @@ final class HomeRemoteServer implements Runnable {
     private ServerSocket socket;
     private Thread thread;
     private int port = 80;
+    private final java.util.HashMap<String,Long> activeRemotes = new java.util.HashMap<>();
+    synchronized boolean hasActiveRemote() { long now=android.os.SystemClock.elapsedRealtime();activeRemotes.entrySet().removeIf(e->now-e.getValue()>15000L);return !activeRemotes.isEmpty(); }
 
     HomeRemoteServer(Context context, Commands commands) {
         this.context = context.getApplicationContext();
@@ -137,13 +139,19 @@ final class HomeRemoteServer implements Runnable {
             commands.run("paired");
             return;
         }
-        if (method.equals("POST") && path.equals("/api/key")) {
+        if (method.equals("POST") && (path.equals("/api/key") || path.equals("/api/presence"))) {
             JSONObject request = new JSONObject(json);
             boolean authenticated;
             synchronized (this) { authenticated = tokens.contains(request.optString("token")); }
             if (!authenticated) {
                 respond(client, 401, "application/json", "{\"error\":\"Pair this remote again\"}"); return;
             }
+            synchronized (this) {
+                String authenticatedToken=request.optString("token");
+                if (path.equals("/api/presence") && request.optBoolean("disconnect",false)) activeRemotes.remove(authenticatedToken);
+                else activeRemotes.put(authenticatedToken,android.os.SystemClock.elapsedRealtime());
+            }
+            if (path.equals("/api/presence")) { respond(client,200,"application/json","{\"ok\":true}"); return; }
             String command = request.optString("command", "");
             if (!command.matches("up|down|left|right|ok|back|home|volumeup|volumedown|playpause|next|previous")) {
                 respond(client, 400, "application/json", "{\"error\":\"Unknown command\"}"); return;

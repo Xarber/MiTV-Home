@@ -49,6 +49,7 @@ public final class AppLanguage {
   IT.put("Network","Rete");
   IT.put("Sound","Audio");
   IT.put("Remote","Telecomando");
+  IT.put("Connected remote","Telecomando connesso");
   IT.put("Use a phone on the same Wi-Fi","Usa un telefono sulla stessa rete Wi-Fi");
   IT.put("AirPlay audio","Audio AirPlay");
   IT.put("AirPlay audio controls","Controlli audio AirPlay");

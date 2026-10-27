@@ -1,0 +1,6 @@
+diff --git a/lib/raop.c b/lib/raop.c
+--- a/lib/raop.c
++++ b/lib/raop.c
+@@ -392,1 +392,1 @@
+-    logger_log(raop->logger, LOGGER_DEBUG, "Handling request %s with URL %s", method, url);
++    logger_log(raop->logger, LOGGER_INFO, "Receiver request method: %s", method);
