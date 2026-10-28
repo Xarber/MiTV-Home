@@ -55,3 +55,11 @@ unchanged. Namespaces isolate system-remote and phone trust. Failed storage read
 preserve the files. Phone commands are never replayed after reconnection or TV
 switch; stale playback sources reject controls. Existing stable artifacts and
 preferences remain the rollback baseline.
+
+GitHub initially refused standalone dispatch of new beta-only workflow files (404: not on default branch). The established build workflow now calls the phone matrix as a local reusable workflow, preserving the approved testing → beta path and leaving stable main unchanged.
+
+The first beta web CI run passed 16 of 17 checks but caught a short-viewport
+focus check during a resize/entrance transition. Scroll containers now re-reveal
+focused content after their size changes; the assertion waits for the animated
+layout to settle. The targeted local regression passes. The earlier failed build
+was prevented from publishing; the corrected source requires its new CI run.

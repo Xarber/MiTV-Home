@@ -1,8 +1,6 @@
 name: Aurea Remote companion
 on:
-  push:
-    branches: [beta, main]
-    paths: ['demo/**', 'scripts/phone/**', '.github/workflows/phone.yml']
+  workflow_call:
   workflow_dispatch:
 permissions:
   contents: read

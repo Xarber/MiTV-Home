@@ -22,6 +22,12 @@ concurrency:
   group: mitv-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 jobs:
+  phone-companion:
+    name: Phone companion formats
+    if: github.event_name != 'pull_request' && !inputs.apple_tv_preflight
+    uses: ./.github/workflows/phone.yml
+    secrets: inherit
+
   web-remote:
     name: Embedded phone web remote
     if: github.event_name != 'pull_request' && !inputs.apple_tv_preflight
@@ -262,7 +268,7 @@ jobs:
   publish:
     name: Publish validated channel
     if: github.event_name != 'pull_request' && !inputs.apple_tv_preflight && (github.ref_name == 'main' || github.ref_name == 'beta')
-    needs: [checks, android, source]
+    needs: [checks, android, source, phone-companion]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
