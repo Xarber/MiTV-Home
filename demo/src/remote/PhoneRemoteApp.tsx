@@ -70,7 +70,7 @@ export default function PhoneRemoteApp({preview=false}:{preview?:boolean}){
  {row('phone-forget-tv','Forget this television','close',()=>{void client.disconnect(true);setPanel(null);})}
  {row('phone-source','Source code','code',()=>{void Linking.openURL('https://github.com/Xarber/MiTV-Home/tree/'+(process.env.EXPO_PUBLIC_SOURCE_COMMIT??'testing'));})}
  {row('phone-changelog','What’s new','info',()=>setPanel('changelog'))}
- <FocusButton id="phone-version" group="phone-modal" label="Aurea Remote version 1.8.0" onPress={()=>{setTaps(value=>value+1);if(taps>=2)setDev(true);}} style={{padding:12}}><Text style={s.caption}>Aurea Remote · 1.8.0</Text></FocusButton>
+ <FocusButton id="phone-version" group="phone-modal" label="Aurea Remote version 1.8.1" onPress={()=>{setTaps(value=>value+1);if(taps>=2)setDev(true);}} style={{padding:12}}><Text style={s.caption}>Aurea Remote · 1.8.1</Text></FocusButton>
  {dev&&<Text selectable style={s.caption}>Developer information{`\n`}Build: {process.env.EXPO_PUBLIC_SOURCE_COMMIT??'local working tree'}{`\n`}Platform: {Platform.OS}{`\n`}Connection: {state.status}{`\n`}Preview: {String(remote.preview)}{`\n`}System service: {state.device?.systemRemote.status??'unknown'}{`\n`}Error: {state.error??'none'}</Text>}
  </>}
  {displayed==='changelog'&&<View><Text style={s.description}>1.8.0 · Multiple paired TVs, apps and inputs, in-app music controls, offline PWA loading and safer reconnecting.</Text><Text style={s.caption}>System-wide remote controls require a separate Android TV Remote Service pairing. Physical phone and TV validation is pending.</Text></View>}

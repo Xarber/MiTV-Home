@@ -9,6 +9,8 @@ from pathlib import Path
 import re
 import subprocess
 import zipfile
+from html.parser import HTMLParser
+from urllib.parse import urlsplit, unquote
 
 ROOT = Path(__file__).resolve().parents[1]
 HISTORY = ROOT / 'app/src/main/assets/release-history.json'
@@ -50,6 +52,31 @@ def generate():
     commits = subprocess.check_output(['git', 'log', '--reverse', '--format=%H %ad %s%n%b', '--date=short', '98cbd64^..HEAD'], cwd=ROOT, text=True)
     (ROOT / 'app/src/main/assets/developer-changelog.txt').write_text('MiTV Home developer changelog\nLegacy subjects are preserved. New work uses Conventional Commits.\n\n' + commits)
 
+def validate_embedded_web(archive, prefix=''):
+    base = prefix + 'assets/remoteapp/'
+    names = set(archive.namelist())
+    assert base + 'index.html' in names, 'Missing embedded remote index'
+    references = []
+    class Resources(HTMLParser):
+        def handle_starttag(self, tag, attributes):
+            attributes = dict(attributes)
+            value = attributes.get('src') if tag == 'script' else attributes.get('href') if tag == 'link' else None
+            if value: references.append(value)
+    Resources().feed(archive.read(base + 'index.html').decode('utf-8'))
+    assert any(urlsplit(value).path.endswith('.js') for value in references), 'Remote has no JavaScript entry'
+    for value in references:
+        parsed = urlsplit(value)
+        assert not parsed.scheme and not parsed.netloc, 'Embedded remote resource must be local'
+        path = unquote(parsed.path).lstrip('/')
+        assert '..' not in path.split('/'), 'Invalid remote asset path'
+        assert base + path in names, 'Missing embedded remote resource: ' + path
+    expected_root = ROOT / 'app/src/main/assets/remoteapp'
+    if expected_root.is_dir():
+        for resource in expected_root.rglob('*'):
+            if resource.is_file():
+                relative = resource.relative_to(expected_root).as_posix()
+                assert base + relative in names, 'Android omitted exported web asset: ' + relative
+
 def validate_archive(path, kind, commit, channel):
     current = metadata()
     assert path.is_file() and path.stat().st_size > 1024, f'Missing or empty artifact: {path}'
@@ -57,6 +84,7 @@ def validate_archive(path, kind, commit, channel):
     with zipfile.ZipFile(path) as archive:
         assert archive.testzip() is None, 'Corrupt ZIP'
         names = set(archive.namelist())
+        validate_embedded_web(archive, prefix)
         assert prefix + 'manifest/AndroidManifest.xml' in names if kind == 'aab' else 'AndroidManifest.xml' in names
         assert ('BundleConfig.pb' in names) if kind == 'aab' else any(re.fullmatch(r'classes\d*\.dex', name) for name in names)
         abis = {'arm64-v8a', 'armeabi-v7a', 'x86', 'x86_64'}
