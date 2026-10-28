@@ -58,7 +58,7 @@ final class HomeRemoteServer implements Runnable {
         pairingOrigin="";
         pin = String.format(Locale.US, "%06d", new SecureRandom().nextInt(1_000_000));
         pairingDeadline = android.os.SystemClock.elapsedRealtime() + 5 * 60 * 1000L;
-        failedPairAttempts = 0; pairWindowStart = 0;
+        // Preserve the global attempt window when an origin asks for a fresh PIN.
     }
     synchronized boolean pairingExpired() { return android.os.SystemClock.elapsedRealtime() > pairingDeadline; }
     private synchronized void announcePairRequest() {
