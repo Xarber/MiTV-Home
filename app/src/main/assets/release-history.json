@@ -2,6 +2,37 @@
   "schema": 1,
   "releases": [
     {
+      "version": "1.7.5",
+      "code": 23,
+      "date": "2026-10-28",
+      "critical": false,
+      "highlights": {
+        "en": "Fixes the immediate error when submitting an Apple TV pairing code.",
+        "it": "Corregge l’errore immediato quando si inserisce il codice di abbinamento Apple TV."
+      },
+      "fixes": {
+        "en": "Updates the HAP SRP call for the bundled authentication library and pins its version for reproducible builds.",
+        "it": "Aggiorna la chiamata HAP SRP per la libreria di autenticazione inclusa e ne fissa la versione per build riproducibili."
+      },
+      "compatibility": {
+        "en": "Corrects a locally reproduced API mismatch; successful pairing and concurrent phone streaming still require physical-device validation.",
+        "it": "Corregge un’incompatibilità API riprodotta localmente; abbinamento e streaming simultaneo dal telefono richiedono ancora verifica fisica."
+      },
+      "features": [
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Pairing compatibility fix",
+            "it": "Correzione compatibilità abbinamento"
+          },
+          "detail": {
+            "en": "Removes a local argument error before the PIN proof can be sent. Authentication checks remain enabled.",
+            "it": "Elimina un errore locale negli argomenti prima dell’invio della prova del PIN. I controlli di autenticazione restano attivi."
+          }
+        }
+      ]
+    },
+    {
       "version": "1.7.4",
       "code": 22,
       "date": "2026-10-28",

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: AGPL-3.0-only
-"""Rebuild pinned MIT pyatv with the narrow upstream tvOS 27 PIN-header fix."""
+"""Rebuild pinned MIT pyatv with the tvOS 27 PIN-header and SRP API compatibility fixes."""
 import argparse
 import hashlib
 import io
@@ -13,6 +13,7 @@ import tempfile
 import urllib.request
 
 PATCH = Path(__file__).resolve().parent / "patches/pyatv-0.18.0-tvos27-client-name.patch"
+SRP_PATCH = PATCH.with_name("pyatv-0.18.0-srptools2.patch")
 UPSTREAM = "https://github.com/postlund/pyatv/pull/2894"
 
 def build(output):
@@ -29,13 +30,15 @@ def build(output):
         root = Path(temporary)
         with tarfile.open(fileobj=io.BytesIO(payload)) as archive:archive.extractall(root, filter="data")
         source = root / "pyatv-0.18.0"
-        subprocess.run(["git", "apply", "--check", str(PATCH)], cwd=source, check=True)
-        subprocess.run(["git", "apply", str(PATCH)], cwd=source, check=True)
+        for patch in (PATCH, SRP_PATCH):
+            subprocess.run(["git", "apply", "--check", str(patch)], cwd=source, check=True)
+            subprocess.run(["git", "apply", str(patch)], cwd=source, check=True)
         subprocess.run([sys.executable, "-m", "pip", "wheel", "--no-deps", "--wheel-dir", str(output), str(source)], check=True)
     wheel = output / "pyatv-0.18.0-py3-none-any.whl"
     if not wheel.is_file():raise RuntimeError("Expected pure Python patched wheel")
     (output / "pyatv-patch-provenance.json").write_text(json.dumps({"version":"0.18.0", "upstream":UPSTREAM,
         "upstreamCommit":"fa9ef01dce9928e6be959b7f9b67d14a0c722b06", "sourceSha256":digest,
+        "srpPatchSha256":hashlib.sha256(SRP_PATCH.read_bytes()).hexdigest(),
         "patchSha256":hashlib.sha256(PATCH.read_bytes()).hexdigest(), "wheelSha256":hashlib.sha256(wheel.read_bytes()).hexdigest()}, indent=2)+"\n")
 
 if __name__ == "__main__":

@@ -146,3 +146,21 @@ wrong PIN. Other authentication errors likewise do not prove user error. Timeout
 network interruptions, expiry, cancellation, runtime and Keystore storage failures
 remain distinct in localized UI copy. This improves diagnosis; it does not claim
 to fix the receiver's post-PIN rejection. Unknown errors stay generic.
+
+## SRP dependency compatibility (1.7.5)
+
+Physical release logs from 1.7.4 identified a local `TypeError` at
+`hap_srp.py:147`, after successful PIN-start and M1 requests but before M3.
+The bundled srptools 2.0.0 makes `SRPClientSession.private` keyword-only;
+pyatv 0.18.0 supplies it positionally. The vendor wheel now applies a separate
+one-line compatibility patch using `private=`, retaining the same key and all
+authentication checks. Gradle explicitly pins srptools 2.0.0.
+
+The portable-wheel CI job tests the real patched pyatv handler with srptools
+2.0.0 and cryptography 50.0.2: a 3072-bit SRP proof exchange, matching keys,
+signed/encrypted setup payload, and incorrect-PIN rejection. This is a local
+protocol test, not proof of pairing with a physical Apple TV. The existing
+client-name patch and its provenance remain separate.
+
+Sources: [pyatv 0.18.0 HAP SRP](https://github.com/postlund/pyatv/blob/v0.18.0/pyatv/auth/hap_srp.py),
+[srptools client API](https://github.com/idlesign/srptools/blob/master/srptools/client.py).

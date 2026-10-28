@@ -2,6 +2,14 @@
 
 Generated from `app/src/main/assets/release-history.json`. Legacy versions reflect repository history; dates describe implementation, not a verified public release.
 
+## 1.7.5 — 2026-10-28
+
+Fixes the immediate error when submitting an Apple TV pairing code.
+
+### Fixes & Improvements
+
+Updates the HAP SRP call for the bundled authentication library and pins its version for reproducible builds.
+
 ## 1.7.4 — 2026-10-28
 
 Persistent pairing diagnostics that can be retrieved from the TV without rebuilding for every failure.

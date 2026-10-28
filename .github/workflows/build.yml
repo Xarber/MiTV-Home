@@ -78,6 +78,10 @@ jobs:
         env:
           MITV_PYATV_WHEEL: wheels/pyatv-0.18.0-py3-none-any.whl
         run: python -m unittest discover -s tests/python -p test_tvos27_pairing_headers.py -v
+      - name: Verify real SRP exchange with Android dependency versions
+        run: |
+          python -m pip install wheels/pyatv-0.18.0-py3-none-any.whl srptools==2.0.0 cryptography==50.0.2
+          python -m unittest discover -s tests/python -p test_srp_compatibility.py -v
       - uses: actions/upload-artifact@v5
         with:
           name: apple-tv-wheels-pure-${{ github.sha }}
