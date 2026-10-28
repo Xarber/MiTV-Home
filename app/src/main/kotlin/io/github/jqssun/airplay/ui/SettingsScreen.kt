@@ -70,17 +70,19 @@ fun SettingsScreen(viewModel: MainViewModel) {
     val syncClientVolume by viewModel.pref(Prefs.SYNC_CLIENT_VOLUME).collectAsState()
     val debugEnabled by viewModel.pref(Prefs.DEBUG_ENABLED).collectAsState()
     val developerSession = remember { DeveloperAccess.SESSION }
-    var developerOptions by remember { mutableStateOf(developerSession.isUnlocked()) }
+    val developerContext = LocalContext.current
+    var developerOptions by remember { mutableStateOf(DeveloperAccess.enabled(developerContext)) }
+    var developerToggleShown by remember { mutableStateOf(developerSession.isUnlocked() || developerOptions) }
     val lifecycleOwnerForDeveloper = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwnerForDeveloper) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_PAUSE) { developerSession.lock(); developerOptions = false }
+            if (event == Lifecycle.Event.ON_PAUSE) { developerSession.lock(); developerToggleShown = developerOptions }
         }
         lifecycleOwnerForDeveloper.lifecycle.addObserver(observer)
         onDispose { lifecycleOwnerForDeveloper.lifecycle.removeObserver(observer); developerSession.lock() }
     }
     LaunchedEffect(Unit) {
-        while (true) { developerOptions = developerSession.isUnlocked(); delay(250) }
+        while (true) { developerOptions = DeveloperAccess.enabled(developerContext); developerToggleShown = developerSession.isUnlocked() || developerOptions; delay(250) }
     }
     val keyAllowFrameDrop by viewModel.pref(Prefs.KEY_ALLOW_FRAME_DROP).collectAsState()
     val realtimeDecoderPriority by viewModel.pref(Prefs.KEY_PRIORITY).collectAsState()
@@ -262,10 +264,18 @@ fun SettingsScreen(viewModel: MainViewModel) {
             headlineContent = { Text("MiTV Home ${BuildConfig.VERSION_NAME}") },
             supportingContent = { Text("${BuildConfig.VERSION_CODE} · ${BuildConfig.SOURCE_COMMIT}") },
             modifier = Modifier.clickable {
-                developerOptions = developerSession.tapVersion()
+                developerToggleShown = developerSession.tapVersion() || developerOptions
             }.dpadFocus()
         )
 
+        if (developerToggleShown) {
+            SettingSwitch(
+                title = stringResource(R.string.setting_developer_options),
+                description = "",
+                checked = developerOptions,
+                onCheckedChange = { DeveloperAccess.setEnabled(developerContext, it); developerOptions = it }
+            )
+        }
         if (developerOptions) {
             SettingSwitch(
                 title = stringResource(R.string.setting_auto_start),

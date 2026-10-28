@@ -1,4 +1,5 @@
 plugins {
+    id("com.chaquo.python")
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
@@ -49,15 +50,18 @@ android {
     }
 
     defaultConfig {
+        // Chaquopy reads supported architectures from defaultConfig.
+        ndk { abiFilters += allAbis }
         applicationId = providers.gradleProperty("homeApplicationId").getOrElse("it.xarber.mitvhome")
         minSdk = 26
         targetSdk = 34
-        versionCode = 16
-        versionName = "1.5.1"
+        versionCode = 23
+        versionName = "1.7.5"
         buildConfigField("String", "SOURCE_COMMIT", buildString(sourceCommit))
         buildConfigField("String", "BUILD_CHANNEL", buildString(buildChannel))
         buildConfigField("String", "BUILD_DATE", buildString(buildDate))
         buildConfigField("String", "BUILD_VARIANT", buildString("github-extended"))
+        buildConfigField("String", "UPDATE_CHANNEL", buildString(if (buildChannel in listOf("beta", "testing")) "beta" else "stable"))
 
         externalNativeBuild {
             cmake {
@@ -67,20 +71,21 @@ android {
         }
     }
 
+    if (project.hasProperty("useBundledNative")) {
+        providers.gradleProperty("bundledNativeRoot").orNull?.let { nativeRoot ->
+            sourceSets.getByName("main").jniLibs.setSrcDirs(listOf(file(nativeRoot)))
+        }
+    }
     if (!project.hasProperty("useBundledNative")) {
         sourceSets.getByName("main").jniLibs.directories.clear()
         externalNativeBuild { cmake { path = file("src/main/cpp/CMakeLists.txt") } }
     }
 
     buildTypes {
-        debug {
-            ndk { abiFilters += allAbis }
-        }
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfigs.findByName("release")?.let { signingConfig = it }
-            ndk { abiFilters += allAbis }
         }
         // debuggable build with HWASan (arm64) + UBSan in native code
         create("sanitize") {
@@ -122,7 +127,7 @@ val generateHomeBuildInfo = tasks.register("generateHomeBuildInfo") {
     outputs.files(file("src/main/assets/build-metadata.json"), file("src/main/assets/developer-changelog.txt"))
     doLast {
         file("src/main/assets/build-metadata.json").writeText("""
-            {"version":"1.5.1","code":16,"commit":${buildString(sourceCommit)},"channel":${buildString(buildChannel)},"variant":"github-extended","date":${buildString(buildDate)}}
+            {"version":"1.7.5","code":23,"commit":${buildString(sourceCommit)},"channel":${buildString(buildChannel)},"variant":"github-extended","date":${buildString(buildDate)}}
         """.trimIndent()+"\n")
         val history = gitValue("log", "--reverse", "--format=%H %ad %s%n%b", "--date=short", "98cbd64^..HEAD")
         val historyFile = file("src/main/assets/developer-changelog.txt")
@@ -187,4 +192,19 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
+}
+
+// Python 3.11 retains the physical MiTV ARMv7 ABI. Native wheels are built by
+// the pinned Linux cross-build job, never substituted with desktop wheels.
+chaquopy {
+    defaultConfig {
+        version = "3.11"
+        pip {
+            install(rootProject.file("build/apple-tv-wheels/pyatv-0.18.0-py3-none-any.whl").absolutePath)
+            install("pydantic==2.14.1")
+            install("cryptography==50.0.2")
+            install("srptools==2.0.0")
+            options("--find-links", rootProject.file("build/apple-tv-wheels").absolutePath)
+        }
+    }
 }

@@ -6,12 +6,88 @@ on:
   pull_request:
     branches: [beta, main]
   workflow_dispatch:
+    inputs:
+      apple_tv_preflight:
+        description: Build Android Apple TV client dependencies only
+        type: boolean
+        default: false
+      apple_tv_dependency_run:
+        description: Optional successful same-repository native dependency run to reuse
+        type: string
+        default: ''
 permissions:
   contents: read
+  actions: read
 concurrency:
   group: mitv-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 jobs:
+  apple-tv-runtime:
+    name: Apple TV runtime ${{ matrix.abi }}
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        abi: [armeabi-v7a, arm64-v8a, x86, x86_64]
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Install wheel build utilities
+        run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends patchelf
+      - uses: actions/cache@v4
+        id: native-wheels
+        with:
+          path: wheels/
+          key: apple-tv-cp311-${{ matrix.abi }}-${{ hashFiles('scripts/apple_tv/build_wheels.py') }}
+      - name: Reuse previously compiled pinned dependencies
+        if: inputs.apple_tv_dependency_run != ''
+        uses: actions/download-artifact@v6
+        with:
+          pattern: apple-tv-wheels-${{ matrix.abi }}-*
+          run-id: ${{ inputs.apple_tv_dependency_run }}
+          github-token: ${{ github.token }}
+          path: wheels
+          merge-multiple: true
+      - name: Cross-compile pinned dependencies
+        if: steps.native-wheels.outputs.cache-hit != 'true' && inputs.apple_tv_dependency_run == ''
+        run: python scripts/apple_tv/build_wheels.py --abi '${{ matrix.abi }}' --work "$RUNNER_TEMP/apple-tv" --output wheels
+      - name: Verify native wheel provenance and bytes
+        run: python scripts/apple_tv/verify_wheels.py --abi '${{ matrix.abi }}' wheels
+      - uses: actions/upload-artifact@v5
+        with:
+          name: apple-tv-wheels-${{ matrix.abi }}-${{ github.sha }}
+          path: wheels/
+          if-no-files-found: error
+
+  apple-tv-pure:
+    name: Apple TV portable Python dependencies
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - run: python scripts/apple_tv/build_pure_wheels.py --output wheels
+      - name: Verify tvOS 27 pairing header on every handshake request
+        env:
+          MITV_PYATV_WHEEL: wheels/pyatv-0.18.0-py3-none-any.whl
+        run: python -m unittest discover -s tests/python -p test_tvos27_pairing_headers.py -v
+      - name: Verify real SRP exchange with Android dependency versions
+        run: |
+          python -m pip install wheels/pyatv-0.18.0-py3-none-any.whl srptools==2.0.0 cryptography==50.0.2
+          python -m unittest discover -s tests/python -p test_srp_compatibility.py -v
+      - uses: actions/upload-artifact@v5
+        with:
+          name: apple-tv-wheels-pure-${{ github.sha }}
+          path: wheels/
+          if-no-files-found: error
+
   checks:
     name: Host and release checks
     runs-on: ubuntu-24.04
@@ -26,8 +102,9 @@ jobs:
       - run: scripts/check-host.sh
 
   android:
+    needs: [apple-tv-runtime, apple-tv-pure]
     name: Android ${{ matrix.format }}
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && !inputs.apple_tv_preflight
     strategy:
       fail-fast: false
       matrix:
@@ -45,6 +122,15 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Collect exact-run Android Python dependencies
+        uses: actions/download-artifact@v6
+        with:
+          pattern: apple-tv-wheels-*-${{ github.sha }}
+          path: build/apple-tv-wheels
+          merge-multiple: true
       - uses: gradle/actions/setup-gradle@v5
       - name: Install native build tools
         run: |
@@ -90,6 +176,8 @@ jobs:
             FILE="dist/MiTV-Home-v${VERSION}-android-universal-${MITV_BUILD_CHANNEL}-github-extended-${SHORT_SHA}.apk"
             cp app/build/outputs/apk/release/app-release.apk "$FILE"
             "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --verbose "$FILE"
+            "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --print-certs "$FILE" > "$RUNNER_TEMP/apk-signers.txt"
+            python3 scripts/update_manifest.py package --apk "$FILE" --report "$RUNNER_TEMP/apk-signers.txt" --commit "$GITHUB_SHA" --channel "$MITV_BUILD_CHANNEL"
             "$ANDROID_HOME/build-tools/37.0.0/aapt2" dump badging "$FILE" > "$RUNNER_TEMP/badging.txt"
             grep -F "name='it.xarber.mitvhome'" "$RUNNER_TEMP/badging.txt"
             grep -F "versionCode='$CODE'" "$RUNNER_TEMP/badging.txt"
@@ -126,7 +214,7 @@ jobs:
 
   source:
     name: Corresponding source
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && !inputs.apple_tv_preflight
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
@@ -146,7 +234,7 @@ jobs:
 
   publish:
     name: Publish validated channel
-    if: github.event_name != 'pull_request' && (github.ref_name == 'main' || github.ref_name == 'beta')
+    if: github.event_name != 'pull_request' && !inputs.apple_tv_preflight && (github.ref_name == 'main' || github.ref_name == 'beta')
     needs: [checks, android, source]
     runs-on: ubuntu-24.04
     permissions:
@@ -180,7 +268,12 @@ jobs:
           # A build must never retarget/overwrite an existing release or version tag.
           if gh release view "$TAG" >/dev/null 2>&1; then echo "Release already exists: $TAG; bump version before publishing." >&2; exit 1; fi
           if git rev-parse --verify "refs/tags/$TAG" >/dev/null 2>&1; then test "$(git rev-list -n 1 "$TAG")" = "$GITHUB_SHA"; fi
+          python3 scripts/update_manifest.py manifest --dir dist --tag "$TAG" --commit "$GITHUB_SHA" --channel "$MITV_BUILD_CHANNEL"
           python3 scripts/release.py notes > "$RUNNER_TEMP/release-notes.md"
           cp distribution/obtainium.json dist/obtainium.json
           cp distribution/obtainium-beta.json dist/obtainium-beta.json
-          gh release create "$TAG" --target "$GITHUB_SHA" --title "MiTV Home $VERSION ($MITV_BUILD_CHANNEL)" --notes-file "$RUNNER_TEMP/release-notes.md" "${RELEASE_ARGS[@]}" dist/*.apk dist/*.aab dist/*.tar.gz dist/SHA256SUMS.txt dist/obtainium.json dist/obtainium-beta.json
+          (cd dist && sha256sum ./*.apk ./*.aab ./*.tar.gz update-manifest.json obtainium.json obtainium-beta.json > SHA256SUMS.txt)
+          gh release create "$TAG" --draft --target "$GITHUB_SHA" --title "MiTV Home $VERSION ($MITV_BUILD_CHANNEL)" --notes-file "$RUNNER_TEMP/release-notes.md" "${RELEASE_ARGS[@]}" dist/*.apk dist/*.aab dist/*.tar.gz dist/SHA256SUMS.txt dist/obtainium.json dist/obtainium-beta.json dist/update-manifest.json
+          test "$(gh release view "$TAG" --json assets --jq '.assets | length')" -ge 7
+          if [ "$MITV_BUILD_CHANNEL" = beta ]; then gh release edit "$TAG" --draft=false --latest=false; else gh release edit "$TAG" --draft=false --latest; fi
+          python3 scripts/check_published_update.py dist/update-manifest.json

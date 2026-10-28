@@ -27,13 +27,18 @@ final class ReleasePanels {
         label(host, rows, latest.optString("version"));
         features(host, rows, latest);
         disclosure(host, rows, host.tr("Fixes & Improvements"), "bug", ReleaseHistory.localized(host, latest, "fixes"));
-        // Summarize each skipped version with one real feature, rather than just counting updates.
-        for (int i = 1; i < releases.length(); i++) {
-            JSONObject release = releases.optJSONObject(i);
-            if (release == null || release.optInt("code") <= previous) continue;
-            JSONArray features = release.optJSONArray("features");
-            JSONObject first = features == null ? null : features.optJSONObject(0);
-            if (first != null) host.addControlIcon(rows, ReleaseHistory.localized(host, first, "label"), release.optString("version"), first.optString("icon", "info"), () -> {host.closePanel();host.showRelease(release);});
+        LinearLayout earlier=new LinearLayout(host);earlier.setOrientation(LinearLayout.VERTICAL);earlier.setVisibility(View.GONE);
+        String firstSummary="";int count=0;
+        for(int i=1;i<releases.length();i++){
+            JSONObject release=releases.optJSONObject(i);if(release==null||release.optInt("code")<=previous)continue;
+            JSONArray changes=release.optJSONArray("features");JSONObject first=changes==null?null:changes.optJSONObject(0);if(first==null)continue;
+            String title=ReleaseHistory.localized(host,first,"label");if(firstSummary.isEmpty())firstSummary=title;count++;
+            host.addControlIcon(earlier,title,release.optString("version"),first.optString("icon","history"),()->{host.closePanel();host.showRelease(release);});
+        }
+        if(count>0){
+            final TextView[] trigger=new TextView[1];
+            host.addControlIcon(rows,"Earlier updates",firstSummary,"history",()->{boolean expanded=earlier.getVisibility()!=View.VISIBLE;earlier.setVisibility(expanded?View.VISIBLE:View.GONE);trigger[0].setContentDescription(host.tr("Earlier updates")+", "+host.tr(expanded?"Expanded":"Collapsed"));trigger[0].requestFocus();});
+            trigger[0]=(TextView)rows.getChildAt(rows.getChildCount()-1);trigger[0].setContentDescription(host.tr("Earlier updates")+", "+host.tr("Collapsed"));rows.addView(earlier,host.lp(-1,-2));
         }
     }
     static void appendRelease(MainActivity host, LinearLayout rows, JSONObject release) {
@@ -58,7 +63,7 @@ final class ReleasePanels {
         body.setLineSpacing(host.dp(3), 1);
         body.setVisibility(View.GONE);
         final TextView[] trigger = new TextView[1];
-        host.addControlIcon(rows, title, host.tr("More information"), icon, () -> {
+        host.addControlIcon(rows, title, "", icon, () -> {
             boolean expanded = body.getVisibility() != View.VISIBLE;
             body.setVisibility(expanded ? View.VISIBLE : View.GONE);
             trigger[0].setContentDescription(title + ", " + host.tr(expanded ? "Expanded" : "Collapsed"));

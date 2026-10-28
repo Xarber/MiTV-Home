@@ -1,0 +1,135 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+package it.xarber.tvhome.playback;
+
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.wifi.WifiManager;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.SystemClock;
+import android.util.Base64;
+import com.chaquo.python.PyObject;
+import com.chaquo.python.Python;
+import com.chaquo.python.android.AndroidPlatform;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import org.json.JSONObject;
+import org.json.JSONArray;
+import java.net.NetworkInterface;
+import java.net.Inet4Address;
+import java.util.Collections;
+
+/** Home-scoped native remote playback. Local receiver playback is a separate source. */
+public final class PairedPlayback {
+    private static PairedPlayback shared;
+    public static synchronized PairedPlayback get(Context context){if(shared==null||shared.closed)shared=new PairedPlayback(context);return shared;}
+    private ScheduledFuture<?> monitorJob;
+    private final Context context;
+    private final PairingStore store;
+    private final Handler main=new Handler(Looper.getMainLooper());
+    private final ScheduledExecutorService worker=Executors.newSingleThreadScheduledExecutor();
+    private final PairingAttempt pairing=new PairingAttempt(SystemClock::elapsedRealtime);
+    private PyObject client;
+    private WifiManager.MulticastLock multicast;
+    private volatile boolean foreground,closed,busy;
+    private long retryAt;
+    private int failures;
+    private volatile JSONObject state=new JSONObject();
+    private volatile Bitmap artwork;
+    private String artEncoded;
+    private volatile String deviceName="";
+    private volatile boolean paired,storageError;
+    private long observed;
+    private Runnable observer;
+    private PairedPlayback(Context context){
+        this.context=context.getApplicationContext();store=new PairingStore(this.context);
+        worker.execute(()->{try{JSONObject value=store.read();paired=value!=null;if(value!=null)deviceName=value.optString("name");}catch(Exception error){storageError=true;}notifyChange();});
+    }
+    public void observe(Runnable callback){observer=callback;}
+    public boolean paired(){return paired;}
+    public boolean pairingPending(){return pairing.pending();}
+    public String pairingName(){return pairing.name();}
+    public long pairingRemaining(){return pairing.remaining();}
+    public boolean busy(){return busy;}
+    public boolean storageError(){return storageError;}
+    public String name(){return deviceName;}
+    public JSONObject state(){return state;}
+    public Bitmap artwork(){return artwork;}
+    public boolean active(){return foreground&&SystemClock.elapsedRealtime()-observed<12000&&Math.abs(System.currentTimeMillis()/1000.-state.optDouble("observed_at",0))<12&&state.optBoolean("active");}
+    public void resume(){foreground=true;retryAt=0;if(monitorJob==null||monitorJob.isCancelled())monitorJob=worker.scheduleWithFixedDelay(this::poll,0,2,TimeUnit.SECONDS);}
+    public void pause(){foreground=false;if(monitorJob!=null)monitorJob.cancel(false);worker.execute(()->{if(client!=null&&!pairing.pending())call("disconnect",new JSONObject());resetState();if(!pairing.pending())releaseMulticast();});}
+    public void close(){pairing.clear();closed=true;foreground=false;observer=null;worker.execute(()->{if(client!=null)call("shutdown",new JSONObject());releaseMulticast();});worker.shutdown();}
+    private void notifyChange(){main.post(()->{if(!closed&&observer!=null)observer.run();});}
+    private void lockMulticast(){if(multicast!=null)return;WifiManager wifi=(WifiManager)context.getSystemService(Context.WIFI_SERVICE);if(wifi!=null){multicast=wifi.createMulticastLock("MiTVAppleTVDiscovery");multicast.setReferenceCounted(false);multicast.acquire();}}
+    private void releaseMulticast(){if(multicast!=null){if(multicast.isHeld())multicast.release();multicast=null;}}
+    private JSONObject call(String operation,JSONObject payload){
+        try{
+            if(client==null){synchronized(Python.class){if(!Python.isStarted())Python.start(new AndroidPlatform(context));}client=Python.getInstance().getModule("paired_apple_tv").get("Client").call();
+                java.io.File directory=context.getExternalFilesDir("diagnostics");if(directory==null)directory=new java.io.File(context.getFilesDir(),"diagnostics");directory.mkdirs();
+                client.callAttr("configure_diagnostics",directory.getAbsolutePath(),io.github.jqssun.airplay.BuildConfig.VERSION_NAME,io.github.jqssun.airplay.BuildConfig.SOURCE_COMMIT);}
+            return new JSONObject(client.callAttr("request",operation,payload.toString()).toString());
+        }catch(Exception error){logHostFailure(operation,"runtime_unavailable",error);return error("runtime_unavailable");}
+    }
+    private static JSONObject error(String key){JSONObject result=new JSONObject();try{result.put("error",key);}catch(Exception ignored){}return result;}
+    public void request(String operation,JSONObject data,Consumer<JSONObject> callback){
+        if(closed||busy){callback.accept(error("busy"));return;}long requestToken=pairing.token();busy=true;
+        worker.execute(()->{JSONObject result;
+            try{lockMulticast();
+                if(operation.equals("scan"))data.put("excluded_addresses",localAddresses());
+                if(operation.equals("pair_begin"))pairing.clear();
+                if(operation.equals("pair_finish")&&!pairing.pending()){call("cancel_pairing",new JSONObject());result=error("pairing_expired");}
+                else result=call(operation,data);
+                if(operation.equals("pair_begin")&&result.optString("status").equals("pin_required")){
+                    long token=pairing.begin(result.optString("name"));
+                    worker.schedule(()->{if(pairing.expire(token)){call("cancel_pairing",new JSONObject());if(!foreground)releaseMulticast();notifyChange();}},PairingAttempt.TIMEOUT_MS,TimeUnit.MILLISECONDS);
+                }
+                if(operation.equals("pair_finish")&&result.has("credentials")&&requestToken!=pairing.token())result=error("pairing_canceled");
+                if(operation.equals("cancel_pairing")||operation.equals("scan")||operation.equals("pair_finish"))pairing.clear();
+                if(operation.equals("pair_finish")&&result.has("credentials")){
+                    try{store.save(result);paired=true;storageError=false;deviceName=result.optString("name");result=new JSONObject().put("status","paired");retryAt=0;}
+                    catch(Exception storageFailure){logHostFailure(operation,"storage_failed",storageFailure);result=error("storage_failed");}
+                }
+            }catch(Exception error){result=error("runtime_unavailable");}
+            busy=false;JSONObject safe=result;main.post(()->{if(!closed){callback.accept(safe);notifyChange();}});
+        });
+    }
+    private void logHostFailure(String operation,String code,Exception error){
+        String type=error.getClass().getSimpleName();android.util.Log.w("MiTVPairing","event=failure operation="+operation+" error="+code+" exception_type="+type);
+        try{if(client!=null)client.callAttr("host_failure",operation,code,type);}catch(Exception ignored){}
+    }
+    public String diagnosticHistory(){
+        StringBuilder text=new StringBuilder("\nPaired playback logs (safe metadata; newest tail)\n");
+        java.io.File directory=context.getExternalFilesDir("diagnostics");if(directory==null)directory=new java.io.File(context.getFilesDir(),"diagnostics");
+        for(String name:new String[]{"paired-playback.previous.jsonl","paired-playback.jsonl"}){
+            java.io.File file=new java.io.File(directory,name);
+            try{if(file.isFile()&&file.length()<=140000){String value=new String(java.nio.file.Files.readAllBytes(file.toPath()),java.nio.charset.StandardCharsets.UTF_8);text.append(value);}}catch(Exception ignored){}
+        }
+        String value=text.toString();return value.length()>24000?value.substring(value.length()-24000):value;
+    }
+    public void cancelPairing(){pairing.clear();worker.execute(()->{if(client!=null)call("cancel_pairing",new JSONObject());if(!foreground)releaseMulticast();});}
+    public void unpair(){pairing.clear();worker.execute(()->{if(client!=null)call("disconnect",new JSONObject());store.clear();paired=false;storageError=false;deviceName="";resetState();releaseMulticast();notifyChange();});}
+    public void command(String action,Double volume){try{JSONObject value=new JSONObject().put("action",action);if(volume!=null)value.put("value",volume);request("command",value,result->{});}catch(Exception ignored){}}
+    private JSONArray localAddresses(){
+        JSONArray addresses=new JSONArray();
+        try{for(NetworkInterface network:Collections.list(NetworkInterface.getNetworkInterfaces()))
+            for(java.net.InetAddress address:Collections.list(network.getInetAddresses()))
+                if(address instanceof Inet4Address&&!address.isLoopbackAddress())addresses.put(address.getHostAddress());
+        }catch(Exception ignored){}return addresses;
+    }
+    private void resetState(){state=new JSONObject();artwork=null;artEncoded=null;observed=0;}
+    private void poll(){
+        if(closed||!foreground||!paired||pairing.pending()||busy||SystemClock.elapsedRealtime()<retryAt)return;
+        try{
+            lockMulticast();JSONObject next;
+            if(!state.optString("status").equals("connected")){JSONObject credentials=store.read();if(credentials==null)return;credentials.put("excluded_addresses",localAddresses());next=call("connect",credentials);}else next=call("state",new JSONObject());
+            if(next.has("error")||!next.optString("status").equals("connected")){resetState();failures++;retryAt=SystemClock.elapsedRealtime()+Math.min(60000,2000L<<Math.min(5,failures));releaseMulticast();notifyChange();return;}
+            failures=0;state=next;observed=SystemClock.elapsedRealtime();String encoded=next.optString("artwork","");
+            if(!encoded.equals(artEncoded)){artEncoded=encoded;artwork=null;if(!encoded.isEmpty()&&encoded.length()<700000){byte[] bytes=Base64.decode(encoded,Base64.DEFAULT);BitmapFactory.Options options=new BitmapFactory.Options();options.inJustDecodeBounds=true;BitmapFactory.decodeByteArray(bytes,0,bytes.length,options);if(options.outWidth>0&&options.outHeight>0&&options.outWidth<=1024&&options.outHeight<=1024)artwork=BitmapFactory.decodeByteArray(bytes,0,bytes.length);}}
+            notifyChange();
+        }catch(Exception error){resetState();retryAt=SystemClock.elapsedRealtime()+30000;releaseMulticast();notifyChange();}
+    }
+}

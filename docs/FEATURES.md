@@ -8,7 +8,9 @@
 - Music and remote activities reveal short details, retain focus order and allow black or transparent backgrounds. Audio popup controls focus, album art, timeline and volume.
 - Home-only HTTP remote, short-lived QR/PIN pairing, bounded token set, 5s presence heartbeat and 15s expiry. Port 80 attempted; 8765 fallback on restricted Android.
 - About: version/commit footer, persistent icon-led changelog with expandable feature/fix details, once-per-update What's New (suppressed on first install), licenses and source link, export/import presentation preferences.
-- Hidden developer tools: version triple press, 30s inactivity expiry, background/tab lock, safe report copy/share, allowlisted event history, notification simulation and remote revocation.
+- Hidden developer configuration: version triple press reveals a persistent on/off toggle; enabled tools appear in Control Center. The reveal expires after inactivity/navigation, safe report copy/share, allowlisted event history, notification simulation and remote revocation.
+
+- GitHub updater: launch/foreground checks, cached release metadata, channel filtering, icon-based notes, DownloadManager progress/cancel, APK validation and official Android installer. Installed signing identity must match. See [update contracts and limits](features/UPDATES.md).
 
 ## Limits
 
