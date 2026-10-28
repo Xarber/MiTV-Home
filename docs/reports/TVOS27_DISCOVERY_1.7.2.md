@@ -49,7 +49,7 @@ and signing proof/credentials. Remaining disk space is still below the safe buil
 margin. Asked the user to free approximately 2 GB or choose the remote-build fallback.
 No unrelated user files, dependencies, signing keys or production data were removed.
 
-## Deployment status
+## Status after the initial local-build attempt
 
 v1.7.2 is committed development work. It is not built, released or installed yet.
 The TV retains v1.7.1. Physical PIN display, authenticated pairing/playback and the
@@ -62,3 +62,32 @@ local-build request. Remote run for commit `dbc5b4d`:
 https://github.com/Xarber/MiTV-Home/actions/runs/40604486783
 
 No build success or installation is claimed for that in-progress run.
+
+
+## Physical deployment — 28 October 2026
+
+The GitHub workflow completed successfully, including universal APK, AAB, source,
+all dependency jobs and host checks. Installed its exact release-mode universal APK
+for commit `dbc5b4d`, version 1.7.2 / code 20, on the physical Android 10 ARMv7 TV.
+No public release was published from testing.
+
+Validated artifact checksum, embedded version/commit, ARMv7 support and existing
+release signing identity with Android 10 verification. Inspected packaged Python
+to confirm both the client-name header patch and receiver-discovery filter were
+present. Installed in place without uninstalling or clearing data. Android reported
+Success; package listing confirmed code 20. The installed APK hash matched the
+verified artifact, cold launch succeeded and default Home remained MiTV Home.
+
+The actual receiver's network advertisement included the new software marker.
+Home's phone remote returned HTTP 200. These checks verify marker publication and
+basic service availability, not playback or authenticated Apple TV pairing.
+
+A standard artifact download initially failed for lack of Mac storage. Removed
+that incomplete download and streamed the ZIP directly through extraction to avoid
+storing both the ZIP and APK. Removed 118 MiB of failed local-build intermediates,
+keeping the working v1.7.1 rollback APK and private backups/signing credentials.
+The successful APK came from GitHub; the earlier local build remains failed.
+
+Asked the user to try a fresh pairing and confirm visible PIN presentation. Actual
+on-screen Apple TV PIN display, authenticated completion and playback are still
+awaiting that physical test; no success is inferred from compilation or deployment.
