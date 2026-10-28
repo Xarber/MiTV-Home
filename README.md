@@ -10,7 +10,9 @@
 
 <p align="center"><a href="https://github.com/Xarber/MiTV-Home/releases/latest"><strong>Download APK</strong></a> · <a href="docs/INSTALL.md">Install & restore</a> · <a href="docs/BUILDING.md">Build it yourself</a> · <a href="https://github.com/Xarber/MiTV-Home/issues">Report an issue</a></p>
 
-![MiTV Home dock](docs/assets/home.png)
+![Stable Android launcher screenshot](docs/assets/home.png)
+
+The screenshot above shows the current stable release. The Expo migration is being validated on `testing`.
 
 ## Expo application base
 

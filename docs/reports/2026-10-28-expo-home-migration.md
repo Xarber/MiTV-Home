@@ -35,3 +35,33 @@ D-pad, app/HDMI routes and lifecycle. Only then replace the production package a
 verify retained preferences/services. Full four-ABI native builds and phone format
 validation are separate release gates. No promotion to stable is authorized by
 these partial results.
+
+## First physical preview and follow-up fixes
+
+Run 40746867768 built the release-mode ARM preview from 445ac55 successfully.
+Its checksum, established certificate, preview package, version/code, minimum API,
+embedded Hermes bundle and ARM host library were verified before installation.
+The separate preview ran on the physical Android 10 MiTV. Fresh private screenshots
+confirmed the Expo interface and actual installed app banners. It deliberately did
+not bind/start receiver or remote listeners, so this does not verify AirPlay,
+remote pairing or production preference retention.
+
+The user reported density/layout, hero frame, focus and clipping defects in that
+preview. Follow-up source changes fit the web canvas to TV density, lower/widen the
+dock with concentric padding/radii, remove the header wordmark, fix the full-screen
+banner frame, refresh focus geometry after snapping, maintain scroll geometry,
+contain rounded popup materials and inset scroll content. Wi-Fi name access now has
+an explicit Android permission/settings path; no permission is silently granted.
+See Android's WifiInfo/getSSID reference for SSID redaction requirements.
+
+The follow-up candidate build must use the actual production package to exercise
+native listeners and retained preferences. It is an ARM validation candidate, not
+a universal release. Stable and beta publication remain separate validation gates.
+
+Additional checks for the follow-up source batch: 18 model/focus/hold/reconnection
+checks passed; Chrome browser regression suite passed all 17 checks; Android phone
+prebuild succeeded in the isolated workspace with the pinned TV fork preserved.
+No iOS native build or actual phone hardware validation is implied. Native runtime
+warnings exposed fractional SVG strings, now normalized; idle snapshot equality,
+minute-boundary clock updates and active-page-only artwork reduce unnecessary TV
+work. Follow-up geometry/material fixes still await the matching physical APK.

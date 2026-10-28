@@ -111,3 +111,8 @@ those directories. Release validation checks HTML script/link references and eve
 exported web asset inside both APK and AAB, preventing a working HTML shell with
 missing JavaScript from being published. The defect was found by fetching the
 actual installed TV's script URL; browser-only exports did not expose it.
+
+TV integration now runs behind the Expo Home surface. The production package owns
+the existing remote/receiver services; isolated preview packages deliberately do
+not advertise duplicate receivers or listen on the TV remote port. Test pairing
+and activities with the production-package candidate, not the isolated UI preview.

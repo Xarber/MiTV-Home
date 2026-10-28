@@ -45,9 +45,9 @@ HTTP status, HAP phase and stack locations as evidence before choosing a fix.
 ## Aurea Home and Remote companion
 
 The user authorized testing → beta promotion of the Expo work and companion
-builds. Keep stable main unchanged until separately validated. Native Android TV
-remains the launcher; demo/ dispatches the web TV preview and iOS/Android/web phone
-remote. Preserve separate package IDs, update channels and signing continuity.
+builds. Keep stable main unchanged until separately validated. Expo is now the shared application base. Android TV uses the native React Home
+host and retained Android services; App.tsx dispatches the web preview and separate
+iOS/Android/web phone remote. Preserve separate package IDs, update channels and signing continuity.
 Multiple saved TVs have isolated credentials and cancellation on switching. Never
 replay commands after reconnect, treat an example as a real TV, cache private API
 requests or claim physical background remote support from browser tests.

@@ -20,6 +20,8 @@ import io.github.jqssun.airplay.BuildConfig
 
 /** Same installed Home component; Expo is the actual native screen, never a WebView. */
 class MainActivity : ReactActivity() {
+    private val wifiPermission = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions -> val allowed=permissions[android.Manifest.permission.ACCESS_FINE_LOCATION]==true; AureaTVModule.event("notice",TVPlatform.safe("message",AppLanguage.text(this,if(allowed) "Wi-Fi name access enabled" else "Wi-Fi name is hidden without location permission"))) }
+    fun requestWifiName() { wifiPermission.launch(arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION,android.Manifest.permission.ACCESS_COARSE_LOCATION)) }
     private val exportFile = registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         if (uri != null) try { contentResolver.openOutputStream(uri)?.use { output -> output.write(HomePreferences.export(this, getSharedPreferences("it.xarber.tvhome.MainActivity", 0)).toByteArray(Charsets.UTF_8)) }; AureaTVModule.event("notice", TVPlatform.safe("message", "Preferences exported")) } catch (_: Exception) { AureaTVModule.event("notice", TVPlatform.safe("message", "Export failed")) }
     }

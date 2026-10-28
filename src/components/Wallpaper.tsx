@@ -17,10 +17,10 @@ export function Wallpaper({id,motion=false,mini=false}:{id:string;motion?:boolea
  <LinearGradient colors={wallpaper.colors} start={{x:0,y:0}} end={{x:1,y:1}} style={StyleSheet.absoluteFill}/>
  <Animated.View nativeID={mini?undefined:'wallpaper-motion'} style={[StyleSheet.absoluteFill,style]}>
  <Svg width="100%" height="100%" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
- <Defs><SvgGradient id={gradientId} x1="0" y1="0" x2="1" y2="1"><Stop offset="0" stopColor={wallpaper.colors[1]} stopOpacity=".03"/><Stop offset=".5" stopColor={wallpaper.colors[1]} stopOpacity=".6"/><Stop offset="1" stopColor={wallpaper.colors[0]} stopOpacity=".05"/></SvgGradient></Defs>
+ <Defs><SvgGradient id={gradientId} x1="0" y1="0" x2="1" y2="1"><Stop offset="0" stopColor={wallpaper.colors[1]} stopOpacity="0.03"/><Stop offset="0.5" stopColor={wallpaper.colors[1]} stopOpacity="0.6"/><Stop offset="1" stopColor={wallpaper.colors[0]} stopOpacity="0.05"/></SvgGradient></Defs>
  <Path d="M-200 880 C80 830 240 470 430 100 C590-210 1030-190 1140 80 C920 130 640 320 490 570 C320 850 50 1050-200 1100Z" fill={`url(#${gradientId})`}/>
- <Path d="M440 1000 C600 760 620 520 930 410 C1100 350 1260 420 1570 180 L1600 950Z" fill={`url(#${gradientId})`} opacity=".5"/>
- <Path d="M-100 850 C420 1070 700 230 1570 220" stroke={wallpaper.colors[1]} strokeWidth="1" opacity=".24" fill="none"/>
+ <Path d="M440 1000 C600 760 620 520 930 410 C1100 350 1260 420 1570 180 L1600 950Z" fill={`url(#${gradientId})`} opacity="0.5"/>
+ <Path d="M-100 850 C420 1070 700 230 1570 220" stroke={wallpaper.colors[1]} strokeWidth="1" opacity="0.24" fill="none"/>
  </Svg>
  </Animated.View>
  <LinearGradient colors={['transparent','rgba(3,7,15,0.18)','rgba(3,7,15,0.66)']} style={StyleSheet.absoluteFill}/>

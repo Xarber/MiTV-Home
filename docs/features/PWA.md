@@ -28,3 +28,6 @@ install native APKs or claim native OTA support.
 Headless Chrome verifies manifest output, registration and offline preview
 navigation; actual Android/iOS/desktop installation prompts remain device checks.
 The localhost production export runs independently of Metro.
+
+TV-only scaling and native service adapters do not change the browser's dimensions
+or authorize caching private TV data. Root web exports remain independently usable.

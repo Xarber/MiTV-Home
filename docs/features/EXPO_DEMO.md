@@ -31,3 +31,16 @@ APK/AAB independently. Never run `expo prebuild --clean` over the TV host.
 Italian strings reuse the established native dictionary via
 `python3 scripts/expo/localization.py`; newer Expo-specific labels live in i18n.ts.
 See ARCHITECTURE.md and decisions/0003-expo-home-base.md for migration boundaries.
+
+## Native verification builds
+
+Manual build.yml `expo_preview` produces both a separate preview and a
+production-package ARM candidate. The separate preview disables receiver/remote
+listeners so it cannot claim or interfere with the installed receiver. The candidate
+retains it.xarber.mitvhome and enables the real native integrations. Verify the
+candidate signature, package, source/version and rollback before updating the TV.
+These ARM artifacts do not replace four-ABI source builds or publish a release.
+
+SSID names can be redacted by Android when location access is missing. Network
+settings exposes the official permission/settings flow and never grants it silently.
+Reference: [Android WifiInfo/getSSID](https://developer.android.com/reference/android/net/wifi/WifiInfo#getSSID()).

@@ -4,11 +4,12 @@ import {View,Text,StyleSheet,useWindowDimensions} from 'react-native';
 import {LinearGradient} from 'expo-linear-gradient';
 import {FocusButton} from './FocusButton';
 import {Icon} from './Icon';
+import {useCanvasDimensions} from './TVCanvas';
 import {InputMarks} from './InputMarks';
 import {NativeAppImage} from './NativeAppImage';
 import {AppEntry} from '../model/catalog';
 export function Tile({app,id,group,onPress,onSelect,onMenu,wide=false,native=false}:{native?:boolean;app:AppEntry;id:string;group:string;onPress:()=>void;onSelect:()=>void;onMenu:()=>void;wide?:boolean}){
- const screenWidth=useWindowDimensions().width;const narrow=screenWidth<600;const compactInput=wide&&screenWidth<800;
+ const screenWidth=useCanvasDimensions().width;const narrow=screenWidth<600;const compactInput=wide&&screenWidth<800;
  return <View style={{flex:1,minWidth:wide?(compactInput?0:180):narrow?40:100,maxWidth:wide?(compactInput?'48%':360):240,flexBasis:compactInput?'46%':undefined}}>
  <FocusButton id={id} label={app.name} group={group} onPress={onPress} onSelect={onSelect} onLongPress={onMenu} style={[styles.tile,{aspectRatio:wide?2.1:1.75}]}>
  <LinearGradient colors={[app.color,'#20232b']} style={[StyleSheet.absoluteFill,{borderRadius:13}]} start={{x:0,y:0}} end={{x:1,y:1}}/>

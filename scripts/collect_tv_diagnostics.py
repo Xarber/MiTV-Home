@@ -28,7 +28,7 @@ result=subprocess.run(base+['pull',f'/sdcard/Android/data/{args.package}/files/d
 report['persistent_logs_retrieved']=result.returncode==0
 with open(root/'pairing-logcat.txt','wb') as output:
  os.chmod(root/'pairing-logcat.txt',0o600)
- result=subprocess.run(base+['logcat','-d','-v','threadtime','-s','MiTVPairing:V','*:S'],stdout=output,stderr=subprocess.DEVNULL,timeout=30)
+ result=subprocess.run(base+['logcat','-d','-v','threadtime','-s','MiTVPairing:V','AureaHomeUI:V','*:S'],stdout=output,stderr=subprocess.DEVNULL,timeout=30)
 report['safe_logcat_retrieved']=result.returncode==0
 result=subprocess.run(base+['shell','pm','list','packages','--show-versioncode',args.package],capture_output=True,text=True,timeout=20)
 match=re.search(r'versionCode:(\d+)',result.stdout)

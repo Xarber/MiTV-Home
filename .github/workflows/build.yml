@@ -31,6 +31,9 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && inputs.expo_preview
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    env:
+      EXPO_PUBLIC_SOURCE_COMMIT: ${{ github.sha }}
+      MITV_BUILD_CHANNEL: ${{ github.ref_name }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -69,8 +72,13 @@ jobs:
           cp -R dist/. app/src/main/assets/remoteapp/
           SDK_MANAGER="$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager | sort -V | tail -1)"
           "$SDK_MANAGER" 'platforms;android-37.0' 'build-tools;37.0.0' 'ndk;27.0.12077973' 'cmake;3.22.1'
-      - name: Build isolated release-mode preview
-        run: ./gradlew :app:assembleRelease -PuseBundledNative -PreactNativeArchitectures=armeabi-v7a,arm64-v8a -PhomeApplicationId=it.xarber.mitvhome.preview -PbundledNativeRoot="$GITHUB_WORKSPACE/build/preview-native" --console=plain
+      - name: Build ARM UI preview and production-package candidate
+        run: |
+          mkdir -p candidate-unsigned
+          ./gradlew :app:assembleRelease -PuseBundledNative -PreactNativeArchitectures=armeabi-v7a,arm64-v8a -PhomeApplicationId=it.xarber.mitvhome.preview -PbundledNativeRoot="$GITHUB_WORKSPACE/build/preview-native" --console=plain
+          cp app/build/outputs/apk/release/app-release-unsigned.apk candidate-unsigned/preview.apk
+          ./gradlew :app:assembleRelease -PuseBundledNative -PreactNativeArchitectures=armeabi-v7a,arm64-v8a -PhomeApplicationId=it.xarber.mitvhome -PbundledNativeRoot="$GITHUB_WORKSPACE/build/preview-native" --console=plain
+          cp app/build/outputs/apk/release/app-release-unsigned.apk candidate-unsigned/candidate.apk
       - name: Sign isolated preview with the established release key
         env:
           KEYSTORE: ${{ secrets.MITV_KEYSTORE_BASE64 }}
@@ -84,8 +92,10 @@ jobs:
           SIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -1)"
           VERSION="$(node -p 'require("./package.json").version')"
           mkdir -p preview-dist
-          "$SIGNER" sign --ks "$RUNNER_TEMP/preview.jks" --ks-key-alias "$MITV_KEY_ALIAS" --ks-pass env:MITV_STORE_PASSWORD --key-pass env:MITV_KEY_PASSWORD --out "preview-dist/Aurea-Home-v${VERSION}-preview-${GITHUB_SHA:0:7}-arm.apk" app/build/outputs/apk/release/app-release-unsigned.apk
-          "$SIGNER" verify preview-dist/*.apk
+          for VARIANT in preview candidate; do
+            "$SIGNER" sign --ks "$RUNNER_TEMP/preview.jks" --ks-key-alias "$MITV_KEY_ALIAS" --ks-pass env:MITV_STORE_PASSWORD --key-pass env:MITV_KEY_PASSWORD --out "preview-dist/Aurea-Home-v${VERSION}-${VARIANT}-${GITHUB_SHA:0:7}-arm.apk" "candidate-unsigned/$VARIANT.apk"
+          done
+          for APK in preview-dist/*.apk; do "$SIGNER" verify "$APK"; done
           sha256sum preview-dist/*.apk > preview-dist/SHA256SUMS.txt
       - uses: actions/upload-artifact@v5
         with:

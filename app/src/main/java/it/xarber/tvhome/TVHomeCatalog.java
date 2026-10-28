@@ -37,7 +37,7 @@ final class TVHomeCatalog {
         entries.put("airplay",entry("airplay","AirPlay","airplay","airplay","casting"));
         PackageManager pm=context.getPackageManager();
         for(String category:new String[]{Intent.CATEGORY_LEANBACK_LAUNCHER,Intent.CATEGORY_LAUNCHER})for(ResolveInfo info:pm.queryIntentActivities(new Intent(Intent.ACTION_MAIN).addCategory(category),0)){
-            String pkg=info.activityInfo.packageName;if(pkg.equals(context.getPackageName())||applications.containsKey(pkg)||applications.size()>=256)continue;
+            String pkg=info.activityInfo.packageName;if(pkg.equals(context.getPackageName())||pkg.equals(context.getPackageName()+".preview")||applications.containsKey(pkg)||applications.size()>=256)continue;
             boolean system=(info.activityInfo.applicationInfo.flags&1)!=0,casting=pkg.matches(".*(airplay|smartshare|mediashell|miracast|milink).*");
             applications.put(pkg,info);entries.put(pkg,entry(pkg,String.valueOf(info.loadLabel(pm)),"app","apps",casting?"casting":system?"system":"apps").put("system",system));
         }
@@ -58,7 +58,7 @@ final class TVHomeCatalog {
         entries.put("live",entry("live","Live TV","live","tv","inputs"));
         refreshed=android.os.SystemClock.elapsedRealtime();return array();
     }
-    private JSONArray array(){JSONArray values=new JSONArray();for(JSONObject entry:entries.values())values.put(entry);return values;}
+    private JSONArray array(){JSONArray result=new JSONArray();List<JSONObject> values=new ArrayList<>(entries.values());values.sort((a,b)->{boolean ai=a.optString("kind").equals("hdmi"),bi=b.optString("kind").equals("hdmi");if(ai&&bi)return Integer.compare(a.optInt("port"),b.optInt("port"));if(ai!=bi)return ai?-1:1;return 0;});for(JSONObject value:values)result.put(value);return result;}
     private String normalize(String key){return key.equals("library")?"all":key;}
     synchronized JSONArray dock()throws Exception{
         read(false);List<String> requested=new ArrayList<>();requested.add(normalize(prefs.getString("input-dock-pin","inputs")));

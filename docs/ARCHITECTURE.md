@@ -42,3 +42,16 @@ See [migration decision](decisions/0003-expo-home-base.md),
 [Expo development](features/EXPO_DEMO.md), [remote](features/PHONE_REMOTE.md),
 [PWA](features/PWA.md), and [branding](BRANDING.md). Migration verification and
 remaining limitations belong in reports, not implied by a successful web export.
+
+## TV density and focus coordinates
+
+TVCanvas uses the web design's 1440-point canvas and fits it to the Android TV
+window. This prevents device density from inflating typography, paddings and panel
+widths. Phone and web layouts keep their ordinary window dimensions. Native anchor
+rectangles and scroll deltas convert through the same canvas scale.
+
+Each snap refreshes every focus target after the UI-thread transition completes.
+Scroll offsets update only the corresponding content geometry; fixed category
+tabs and popup Close buttons do not move with scrolling. Native focus rectangles
+must not be refreshed for one focused item while leaving its siblings in a prior
+page coordinate system. Tests cover that specific sideways-navigation regression.
