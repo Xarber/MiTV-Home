@@ -446,7 +446,7 @@ public final class MainActivity extends Activity {
         addControl(rows,"Done","",this::closePanel);panel.show();focusFirst(rows);
     }
     void showRelease(org.json.JSONObject release){LinearLayout rows=dialog("MiTV Home "+release.optString("version"));ReleasePanels.appendRelease(this,rows,release);addControlIcon(rows,"Full changelog","","history",()->{closePanel();showChangelog(false);});addControl(rows,"Done","",this::closePanel);panel.show();focusFirst(rows);}
-    String diagnosticReport(){return it.xarber.tvhome.diagnostics.Diagnostics.report(this,nativeReceiver!=null,remoteServer!=null);}
+    String diagnosticReport(){return it.xarber.tvhome.diagnostics.Diagnostics.report(this,nativeReceiver!=null,remoteServer!=null)+(pairedPlayback==null?"":pairedPlayback.diagnosticHistory());}
     void showDeveloperDetails(){if(!developerEnabled())return;LinearLayout rows=dialog("Diagnostic details");developerPanel=panel;TextView details=text(diagnosticReport(),11,MUTED);details.setTextIsSelectable(true);rows.addView(details,lp(-1,-2));addControl(rows,"Done","",this::closePanel);panel.show();focusFirst(rows);}
     void showDeveloperOptions(){
         if(!developerEnabled())return;event(it.xarber.tvhome.diagnostics.Diagnostics.Event.DEVELOPER_OPENED);

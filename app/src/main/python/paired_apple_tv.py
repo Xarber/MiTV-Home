@@ -14,6 +14,7 @@ import threading
 import time
 from receiver_discovery import eligible_apple_tv
 from playback_errors import classify_failure
+from playback_diagnostics import Recorder,configure_http_logging
 
 os.environ.setdefault("CRYPTOGRAPHY_OPENSSL_NO_LEGACY", "1")
 # Protocol debug messages can contain credentials and personal metadata.
@@ -22,6 +23,7 @@ logging.disable(logging.CRITICAL)
 
 class Client:
     def __init__(self):
+        self.recorder = None
         self.loop = asyncio.new_event_loop()
         self.thread = threading.Thread(target=self._run, name="AppleTVProtocol", daemon=True)
         self.devices = {}
@@ -35,19 +37,46 @@ class Client:
 
     def _run(self):
         asyncio.set_event_loop(self.loop)
-        self.loop.set_exception_handler(lambda loop, context: None)
+        self.loop.set_exception_handler(self._unhandled_error)
         self.loop.run_forever()
+
+    def configure_diagnostics(self,directory,version,commit):
+        if self.recorder is not None:return
+        sink=None
+        try:
+            from java import jclass
+            android_log=jclass("android.util.Log")
+            sink=lambda line:android_log.i("MiTVPairing",line)
+        except Exception:pass
+        try:
+            self.recorder=Recorder(directory,version,commit,sink)
+            configure_http_logging(self.recorder)
+        except Exception:self.recorder=None
+
+    def _unhandled_error(self,loop,context):
+        if self.recorder:self.recorder.write("failure","state",error="connection_failed",exception=context.get("exception"))
+
+    def host_failure(self,operation,code,exception_type):
+        if self.recorder:self.recorder.write("failure",operation,error=code,host_exception=exception_type)
 
     def request(self, operation, payload="{}"):
         """Called from Android's worker, never the UI thread. Errors are redacted."""
+        started=time.monotonic()
+        if self.recorder and operation!="state":self.recorder.write("start",operation)
         future = asyncio.run_coroutine_threadsafe(self._dispatch(operation, json.loads(payload)), self.loop)
         try:
-            return json.dumps(future.result(timeout=35), allow_nan=False)
+            result=future.result(timeout=35)
+            if self.recorder and operation!="state":self.recorder.write("failure" if "error" in result else "success",operation,error=result.get("error"),elapsed_ms=int((time.monotonic()-started)*1000))
+            return json.dumps(result,allow_nan=False)
         except concurrent.futures.TimeoutError:
             future.cancel()
-            return json.dumps(classify_failure(operation,TimeoutError()))
-        except Exception as error:
+            error=TimeoutError()
+            if self.recorder:self.recorder.write("failure",operation,error="timeout",exception=error,elapsed_ms=int((time.monotonic()-started)*1000))
             return json.dumps(classify_failure(operation,error))
+        except Exception as error:
+            result=classify_failure(operation,error)
+            if self.recorder:self.recorder.write("failure",operation,error=result.get("error"),http_status=result.get("http_status"),exception=error,elapsed_ms=int((time.monotonic()-started)*1000))
+            return json.dumps(result)
 
     async def _dispatch(self, operation, data):
         import pyatv
@@ -190,6 +219,7 @@ class Client:
                 await asyncio.sleep(2)
         except asyncio.CancelledError:
             raise
-        except Exception:
+        except Exception as error:
+            if self.recorder:self.recorder.write("failure","state",error="connection_failed",exception=error)
             # Remove stale playback immediately; the Android owner reconnects with backoff.
             self.snapshot = {"status": "disconnected", "playing": False, "error": "connection_lost"}

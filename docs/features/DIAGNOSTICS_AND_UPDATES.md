@@ -19,3 +19,36 @@ Physical-TV validation of the 1.6.0 upgrade from pre-baseline versions found too
 The user's latest task-specific behavior overrides the earlier expiring-access default: three presses on the About build/version reveal a Developer options toggle. Its enabled flag is persisted in home_developer. When enabled, Developer settings appears in Control Center and stays enabled until switched off. The transient 30-second/navigation/background session controls only the hidden toggle's initial reveal; it does not turn an enabled developer configuration off. The receiver's settings surface shares the same persisted flag. This flag is deliberately excluded from portable presentation backups.
 
 Updates is nested only under About; the duplicate Control Center Updates entry was removed at the user's request.
+
+## Persistent paired-Apple-TV protocol records (1.7.4)
+
+The earlier lifecycle report and receiver log file did not record failures from
+the newly embedded Apple TV client. This omission caused repeated diagnostic
+builds and is corrected by `playback_diagnostics.py`.
+
+The paired client records operation start/result, monotonic duration, UTC, build
+version/commit, allowlisted HTTP method/path, HAP sequence number and response code.
+Failures include exception class chains and bounded basename/function/line-number
+traces. Exception text, stack locals, full paths, device names/addresses, PINs,
+credentials, request/response headers and bodies are never persisted.
+
+A handler for the pinned pyatv HTTP logger recognizes exact known message templates
+and extracts only safe metadata. It never formats a debug record or forwards raw
+library output. Unrecognized messages and paths are dropped. Diagnostics failure
+cannot interrupt pairing. HTTP stages and failures are recorded without requiring
+another debug-specific APK; hidden developer controls still govern access to the
+in-app report. Recent paired-client history is included in existing details/copy/
+export actions, alongside the older bounded lifecycle events.
+
+Files, retained across ordinary app restarts and in-place updates:
+
+- App-owned external files: `diagnostics/paired-playback.jsonl` and
+  `diagnostics/paired-playback.previous.jsonl`, each bounded to 128 KiB.
+- On this Android TV, retrieve through authorized ADB from
+  `/sdcard/Android/data/it.xarber.mitvhome/files/diagnostics/`.
+- The same safe lines are mirrored under Android logcat tag `MiTVPairing`.
+- If app-owned external storage is unavailable, use app-private files as fallback;
+  the developer report and logcat remain the supported retrieval paths.
+
+Do not enable arbitrary pyatv binary debug output: its messages can contain pairing
+secrets. Old failures cannot be reconstructed when they were never recorded.

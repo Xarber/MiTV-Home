@@ -2,6 +2,37 @@
   "schema": 1,
   "releases": [
     {
+      "version": "1.7.4",
+      "code": 22,
+      "date": "2026-10-28",
+      "critical": false,
+      "highlights": {
+        "en": "Persistent pairing diagnostics that can be retrieved from the TV without rebuilding for every failure.",
+        "it": "Diagnostica di abbinamento persistente, recuperabile dalla TV senza ricompilare per ogni errore."
+      },
+      "fixes": {
+        "en": "Records pairing phases, HTTP status, timings and safe exception locations in rotating files and Android logs; developer copy/export includes recent history.",
+        "it": "Registra fasi, stato HTTP, tempi e posizioni sicure delle eccezioni in file a rotazione e log Android; copia/esportazione sviluppatore includono la cronologia recente."
+      },
+      "compatibility": {
+        "en": "Logs exclude PINs, credentials, addresses, device names, raw packets and exception messages. Diagnostics do not themselves fix every pairing error.",
+        "it": "I log escludono PIN, credenziali, indirizzi, nomi dispositivi, pacchetti grezzi e messaggi delle eccezioni. La diagnostica non risolve da sola ogni errore."
+      },
+      "features": [
+        {
+          "icon": "code",
+          "label": {
+            "en": "Persistent protocol diagnostics",
+            "it": "Diagnostica protocollo persistente"
+          },
+          "detail": {
+            "en": "Retains bounded safe request phases, responses and error traces across app restarts, accessible through developer diagnostics or ADB.",
+            "it": "Conserva fasi delle richieste, risposte e tracce di errore sicure e limitate anche dopo il riavvio, accessibili dalla diagnostica sviluppatore o ADB."
+          }
+        }
+      ]
+    },
+    {
       "version": "1.7.3",
       "code": 21,
       "date": "2026-10-28",

@@ -68,9 +68,11 @@ public final class PairedPlayback {
     private void releaseMulticast(){if(multicast!=null){if(multicast.isHeld())multicast.release();multicast=null;}}
     private JSONObject call(String operation,JSONObject payload){
         try{
-            if(client==null){synchronized(Python.class){if(!Python.isStarted())Python.start(new AndroidPlatform(context));}client=Python.getInstance().getModule("paired_apple_tv").get("Client").call();}
+            if(client==null){synchronized(Python.class){if(!Python.isStarted())Python.start(new AndroidPlatform(context));}client=Python.getInstance().getModule("paired_apple_tv").get("Client").call();
+                java.io.File directory=context.getExternalFilesDir("diagnostics");if(directory==null)directory=new java.io.File(context.getFilesDir(),"diagnostics");directory.mkdirs();
+                client.callAttr("configure_diagnostics",directory.getAbsolutePath(),io.github.jqssun.airplay.BuildConfig.VERSION_NAME,io.github.jqssun.airplay.BuildConfig.SOURCE_COMMIT);}
             return new JSONObject(client.callAttr("request",operation,payload.toString()).toString());
-        }catch(Exception error){return error("runtime_unavailable");}
+        }catch(Exception error){logHostFailure(operation,"runtime_unavailable",error);return error("runtime_unavailable");}
     }
     private static JSONObject error(String key){JSONObject result=new JSONObject();try{result.put("error",key);}catch(Exception ignored){}return result;}
     public void request(String operation,JSONObject data,Consumer<JSONObject> callback){
@@ -89,11 +91,24 @@ public final class PairedPlayback {
                 if(operation.equals("cancel_pairing")||operation.equals("scan")||operation.equals("pair_finish"))pairing.clear();
                 if(operation.equals("pair_finish")&&result.has("credentials")){
                     try{store.save(result);paired=true;storageError=false;deviceName=result.optString("name");result=new JSONObject().put("status","paired");retryAt=0;}
-                    catch(Exception storageFailure){result=error("storage_failed");}
+                    catch(Exception storageFailure){logHostFailure(operation,"storage_failed",storageFailure);result=error("storage_failed");}
                 }
             }catch(Exception error){result=error("runtime_unavailable");}
             busy=false;JSONObject safe=result;main.post(()->{if(!closed){callback.accept(safe);notifyChange();}});
         });
+    }
+    private void logHostFailure(String operation,String code,Exception error){
+        String type=error.getClass().getSimpleName();android.util.Log.w("MiTVPairing","event=failure operation="+operation+" error="+code+" exception_type="+type);
+        try{if(client!=null)client.callAttr("host_failure",operation,code,type);}catch(Exception ignored){}
+    }
+    public String diagnosticHistory(){
+        StringBuilder text=new StringBuilder("\nPaired playback logs (safe metadata; newest tail)\n");
+        java.io.File directory=context.getExternalFilesDir("diagnostics");if(directory==null)directory=new java.io.File(context.getFilesDir(),"diagnostics");
+        for(String name:new String[]{"paired-playback.previous.jsonl","paired-playback.jsonl"}){
+            java.io.File file=new java.io.File(directory,name);
+            try{if(file.isFile()&&file.length()<=140000){String value=new String(java.nio.file.Files.readAllBytes(file.toPath()),java.nio.charset.StandardCharsets.UTF_8);text.append(value);}}catch(Exception ignored){}
+        }
+        String value=text.toString();return value.length()>24000?value.substring(value.length()-24000):value;
     }
     public void cancelPairing(){pairing.clear();worker.execute(()->{if(client!=null)call("cancel_pairing",new JSONObject());if(!foreground)releaseMulticast();});}
     public void unpair(){pairing.clear();worker.execute(()->{if(client!=null)call("disconnect",new JSONObject());store.clear();paired=false;storageError=false;deviceName="";resetState();releaseMulticast();notifyChange();});}

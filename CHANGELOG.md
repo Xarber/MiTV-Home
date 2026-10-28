@@ -2,6 +2,14 @@
 
 Generated from `app/src/main/assets/release-history.json`. Legacy versions reflect repository history; dates describe implementation, not a verified public release.
 
+## 1.7.4 — 2026-10-28
+
+Persistent pairing diagnostics that can be retrieved from the TV without rebuilding for every failure.
+
+### Fixes & Improvements
+
+Records pairing phases, HTTP status, timings and safe exception locations in rotating files and Android logs; developer copy/export includes recent history.
+
 ## 1.7.3 — 2026-10-28
 
 Understand why Apple TV pairing fails, with safe and specific error details.

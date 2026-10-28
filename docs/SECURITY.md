@@ -24,3 +24,11 @@ require feature availability; no untrusted remote code is executed. Discovery us
 the existing local-network/multicast permissions, with Home-scoped connection and
 backoff. Native dependency import and real tvOS interoperability remain validation
 requirements; research or compilation is not pairing proof.
+
+Paired-playback diagnostics store only fixed endpoint paths, phases, statuses,
+timing and safe exception locations in two rotating app-owned files (256 KiB
+combined) and the `MiTVPairing` logcat tag. No exception messages, locals, packet
+payloads/headers, PINs, credentials, addresses, device names or artwork are recorded.
+The safe handler does not format arbitrary upstream debug records. Release builds
+can expose these sanitized diagnostics through authorized ADB without enabling
+root/debuggable mode or opening a remote shell service in the app.

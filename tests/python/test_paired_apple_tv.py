@@ -18,6 +18,7 @@ spec.loader.exec_module(module)
 class AdapterChecks(unittest.IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
         self.client = module.Client.__new__(module.Client)
+        self.client.recorder = None
         self.client.loop = asyncio.get_running_loop()
         self.client.devices = {}
         self.client.pairing = self.client.device = self.client.monitor = None
