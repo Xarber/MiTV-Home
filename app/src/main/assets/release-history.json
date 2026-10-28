@@ -15,8 +15,8 @@
         "it": "Aggiorna la chiamata HAP SRP per la libreria di autenticazione inclusa e ne fissa la versione per build riproducibili."
       },
       "compatibility": {
-        "en": "Corrects a locally reproduced API mismatch; successful pairing and concurrent phone streaming still require physical-device validation.",
-        "it": "Corregge un’incompatibilità API riprodotta localmente; abbinamento e streaming simultaneo dal telefono richiedono ancora verifica fisica."
+        "en": "Apple TV pairing confirmed on the physical TV. Playback metadata depends on the Apple TV app; simultaneous phone streaming remains unverified.",
+        "it": "Abbinamento Apple TV confermato sulla TV fisica. I metadati dipendono dall’app su Apple TV; lo streaming simultaneo dal telefono non è ancora verificato."
       },
       "features": [
         {
