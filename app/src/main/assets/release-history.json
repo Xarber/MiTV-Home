@@ -2,6 +2,37 @@
   "schema": 1,
   "releases": [
     {
+      "version": "1.7.3",
+      "code": 21,
+      "date": "2026-10-28",
+      "critical": false,
+      "highlights": {
+        "en": "Understand why Apple TV pairing fails, with safe and specific error details.",
+        "it": "Scopri perché l’abbinamento Apple TV non riesce, con dettagli di errore specifici e sicuri."
+      },
+      "fixes": {
+        "en": "Distinguishes receiver authorization rejection, HTTP status, authentication failure, timeout, interrupted connection and secure storage errors without exposing PINs or credentials.",
+        "it": "Distingue rifiuto di autorizzazione, stato HTTP, mancata autenticazione, timeout, connessione interrotta ed errori di salvataggio sicuro senza esporre PIN o credenziali."
+      },
+      "compatibility": {
+        "en": "Diagnostic improvements do not resolve every tvOS pairing rejection. Remote-only control and simultaneous phone AirPlay still require successful pairing and physical coexistence tests.",
+        "it": "La diagnostica non risolve ogni rifiuto di abbinamento tvOS. Il controllo remoto e AirPlay dal telefono simultanei richiedono abbinamento riuscito e verifica fisica."
+      },
+      "features": [
+        {
+          "icon": "info",
+          "label": {
+            "en": "Specific pairing errors",
+            "it": "Errori di abbinamento specifici"
+          },
+          "detail": {
+            "en": "Reports a safe failure category and bounded HTTP status rather than replacing every failure with a generic message.",
+            "it": "Mostra una categoria di errore sicura e lo stato HTTP anziché sostituire ogni errore con un messaggio generico."
+          }
+        }
+      ]
+    },
+    {
       "version": "1.7.2",
       "code": 20,
       "date": "2026-10-28",

@@ -10,6 +10,17 @@ public final class AppLanguage {
  private AppLanguage() {}
  private static final HashMap<String,String> IT=new HashMap<>();
  static {
+  IT.put("Apple TV rejected pairing authorization (HTTP 470). The PIN alone may not resolve this tvOS issue.","Apple TV ha rifiutato l’autorizzazione (HTTP 470). Il solo PIN potrebbe non risolvere questo problema di tvOS.");
+  IT.put("Apple TV returned an error","Apple TV ha restituito un errore");
+  IT.put("Apple TV could not verify the pairing code. Start a new attempt.","Apple TV non ha verificato il codice. Avvia un nuovo tentativo.");
+  IT.put("Pairing timed out. Start a new attempt.","Tempo di risposta scaduto. Avvia un nuovo tentativo.");
+  IT.put("Connection interrupted during pairing. Check the network and retry.","Connessione interrotta durante l’abbinamento. Controlla la rete e riprova.");
+  IT.put("Apple TV requested a pause. Wait before trying again.","Apple TV ha richiesto una pausa. Attendi prima di riprovare.");
+  IT.put("The code-entry window expired. Start a new attempt.","Tempo per inserire il codice scaduto. Avvia un nuovo tentativo.");
+  IT.put("Pairing canceled","Abbinamento annullato");
+  IT.put("Could not securely save the pairing on this TV.","Impossibile salvare in sicurezza l’abbinamento su questa TV.");
+  IT.put("The pairing engine could not complete this request.","Il motore di abbinamento non ha completato la richiesta.");
+  IT.put("Another pairing operation is still running.","Un’altra operazione di abbinamento è ancora in corso.");
   IT.put("HDMI input","Ingresso HDMI");
   IT.put("Choose HDMI input","Scegli ingresso HDMI");
   IT.put("Show pairing code","Mostra codice di abbinamento");

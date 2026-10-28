@@ -87,8 +87,11 @@ public final class PairedPlayback {
                 }
                 if(operation.equals("pair_finish")&&result.has("credentials")&&requestToken!=pairing.token())result=error("pairing_canceled");
                 if(operation.equals("cancel_pairing")||operation.equals("scan")||operation.equals("pair_finish"))pairing.clear();
-                if(operation.equals("pair_finish")&&result.has("credentials")){store.save(result);paired=true;storageError=false;deviceName=result.optString("name");result=new JSONObject().put("status","paired");retryAt=0;}
-            }catch(Exception error){result=error("storage_failed");}
+                if(operation.equals("pair_finish")&&result.has("credentials")){
+                    try{store.save(result);paired=true;storageError=false;deviceName=result.optString("name");result=new JSONObject().put("status","paired");retryAt=0;}
+                    catch(Exception storageFailure){result=error("storage_failed");}
+                }
+            }catch(Exception error){result=error("runtime_unavailable");}
             busy=false;JSONObject safe=result;main.post(()->{if(!closed){callback.accept(safe);notifyChange();}});
         });
     }

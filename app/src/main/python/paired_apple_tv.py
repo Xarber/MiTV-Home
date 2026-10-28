@@ -13,6 +13,7 @@ import os
 import threading
 import time
 from receiver_discovery import eligible_apple_tv
+from playback_errors import classify_failure
 
 os.environ.setdefault("CRYPTOGRAPHY_OPENSSL_NO_LEGACY", "1")
 # Protocol debug messages can contain credentials and personal metadata.
@@ -44,9 +45,9 @@ class Client:
             return json.dumps(future.result(timeout=35), allow_nan=False)
         except concurrent.futures.TimeoutError:
             future.cancel()
-            return json.dumps({"error": "timeout"})
-        except Exception:
-            return json.dumps({"error": "connection_failed"})
+            return json.dumps(classify_failure(operation,TimeoutError()))
+        except Exception as error:
+            return json.dumps(classify_failure(operation,error))
 
     async def _dispatch(self, operation, data):
         import pyatv

@@ -118,3 +118,31 @@ fingerprint. Names are never used for filtering, and genuine old Apple TVs are n
 excluded merely because their model matches the software receiver's model.
 These are compatibility filters, not cryptographic identity proof; real control
 still requires explicit selection and authenticated pairing.
+
+## Control connection versus phone streaming
+
+The pyatv 0.18.0 path used here calls `AP2Session.setup_remote_control`, whose RTSP
+setup explicitly sets `isRemoteControlOnly: True`, with a type-130 data channel.
+The adapter uses metadata and remote-control interfaces. It never calls
+`Stream.play_url`, RAOP `stream_file`, or sends audio/video/photo payloads. The
+presence of AirPlay in the protocol name does not mean a media stream is active.
+The intended architecture permits phone-to-Apple-TV playback while the launcher
+observes/control it. Actual coexistence on the user's tvOS build remains untested
+until authentication succeeds; protocol intent is not physical-device proof.
+
+The launcher's local AirPlay receiver is a separate service. Local received audio
+retains music-activity priority over an external Apple TV observation session.
+
+References: https://pyatv.dev/documentation/protocols/#airplay-2 and
+https://github.com/postlund/pyatv/blob/v0.18.0/pyatv/protocols/airplay/ap2_session.py
+
+## Pairing failure diagnostics
+
+`playback_errors.py` traverses a bounded exception cause/context chain and returns
+only an allowlisted operation, failure category and integer HTTP status (100–599).
+It never serializes exception messages, bodies, PINs, addresses, device identifiers
+or credentials. HTTP 470 is labeled receiver authorization rejection, not a proven
+wrong PIN. Other authentication errors likewise do not prove user error. Timeouts,
+network interruptions, expiry, cancellation, runtime and Keystore storage failures
+remain distinct in localized UI copy. This improves diagnosis; it does not claim
+to fix the receiver's post-PIN rejection. Unknown errors stay generic.

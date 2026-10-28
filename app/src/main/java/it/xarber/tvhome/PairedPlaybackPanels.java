@@ -39,7 +39,7 @@ final class PairedPlaybackPanels {
         host.addControl(rows,"Cancel","",host::closePanel);host.panel.show();Dialog expected=host.panel;
         playback.request("scan",new JSONObject(),result->{
             if(host.panel!=expected||!expected.isShowing())return;
-            if(result.has("error")){status.setText(host.tr("Could not connect — try again"));return;}
+            if(result.has("error")){status.setText(failure(result));return;}
             JSONArray devices=result.optJSONArray("devices");if(devices==null||devices.length()==0){status.setText(host.tr("No Apple TV found on this network"));return;}
             host.closePanel();LinearLayout choices=host.dialog("Choose Apple TV");
             for(int i=0;i<devices.length();i++){JSONObject device=devices.optJSONObject(i);if(device==null)continue;
@@ -49,7 +49,7 @@ final class PairedPlaybackPanels {
     }
     private void begin(String id){
         LinearLayout rows=host.dialog("Pair Apple TV");TextView status=label(rows,host.tr("Connecting…"));host.panel.show();Dialog expected=host.panel;
-        try{playback.request("pair_begin",new JSONObject().put("id",id),result->{if(host.panel!=expected||!expected.isShowing()){cancel();return;}if(result.has("error")){status.setText(host.tr("Could not connect — try again"));host.addControl(rows,"Done","",host::closePanel);host.focusFirst(rows);return;}pin(result.optString("name"));});}catch(Exception ignored){status.setText(host.tr("Could not connect — try again"));}
+        try{playback.request("pair_begin",new JSONObject().put("id",id),result->{if(host.panel!=expected||!expected.isShowing()){cancel();return;}if(result.has("error")){status.setText(failure(result));host.addControl(rows,"Done","",host::closePanel);host.focusFirst(rows);return;}pin(result.optString("name"));});}catch(Exception ignored){status.setText(host.tr("Could not connect — try again"));}
     }
     private void pin(String name){
         LinearLayout rows=host.dialog("Pair Apple TV");label(rows,name);label(rows,host.tr("You have three minutes to enter the code. The saved pairing does not expire. Show Apple TV on its HDMI input, note the code, then press Home to return here."));
@@ -57,7 +57,7 @@ final class PairedPlaybackPanels {
         TextView status=label(rows,"");host.addControl(rows,"Pair","",()->{
             String value=input.getText().toString();if(!value.matches("[0-9]{4}")){status.setText(host.tr("Enter four digits"));return;}
             status.setText(host.tr("Connecting…"));input.setText("");Dialog expected=host.panel;
-            try{playback.request("pair_finish",new JSONObject().put("pin",value),result->{if(host.panel!=expected||!expected.isShowing())return;if(result.has("error")){status.setText(host.tr("Pairing failed — go back and try again"));}else{host.closePanel();show();}});}catch(Exception ignored){status.setText(host.tr("Pairing failed — go back and try again"));}
+            try{playback.request("pair_finish",new JSONObject().put("pin",value),result->{if(host.panel!=expected||!expected.isShowing())return;if(result.has("error")){status.setText(failure(result));}else{host.closePanel();show();}});}catch(Exception ignored){status.setText(host.tr("Pairing failed — go back and try again"));}
         });
         host.addControlIcon(rows,"Show pairing code",selectedInputLabel(),"inputs",this::showCode);
         host.addControlIcon(rows,"Change HDMI input","Press Home to return and enter the code","inputs",()->chooseInput(()->pin(playback.pairingName())));
@@ -96,6 +96,23 @@ final class PairedPlaybackPanels {
             host.addControlIcon(rows,input.label,input.inputId.equals(selectedId)?"✓":"","inputs",()->{preferences.edit().putString("input_id",input.inputId).apply();host.closePanel();selected.run();});}
         if(inputs.isEmpty())label(rows,host.tr("No HDMI inputs registered on this TV"));
         host.addControl(rows,"Cancel","",()->{host.closePanel();if(playback.pairingPending())pin(playback.pairingName());else show();});host.panel.show();host.focusFirst(rows);
+    }
+    private String failure(JSONObject result){
+        String code=result.optString("error");
+        switch(code){
+            case "authorization_rejected":return host.tr("Apple TV rejected pairing authorization (HTTP 470). The PIN alone may not resolve this tvOS issue.");
+            case "http_error":return host.tr("Apple TV returned an error")+" (HTTP "+result.optInt("http_status")+")";
+            case "authentication_failed":return host.tr("Apple TV could not verify the pairing code. Start a new attempt.");
+            case "timeout":return host.tr("Pairing timed out. Start a new attempt.");
+            case "network_error":return host.tr("Connection interrupted during pairing. Check the network and retry.");
+            case "receiver_backoff":return host.tr("Apple TV requested a pause. Wait before trying again.");
+            case "pairing_expired":return host.tr("The code-entry window expired. Start a new attempt.");
+            case "pairing_canceled":return host.tr("Pairing canceled");
+            case "storage_failed":return host.tr("Could not securely save the pairing on this TV.");
+            case "runtime_unavailable":return host.tr("The pairing engine could not complete this request.");
+            case "busy":return host.tr("Another pairing operation is still running.");
+            default:return host.tr("Pairing failed — go back and try again");
+        }
     }
     private void cancel(){playback.cancelPairing();}
     private TextView label(LinearLayout rows,String value){TextView view=host.text(value,13,MainActivity.MUTED);view.setPadding(0,host.dp(6),0,host.dp(8));rows.addView(view,host.lp(-1,-2));return view;}

@@ -2,6 +2,14 @@
 
 Generated from `app/src/main/assets/release-history.json`. Legacy versions reflect repository history; dates describe implementation, not a verified public release.
 
+## 1.7.3 — 2026-10-28
+
+Understand why Apple TV pairing fails, with safe and specific error details.
+
+### Fixes & Improvements
+
+Distinguishes receiver authorization rejection, HTTP status, authentication failure, timeout, interrupted connection and secure storage errors without exposing PINs or credentials.
+
 ## 1.7.2 — 2026-10-28
 
 Send the client name required for tvOS 27 pairing codes and hide software receivers from Apple TV discovery.
