@@ -12,10 +12,10 @@ import java.util.Date;
 
 /** Existing frosted TV controls and release cards; updates never replace notes with a progress-only view. */
 final class UpdatePanels {
-    private final MainActivity host;
+    private final LegacyHomeActivity host;
     private final UpdateController updates;
     private TextView status,progress,action;
-    UpdatePanels(MainActivity host,UpdateController updates){this.host=host;this.updates=updates;}
+    UpdatePanels(LegacyHomeActivity host,UpdateController updates){this.host=host;this.updates=updates;}
     void showSettings(){
         LinearLayout rows=host.dialog("Updates");
         label(rows,"Aurea Home "+BuildConfig.VERSION_NAME+" · "+BuildConfig.VERSION_CODE+"\n"+host.tr("Release channel")+": "+host.tr(updates.channel.equals("beta")?"Beta":"Stable"));
@@ -50,6 +50,6 @@ final class UpdatePanels {
         if(updates.downloadId()>=0){String amount=size(Math.max(0,updates.downloaded));if(updates.total>0)amount+=" / "+size(updates.total)+" · "+size(Math.max(0,updates.total-updates.downloaded))+" "+host.tr("remaining");if(updates.speed>0)amount+="\n"+size(updates.speed)+"/s";progress.setText(amount);}else progress.setText("");
         if(action!=null){action.setText(host.tr(updates.ready?"Install update":"Update Now"));action.setEnabled(!updates.verifying&&!updates.installing);}
     }
-    private TextView label(LinearLayout rows,String value){TextView view=host.text(value,13,MainActivity.MUTED);view.setLineSpacing(host.dp(3),1);view.setPadding(0,host.dp(5),0,host.dp(5));rows.addView(view,host.lp(-1,-2));return view;}
+    private TextView label(LinearLayout rows,String value){TextView view=host.text(value,13,LegacyHomeActivity.MUTED);view.setLineSpacing(host.dp(3),1);view.setPadding(0,host.dp(5),0,host.dp(5));rows.addView(view,host.lp(-1,-2));return view;}
     private String size(long bytes){return android.text.format.Formatter.formatFileSize(host,bytes);}
 }

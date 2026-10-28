@@ -1,0 +1,51 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+package it.xarber.tvhome
+
+import androidx.activity.result.contract.ActivityResultContracts
+import android.app.AlertDialog
+import android.content.Context
+import android.content.Intent
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.view.KeyEvent
+import android.view.View
+import android.widget.EditText
+import com.facebook.react.ReactActivity
+import com.facebook.react.ReactActivityDelegate
+import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
+import com.facebook.react.defaults.DefaultReactActivityDelegate
+import expo.modules.ReactActivityDelegateWrapper
+import io.github.jqssun.airplay.BuildConfig
+
+/** Same installed Home component; Expo is the actual native screen, never a WebView. */
+class MainActivity : ReactActivity() {
+    private val exportFile = registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        if (uri != null) try { contentResolver.openOutputStream(uri)?.use { output -> output.write(HomePreferences.export(this, getSharedPreferences("it.xarber.tvhome.MainActivity", 0)).toByteArray(Charsets.UTF_8)) }; AureaTVModule.event("notice", TVPlatform.safe("message", "Preferences exported")) } catch (_: Exception) { AureaTVModule.event("notice", TVPlatform.safe("message", "Export failed")) }
+    }
+    private val importFile = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) try { val text = contentResolver.openInputStream(uri).use { HomePreferences.readAndValidate(it) }; AlertDialog.Builder(this).setTitle(AppLanguage.text(this,"Import preferences")).setMessage(AppLanguage.text(this,"Replace presentation preferences? Pairings and accounts are preserved.")).setNegativeButton(android.R.string.cancel,null).setPositiveButton(android.R.string.ok) { _, _ -> try { HomePreferences.restore(this,getSharedPreferences("it.xarber.tvhome.MainActivity",0),text);AureaTVModule.event("home",org.json.JSONObject()) } catch (_: Exception) { AureaTVModule.event("notice",TVPlatform.safe("message","Import failed")) } }.show() } catch (_: Exception) { AureaTVModule.event("notice",TVPlatform.safe("message","Invalid preferences file")) }
+    }
+    fun exportPreferences() { exportFile.launch("Aurea-Home-preferences.json") }
+    fun importPreferences() { importFile.launch(arrayOf("application/json","text/plain")) }
+    private val main = Handler(Looper.getMainLooper())
+    companion object { @JvmField var interfaceReady = false }
+    override fun attachBaseContext(base: Context) = super.attachBaseContext(AppLanguage.wrap(base))
+    override fun getMainComponentName() = "main"
+    override fun createReactActivityDelegate(): ReactActivityDelegate = ReactActivityDelegateWrapper(this, BuildConfig.IS_NEW_ARCHITECTURE_ENABLED, object : DefaultReactActivityDelegate(this, mainComponentName, fabricEnabled) {})
+    override fun onCreate(state: Bundle?) {
+        setTheme(io.github.jqssun.airplay.R.style.AureaExpoHome)
+        super.onCreate(null)
+        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+        main.postDelayed({ if (!isFinishing && !interfaceReady) AlertDialog.Builder(this).setTitle("Aurea Home").setMessage("The new interface could not start. Your saved settings are intact.").setPositiveButton("Retry") { _, _ -> recreate() }.setNeutralButton("Recovery Home") { _, _ -> startActivity(Intent(this, LegacyHomeActivity::class.java)) }.show() }, 25000)
+    }
+    override fun onResume() { super.onResume(); TVPlatform.get(this).resume(this); HomeRemoteService.attachExpo(this) }
+    override fun onPause() { TVPlatform.get(this).pause(this); super.onPause() }
+    override fun onDestroy() { main.removeCallbacksAndMessages(null); super.onDestroy() }
+    override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); AureaTVModule.event("home", org.json.JSONObject()) }
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (currentFocus !is EditText && TVPlatform.key(event)) return true
+        return super.dispatchKeyEvent(event)
+    }
+    override fun invokeDefaultOnBackPressed() { AureaTVModule.event("back", org.json.JSONObject()) }
+}

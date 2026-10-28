@@ -18,20 +18,22 @@ jobs:
         format: [apk, aab]
     env:
       EXPO_PUBLIC_SOURCE_COMMIT: ${{ github.sha }}
+      AUREA_TARGET: remote
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
           cache: npm
-          cache-dependency-path: demo/package-lock.json
+          cache-dependency-path: package-lock.json
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
       - uses: gradle/actions/setup-gradle@v5
-      - run: npm ci && npm run typecheck && npm test && npx expo prebuild --platform android --no-install
-        working-directory: demo
+      - run: npm ci && npm run typecheck && npm test && python3 scripts/phone/prepare.py
+      - run: npx expo prebuild --platform android --no-install
+        working-directory: .phone-native
       - name: Prepare existing release key
         env:
           KEYSTORE: ${{ secrets.MITV_KEYSTORE_BASE64 }}
@@ -40,7 +42,7 @@ jobs:
           umask 077
           printf '%s' "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/aurea-release.jks"
       - name: Build release package
-        working-directory: demo/android
+        working-directory: .phone-native/android
         env:
           MITV_STORE_FILE: ${{ runner.temp }}/aurea-release.jks
           MITV_STORE_PASSWORD: ${{ secrets.MITV_STORE_PASSWORD }}
@@ -71,6 +73,7 @@ jobs:
         target: [unsigned, simulator]
     env:
       EXPO_PUBLIC_SOURCE_COMMIT: ${{ github.sha }}
+      AUREA_TARGET: remote
       FORCE_BUNDLING: '1'
     steps:
       - uses: actions/checkout@v6
@@ -78,15 +81,16 @@ jobs:
         with:
           node-version: '24'
           cache: npm
-          cache-dependency-path: demo/package-lock.json
-      - run: npm ci && npm run typecheck && npm test && npx expo prebuild --platform ios
-        working-directory: demo
+          cache-dependency-path: package-lock.json
+      - run: npm ci && npm run typecheck && npm test && python3 scripts/phone/prepare.py
+      - run: npx expo prebuild --platform ios
+        working-directory: .phone-native
       - name: Compile without signing
         env:
           TARGET: ${{ matrix.target }}
         run: |
           if [ "$TARGET" = simulator ]; then SDK=iphonesimulator; DEST='generic/platform=iOS Simulator'; else SDK=iphoneos; DEST='generic/platform=iOS'; fi
-          xcodebuild -workspace demo/ios/AureaRemote.xcworkspace -scheme AureaRemote -configuration Release -sdk "$SDK" -destination "$DEST" -derivedDataPath "$RUNNER_TEMP/aurea-ios" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO ARCHS=arm64 ONLY_ACTIVE_ARCH=NO build
+          xcodebuild -workspace .phone-native/ios/AureaRemote.xcworkspace -scheme AureaRemote -configuration Release -sdk "$SDK" -destination "$DEST" -derivedDataPath "$RUNNER_TEMP/aurea-ios" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO ARCHS=arm64 ONLY_ACTIVE_ARCH=NO build
       - name: Package and validate
         env:
           TARGET: ${{ matrix.target }}

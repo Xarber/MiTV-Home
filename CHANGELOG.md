@@ -2,6 +2,14 @@
 
 Generated from `app/src/main/assets/release-history.json`. Legacy versions reflect repository history; dates describe implementation, not a verified public release.
 
+## 2.0.0 — 2026-10-28
+
+Expo becomes the shared Home, phone and web application base.
+
+### Fixes & Improvements
+
+Native TV state and services are exposed through a typed platform adapter; browser examples remain isolated.
+
 ## 1.8.1 — 2026-10-28
 
 Fixes the phone remote page bundled inside the TV app.

@@ -2,6 +2,48 @@
   "schema": 1,
   "releases": [
     {
+      "version": "2.0.0",
+      "code": 26,
+      "date": "2026-10-28",
+      "critical": false,
+      "highlights": {
+        "en": "Expo becomes the shared Home, phone and web application base.",
+        "it": "Expo diventa la base condivisa delle app Home, telefono e web."
+      },
+      "fixes": {
+        "en": "Native TV state and services are exposed through a typed platform adapter; browser examples remain isolated.",
+        "it": "Stato e servizi reali della TV sono collegati tramite un adattatore di piattaforma tipizzato; gli esempi web restano separati."
+      },
+      "compatibility": {
+        "en": "Preserves Android TV package, signing identity and preferences. This framework migration requires physical TV validation before stable promotion. Mac Music interoperability remains unresolved.",
+        "it": "Mantiene pacchetto, firma e preferenze Android TV. La migrazione richiede verifica sulla TV fisica prima della promozione stabile. La compatibilità con Musica su Mac rimane irrisolta."
+      },
+      "features": [
+        {
+          "icon": "apps",
+          "label": {
+            "en": "Expo Home interface",
+            "it": "Interfaccia Home Expo"
+          },
+          "detail": {
+            "en": "A native React Native TV surface with real apps, registered inputs, saved dock, activities and native service controls.",
+            "it": "Interfaccia nativa React Native TV con app reali, ingressi registrati, dock salvato, attività e controlli dei servizi nativi."
+          }
+        },
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Shared phone and web base",
+            "it": "Base condivisa telefono e web"
+          },
+          "detail": {
+            "en": "The separate phone remote and installable web preview share the root Expo project.",
+            "it": "Il telecomando per telefono e l’anteprima web installabile condividono il progetto Expo principale."
+          }
+        }
+      ]
+    },
+    {
       "version": "1.8.1",
       "code": 25,
       "date": "2026-10-28",

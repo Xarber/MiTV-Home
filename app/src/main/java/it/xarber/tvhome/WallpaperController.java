@@ -7,7 +7,7 @@ import android.widget.LinearLayout;
 
 /** Presentation preferences and bounded wallpaper updates, independent of receiver services. */
 final class WallpaperController {
-    private final MainActivity home;
+    private final LegacyHomeActivity home;
     private final Runnable frame=new Runnable(){@Override public void run(){
         if(home.resumed&&!home.libraryVisible&&home.systemBackdrop&&home.motionEnabled()
                 &&preferences().getBoolean("wallpaper-motion",false)
@@ -16,7 +16,7 @@ final class WallpaperController {
             home.handler.postDelayed(this,80);
         }
     }};
-    WallpaperController(MainActivity home){this.home=home;}
+    WallpaperController(LegacyHomeActivity home){this.home=home;}
     private SharedPreferences preferences(){return home.getPreferences(0);}
     Drawable art(){
         String id=preferences().getString("wallpaper","classic");
@@ -27,7 +27,7 @@ final class WallpaperController {
     void pause(){home.handler.removeCallbacks(frame);}
     private void apply(){
         home.closePanel();home.heroKey="";
-        for(MainActivity.Entry source:home.sources.values())home.decorateInput(source);
+        for(LegacyHomeActivity.Entry source:home.sources.values())home.decorateInput(source);
         home.renderHome();
         home.showHero(home.action("inputs","Inputs","inputs",home.hdmiArt));
         refresh();

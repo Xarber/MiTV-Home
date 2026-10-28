@@ -2,7 +2,7 @@
 
 Start with [docs/INDEX.md](docs/INDEX.md). Follow the user's Universal Application Development Standards; this file adds project-specific context.
 
-- Native Android TV application, Java launcher + Kotlin/Compose receiver + C/C++ media engine. Minimum API 26, target 34; do not change minimum/target or rewrite the framework incidentally.
+- Expo is the application base, with React Native TV Home, a separate shared phone remote, and web/PWA preview. Keep the handwritten Android host and Kotlin/Compose receiver + C/C++ media engine behind the native platform adapter. Minimum API 26, target 34; preserve package, signing identity and canonical preferences. See docs/decisions/0003-expo-home-base.md.
 - Develop atomic Conventional Commits on `testing` or isolated feature branches/worktrees; integrate completed work into `testing` before promotion. Promote complete tested batches by pull request to `beta`, then `main`. Never force push. Testing has no automatically triggered workflows.
 - Original launcher modules are AGPL-3.0-only. Preserve upstream GPL/LGPL/Apache notices and GPL text in LICENSES. Never relicense third-party code as your own.
 - Use existing SDKs for emulator checks; prefer GitHub Actions for full native release builds. Run `scripts/check-host.sh` after a batch; use Android lint/build and fresh emulator screenshots for UI changes. Record results in docs/reports. Never equate simulator checks with physical HDMI or AirPlay compatibility.
@@ -29,7 +29,7 @@ Simulations must remain local, labeled and out of production storage/analytics/e
 
 Apply actual system/developer constraints first. Within project instructions, prefer explicit current task instructions, then repository architecture/approved decisions, then universal defaults, then general conventions. More specific/recent instructions resolve same-level conflicts; ask only for material unresolved or risky decisions. Preserve data, signing identity and existing public GitHub channel authorization. Temporary branches remain allowed, but integrate completed work into testing before beta/main promotion. No workflow migration or new distribution destination is implied by new universal defaults.
 
-The native TV launcher remains Android-only. The user separately authorized iOS/Android phone companions in demo/; phone.yml builds their distinct packages. Do not fabricate Apple packages or add OTA. APK updates use GitHub's public release manifest, installed signing identity, SHA-256/package/version/SDK/ABI checks and official Android installation confirmation. Development-key installations cannot silently move to the release key. See docs/features/UPDATES.md. Never embed a GitHub token or bypass Android prompts.
+The native TV launcher remains Android-only. The user authorized Expo as the shared base and iOS/Android phone companions at the repository root; phone.yml builds their distinct packages. Do not fabricate Apple packages or add OTA. APK updates use GitHub's public release manifest, installed signing identity, SHA-256/package/version/SDK/ABI checks and official Android installation confirmation. Development-key installations cannot silently move to the release key. See docs/features/UPDATES.md. Never embed a GitHub token or bypass Android prompts.
 
 ## Diagnose before rebuilding
 

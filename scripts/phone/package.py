@@ -3,10 +3,10 @@
 """CI artifact-only packaging. Phone artifacts are not added to the TV updater."""
 import hashlib,json,os,plistlib,shutil,subprocess,sys,zipfile
 from pathlib import Path
-platform,kind=sys.argv[1:];config=json.loads(Path('demo/app.json').read_text())['expo'];commit=os.environ['GITHUB_SHA'];channel=os.environ['GITHUB_REF_NAME'];version=config['version']
+platform,kind=sys.argv[1:];config=json.loads(Path('app.json').read_text())['expo'];commit=os.environ['GITHUB_SHA'];channel=os.environ['GITHUB_REF_NAME'];version=config['version']
 out=Path('phone-dist');out.mkdir(exist_ok=True);stem=f'Aurea-Remote-v{version}-{channel}-{commit[:7]}'
 if platform=='android':
-    candidates=list(Path('demo/android/app/build/outputs').rglob('app-release.'+kind));assert len(candidates)==1
+    candidates=list(Path('.phone-native/android/app/build/outputs').rglob('app-release.'+kind));assert len(candidates)==1
     target=out/f'{stem}-android-{("universal" if kind=="apk" else "bundle")}.{kind}';shutil.copy2(candidates[0],target)
     with zipfile.ZipFile(target) as z:
         assert z.testzip() is None

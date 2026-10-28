@@ -44,14 +44,18 @@ final class RemoteCatalog {
         cached=new JSONObject().put("apps",apps).put("inputs",sources);refreshed=SystemClock.elapsedRealtime();return new JSONObject(cached.toString());
     }
     synchronized boolean contains(String id){try{read();return id.equals("live")||packages.containsKey(id)||inputs.containsKey(id);}catch(Exception ignored){return false;}}
-    synchronized void launch(MainActivity home,String id){
+    synchronized void launch(LegacyHomeActivity home,String id){
         try{
             read();if(id.equals("live")){home.openLive();return;}
-            if(inputs.containsKey(id)){MainActivity.Entry target=home.action(id,"HDMI","hdmi",home.hdmiArt);target.inputId=inputs.get(id);home.openInput(target);return;}
+            if(inputs.containsKey(id)){LegacyHomeActivity.Entry target=home.action(id,"HDMI","hdmi",home.hdmiArt);target.inputId=inputs.get(id);home.openInput(target);return;}
             String pkg=packages.get(id);if(pkg==null)return;
             Intent intent=home.getPackageManager().getLeanbackLaunchIntentForPackage(pkg);if(intent==null)intent=home.getPackageManager().getLaunchIntentForPackage(pkg);
             if(intent!=null)home.start(intent);
         }catch(Exception ignored){home.showNotice(home.tr("This screen is unavailable on this TV"),2500);}
+    }
+    synchronized void launch(MainActivity home,String id){JSONObject result=launch(TVPlatform.get(context),id);if(result.has("error"))AureaTVModule.event("notice",TVPlatform.safe("message","This input is unavailable"));}
+    synchronized JSONObject launch(TVPlatform platform,String id){
+        try{read();if(id.equals("live"))platform.catalog.launch("live");else if(packages.containsKey(id))platform.catalog.launch(packages.get(id));else if(inputs.containsKey(id)){JSONArray values=platform.catalog.read(false);String target=null;for(int i=0;i<values.length();i++){JSONObject item=values.getJSONObject(i);if(inputs.get(id).equals(item.optString("inputId")))target=item.getString("id");}if(target==null)return SystemRemoteController.error("unknown_target");platform.catalog.launch(target);}else return SystemRemoteController.error("unknown_target");return new JSONObject().put("accepted",true);}catch(Exception unavailable){return SystemRemoteController.error("screen_unavailable");}
     }
     synchronized JSONObject icon(String id){
         try{

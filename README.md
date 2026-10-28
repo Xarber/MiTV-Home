@@ -12,18 +12,16 @@
 
 ![MiTV Home dock](docs/assets/home.png)
 
-## Expo preview and phone companion
+## Expo application base
 
-This branch adds a React Native + Expo web demo inside this repository, with
-keyboard navigation, simulated music/remote controls and minimal animated wallpapers.
-The launcher remains native Android TV. A separate iOS/Android/web phone UI supports saved TVs, app/input switching and in-app music controls. Open `/?remote=1&preview=1` for the phone demo, or `/?remote=1` to pair with a real TV.
+Expo at the repository root now hosts the Android TV interface, web preview, and separate phone remote. Native AirPlay, HDMI, remote and update services remain behind the TV platform adapter. Browser music and apps are isolated preview fixtures. A separate iOS/Android/web phone UI supports saved TVs, app/input switching and in-app music controls. Open `/?remote=1&preview=1` for the phone demo, or `/?remote=1` to pair with a real TV.
 
 ```sh
-cd demo && npm ci
-cd .. && python3 scripts/start-demo-preview.py
+npm ci
+python3 scripts/start-demo-preview.py
 ```
 
-Open http://127.0.0.1:8765. [Demo guide](demo/README.md) ·
+Open http://127.0.0.1:8765. [Expo guide](docs/features/EXPO_DEMO.md) ·
 [Architecture and limitations](docs/features/EXPO_DEMO.md).
 
 ![Actual interactive web demo, not the physical TV](docs/assets/demo/home.png)

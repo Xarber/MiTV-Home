@@ -10,7 +10,7 @@ import org.json.JSONObject;
 
 /** Icon-led release presentation using the launcher's existing accessible, focusable controls. */
 final class ReleasePanels {
-    static void appendHistory(MainActivity host, LinearLayout rows) {
+    static void appendHistory(LegacyHomeActivity host, LinearLayout rows) {
         JSONArray releases = ReleaseHistory.entries(host);
         for (int i = 0; i < releases.length(); i++) {
             JSONObject release = releases.optJSONObject(i);
@@ -20,7 +20,7 @@ final class ReleasePanels {
             });
         }
     }
-    static void appendUpdate(MainActivity host, LinearLayout rows, int previous) {
+    static void appendUpdate(LegacyHomeActivity host, LinearLayout rows, int previous) {
         JSONArray releases = ReleaseHistory.entries(host);
         JSONObject latest = releases.optJSONObject(0);
         if (latest == null) return;
@@ -41,7 +41,7 @@ final class ReleasePanels {
             trigger[0]=(TextView)rows.getChildAt(rows.getChildCount()-1);trigger[0].setContentDescription(host.tr("Earlier updates")+", "+host.tr("Collapsed"));rows.addView(earlier,host.lp(-1,-2));
         }
     }
-    static void appendRelease(MainActivity host, LinearLayout rows, JSONObject release) {
+    static void appendRelease(LegacyHomeActivity host, LinearLayout rows, JSONObject release) {
         label(host, rows, release.optString("date"));
         features(host, rows, release);
         disclosure(host, rows, host.tr("Fixes & Improvements"), "bug", ReleaseHistory.localized(host, release, "fixes"));
@@ -49,7 +49,7 @@ final class ReleasePanels {
         String compatibility = ReleaseHistory.localized(host, release, "compatibility");
         if (!compatibility.isEmpty()) label(host, rows, host.tr("Compatibility") + "\n" + compatibility);
     }
-    private static void features(MainActivity host, LinearLayout rows, JSONObject release) {
+    private static void features(LegacyHomeActivity host, LinearLayout rows, JSONObject release) {
         JSONArray features = release.optJSONArray("features");
         if (features == null) return;
         for (int i = 0; i < features.length(); i++) {
@@ -57,8 +57,8 @@ final class ReleasePanels {
             if (feature != null) disclosure(host, rows, ReleaseHistory.localized(host, feature, "label"), feature.optString("icon", "info"), ReleaseHistory.localized(host, feature, "detail"));
         }
     }
-    private static void disclosure(MainActivity host, LinearLayout rows, String title, String icon, String detail) {
-        TextView body = host.text(detail, 13, MainActivity.MUTED);
+    private static void disclosure(LegacyHomeActivity host, LinearLayout rows, String title, String icon, String detail) {
+        TextView body = host.text(detail, 13, LegacyHomeActivity.MUTED);
         body.setPadding(host.dp(16), host.dp(8), host.dp(10), host.dp(10));
         body.setLineSpacing(host.dp(3), 1);
         body.setVisibility(View.GONE);
@@ -73,8 +73,8 @@ final class ReleasePanels {
         trigger[0].setContentDescription(title + ", " + host.tr("Collapsed"));
         rows.addView(body, host.lp(-1, -2));
     }
-    private static void label(MainActivity host, LinearLayout rows, String text) {
-        TextView label = host.text(text, 13, MainActivity.MUTED);
+    private static void label(LegacyHomeActivity host, LinearLayout rows, String text) {
+        TextView label = host.text(text, 13, LegacyHomeActivity.MUTED);
         label.setPadding(0, host.dp(8), 0, host.dp(8));
         rows.addView(label, host.lp(-1, -2));
     }

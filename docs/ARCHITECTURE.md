@@ -1,37 +1,44 @@
 # Architecture
 
-MiTV Home is a native Android TV application, not a React Native project. Its package identity is `it.xarber.mitvhome`; the historical Android namespace remains `io.github.jqssun.airplay`. Changing either needs explicit migration planning.
+Expo is the shared application base. `App.tsx` selects native Android TV Home
+(`Platform.isTV`), the separate phone remote, or the isolated browser preview.
+The native Home is a React Native/Fabric surface with an embedded Hermes bundle,
+not a WebView. Package `it.xarber.mitvhome`, Home component
+`it.xarber.tvhome.MainActivity`, native namespace, signing identity and original
+preference/credential stores are retained.
 
-## Components
+## Runtime boundaries
 
 | Module | Responsibility |
 | --- | --- |
-| `it.xarber.tvhome.MainActivity` | TV renderer, D-pad focus, three snap positions, banners, input/platform intents, Control Center and activity views |
-| `AppLanguage` | English/Italian presentation context, independent of system language |
-| `DeviceName` | System-assigned friendly receiver name with fallbacks |
-| `HomeRemoteServer`, `RemoteRequest` | Foreground-only paired phone remote, bounded HTTP validation, presence expiration |
-| `HomePreferences` | Versioned presentation export/import with allowlist and previous-state snapshot |
-| `ReleaseHistory` / `ReleasePanels` | Shared localized release data and baseline; host-rendered icon/disclosure presentation |
-| `diagnostics.DeveloperSession`, `Diagnostics` | Temporary access and bounded safe event export |
-| Kotlin `AirPlayService` / bridge | Foreground service, mDNS, session state, metadata, audio/video routing and native callbacks |
-| C/C++ engine / UxPlay | Receiver protocol, clocking, codecs, PCM output, six-band signal analysis |
-| `updates/*` / `UpdatePanels` | Cached channel-aware GitHub discovery, DownloadManager, APK trust checks and Android installation results |
-| `scripts/release.py` / Actions | Version consistency, embedded provenance, artifact checksums and release notes |
+| `TVHome.tsx`, `src/components` | Shared Home layout, dock/library, anchored panels and activities |
+| `src/launcher/useLauncher.ts` | Real TV state adapter or explicitly isolated preview model |
+| `src/platform/native` | Typed native RPC/events and spatial TV focus |
+| `AureaTVModule`, `TVPlatform`, `TVHomeCatalog` | Bounded trusted bridge, actual apps/banners, registered inputs, original preferences, native service actions |
+| Kotlin `MainActivity` / `AirPlayApp` | Expo React host and lifecycle; unchanged installed Home identity |
+| `HomeRemoteService`, `RemotePlayback`, `PairedPlayback` | Persistent authenticated remote and real receiver/paired-device playback |
+| `AirPlayService`, C/C++ engine | Receiver discovery, audio/video, actual six-band PCM analysis |
+| `updates/*` | Existing GitHub metadata, download trust checks and official Android installer |
+| `LegacyHomeActivity` | Explicit recovery interface, sharing canonical preferences; never the default Expo success path |
+| `.phone-native` | Ignored generated phone host, staged from root sources; never overwrites TV host |
 
-## Flows and lifecycle
+Native Home uses installed app IDs and registered input IDs, not sample app names.
+Preferences remain in the historical activity store, with `library` translated to
+`all` only at the adapter boundary. Web examples remain in their separate browser
+namespace. Phone pairings stay separate per TV. Secure Apple TV credentials remain
+under the existing native Keystore identity.
 
-Home starts/binds the receiver, then starts HTTP remote while resumed. Pausing stops HTTP/presence and unbinds the launcher, while the foreground receiver remains available. AirPlay video/mirroring uses receiver playback UI; audio metadata and measured PCM bands feed the native Home activity and popup. Opening phone remote controls preserves the music activity.
+Foreground snapshots refresh at 1.5 seconds; receiver spectrum events use the
+existing native six bands at 100 ms. Background polling stops. Remote FGS and
+receiver persistence remain native so opening another application does not remove
+their capabilities. Waveform artwork colors reuse the native palette algorithm;
+paired-player bars remain decorative, never claimed as measured spectrum.
 
-UI work is on Android's main thread; app discovery/art preparation use the existing single worker; media work stays in native/service threads. Popup backgrounds are captured when opened and discarded on dismiss. Never reintroduce stale cross-banner backdrop caches. Reduced-motion settings disable decorative transitions.
+Live blur uses Expo 58 BlurTargetView, never retained screenshots. Android 10 uses
+RenderScript and needs physical performance validation. Insets and popup content
+remain bounded; D-pad focus reveals content inside its own scroll container.
 
-The existing renderer remains in MainActivity; new state and validation live in separate modules. Further renderer extraction should preserve focus and hardware behavior in small reviewed steps. MainActivity is not a public plugin API.
-
-## Aurea Home preview branch
-
-The optional `demo/` Expo companion shares the repository, not the production
-launcher runtime. It has no access to TV services or production preferences.
-`WallpaperController` owns native wallpaper settings/lifecycle and `WallpaperArt`
-renders original gradients/curves. MainActivity only delegates presentation hooks.
-See [demo architecture and boundaries](features/EXPO_DEMO.md).
-
-See [phone remote](features/PHONE_REMOTE.md), [PWA](features/PWA.md), and [branding](BRANDING.md) for the separate Expo companion and native background bridge.
+See [migration decision](decisions/0003-expo-home-base.md),
+[Expo development](features/EXPO_DEMO.md), [remote](features/PHONE_REMOTE.md),
+[PWA](features/PWA.md), and [branding](BRANDING.md). Migration verification and
+remaining limitations belong in reports, not implied by a successful web export.

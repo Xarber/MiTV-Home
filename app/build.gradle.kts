@@ -1,4 +1,6 @@
 plugins {
+    id("org.jetbrains.kotlin.android")
+    id("com.facebook.react")
     id("com.chaquo.python")
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -30,11 +32,12 @@ val sourceCommit = providers.environmentVariable("GITHUB_SHA").getOrElse(archive
 val buildChannel = providers.environmentVariable("MITV_BUILD_CHANNEL").getOrElse(archivedSource.getProperty("channel", gitValue("branch", "--show-current")))
 val buildEpoch = providers.environmentVariable("SOURCE_DATE_EPOCH").orNull ?: archivedSource.getProperty("epoch", gitValue("show", "-s", "--format=%ct", "HEAD"))
 val buildDate = buildEpoch.toLongOrNull()?.let { Instant.ofEpochSecond(it).toString() } ?: "unknown"
-val allAbis = if (project.hasProperty("useBundledNative")) listOf("arm64-v8a", "armeabi-v7a")
+val allAbis = if (project.hasProperty("useBundledNative")) providers.gradleProperty("reactNativeArchitectures").orNull?.split(",")?.filter { it == "arm64-v8a" || it == "armeabi-v7a" }?.also { require(it.isNotEmpty()) } ?: listOf("arm64-v8a", "armeabi-v7a")
     else listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
 
 android {
     namespace = "io.github.jqssun.airplay"
+    sourceSets.getByName("main").java.srcDir(layout.buildDirectory.dir("generated/autolinking/src/main/java").get().asFile)
     compileSdk = 37
     ndkVersion = "27.0.12077973"
 
@@ -60,8 +63,8 @@ android {
         applicationId = providers.gradleProperty("homeApplicationId").getOrElse("it.xarber.mitvhome")
         minSdk = 26
         targetSdk = 34
-        versionCode = 25
-        versionName = "1.8.1"
+        versionCode = 26
+        versionName = "2.0.0"
         buildConfigField("String", "SOURCE_COMMIT", buildString(sourceCommit))
         buildConfigField("String", "BUILD_CHANNEL", buildString(buildChannel))
         buildConfigField("String", "BUILD_DATE", buildString(buildDate))
@@ -81,10 +84,12 @@ android {
             sourceSets.getByName("main").jniLibs.setSrcDirs(listOf(file(nativeRoot)))
         }
     }
-    if (!project.hasProperty("useBundledNative")) {
-        sourceSets.getByName("main").jniLibs.directories.clear()
-        externalNativeBuild { cmake { path = file("src/main/cpp/CMakeLists.txt") } }
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/jni/CMakeLists.txt")
+        }
     }
+    defaultConfig.externalNativeBuild.cmake.arguments += "-DAUREA_BUNDLED_MEDIA=" + if (project.hasProperty("useBundledNative")) "ON" else "OFF"
 
     buildTypes {
         release {
@@ -132,7 +137,7 @@ val generateHomeBuildInfo = tasks.register("generateHomeBuildInfo") {
     outputs.files(file("src/main/assets/build-metadata.json"), file("src/main/assets/developer-changelog.txt"))
     doLast {
         file("src/main/assets/build-metadata.json").writeText("""
-            {"version":"1.8.1","code":25,"commit":${buildString(sourceCommit)},"channel":${buildString(buildChannel)},"variant":"github-extended","date":${buildString(buildDate)}}
+            {"version":"2.0.0","code":26,"commit":${buildString(sourceCommit)},"channel":${buildString(buildChannel)},"variant":"github-extended","date":${buildString(buildDate)}}
         """.trimIndent()+"\n")
         val history = gitValue("log", "--reverse", "--format=%H %ad %s%n%b", "--date=short", "98cbd64^..HEAD")
         val historyFile = file("src/main/assets/developer-changelog.txt")
@@ -214,4 +219,21 @@ chaquopy {
             options("--find-links", rootProject.file("build/apple-tv-wheels").absolutePath)
         }
     }
+}
+
+react {
+    root.set(rootDir)
+    entryFile.set(rootProject.file("index.ts"))
+    reactNativeDir.set(rootProject.file("node_modules/react-native"))
+    codegenDir.set(rootProject.file("node_modules/@react-native/codegen"))
+    cliFile.set(file(providers.exec {
+        workingDir(rootDir)
+        commandLine("node", "--print", "require.resolve('@expo/cli', { paths: [require.resolve('expo/package.json')] })")
+    }.standardOutput.asText.get().trim()))
+    bundleCommand.set("export:embed")
+    autolinkLibrariesWithApp()
+}
+dependencies {
+    implementation("com.facebook.react:react-android")
+    implementation("com.facebook.react:hermes-android")
 }

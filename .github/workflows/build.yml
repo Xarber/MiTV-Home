@@ -7,6 +7,10 @@ on:
     branches: [beta, main]
   workflow_dispatch:
     inputs:
+      expo_preview:
+        description: Build isolated Expo TV preview using verified unchanged media bytes (not a release)
+        type: boolean
+        default: false
       apple_tv_preflight:
         description: Build Android Apple TV client dependencies only
         type: boolean
@@ -22,15 +26,84 @@ concurrency:
   group: mitv-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 jobs:
+  expo-preview:
+    name: Expo TV ARM preview (no publication)
+    if: github.event_name == 'workflow_dispatch' && inputs.expo_preview
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - uses: gradle/actions/setup-gradle@v5
+      - run: npm ci && npm run typecheck && npm test && npm run build
+      - name: Restore verified Android dependency wheels
+        uses: actions/download-artifact@v6
+        with:
+          pattern: apple-tv-wheels-*
+          run-id: 40701926505
+          github-token: ${{ github.token }}
+          path: build/apple-tv-wheels
+          merge-multiple: true
+      - name: Prepare unchanged media and embedded web remote
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download v1.7.5 --repo Xarber/MiTV-Home --pattern '*universal*.apk' --dir "$RUNNER_TEMP/media"
+          SIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -1)"
+          "$SIGNER" verify --print-certs "$RUNNER_TEMP"/media/*.apk | grep -F 'a57dfea6154bf320e051cdfd304b1aa7976559f7239fdbde6fcea265a9f93724'
+          python3 scripts/expo/preview-native.py "$RUNNER_TEMP"/media/*.apk build/preview-native
+          mkdir -p app/src/main/assets/remoteapp
+          cp -R dist/. app/src/main/assets/remoteapp/
+          SDK_MANAGER="$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager | sort -V | tail -1)"
+          "$SDK_MANAGER" 'platforms;android-37.0' 'build-tools;37.0.0' 'ndk;27.0.12077973' 'cmake;3.22.1'
+      - name: Build isolated release-mode preview
+        run: ./gradlew :app:assembleRelease -PuseBundledNative -PreactNativeArchitectures=armeabi-v7a,arm64-v8a -PhomeApplicationId=it.xarber.mitvhome.preview -PbundledNativeRoot="$GITHUB_WORKSPACE/build/preview-native" --console=plain
+      - name: Sign isolated preview with the established release key
+        env:
+          KEYSTORE: ${{ secrets.MITV_KEYSTORE_BASE64 }}
+          MITV_STORE_PASSWORD: ${{ secrets.MITV_STORE_PASSWORD }}
+          MITV_KEY_ALIAS: ${{ secrets.MITV_KEY_ALIAS }}
+          MITV_KEY_PASSWORD: ${{ secrets.MITV_KEY_PASSWORD }}
+        run: |
+          test -n "$KEYSTORE"
+          umask 077
+          printf '%s' "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/preview.jks"
+          SIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -1)"
+          VERSION="$(node -p 'require("./package.json").version')"
+          mkdir -p preview-dist
+          "$SIGNER" sign --ks "$RUNNER_TEMP/preview.jks" --ks-key-alias "$MITV_KEY_ALIAS" --ks-pass env:MITV_STORE_PASSWORD --key-pass env:MITV_KEY_PASSWORD --out "preview-dist/Aurea-Home-v${VERSION}-preview-${GITHUB_SHA:0:7}-arm.apk" app/build/outputs/apk/release/app-release-unsigned.apk
+          "$SIGNER" verify preview-dist/*.apk
+          sha256sum preview-dist/*.apk > preview-dist/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v5
+        with:
+          name: Aurea-Expo-TV-preview-${{ github.sha }}
+          path: preview-dist/
+          if-no-files-found: error
+      - if: always()
+        run: rm -f "$RUNNER_TEMP/preview.jks"
+
   phone-companion:
     name: Phone companion formats
-    if: github.event_name != 'pull_request' && !inputs.apple_tv_preflight
+    if: github.event_name != 'pull_request' && !inputs.expo_preview && !inputs.apple_tv_preflight
     uses: ./.github/workflows/phone.yml
     secrets: inherit
 
   web-remote:
     name: Embedded phone web remote
-    if: github.event_name != 'pull_request' && !inputs.apple_tv_preflight
+    if: github.event_name != 'pull_request' && !inputs.expo_preview && !inputs.apple_tv_preflight
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
@@ -38,22 +111,20 @@ jobs:
         with:
           node-version: '24'
           cache: npm
-          cache-dependency-path: demo/package-lock.json
+          cache-dependency-path: package-lock.json
       - run: npm ci && npm run typecheck && npm test && npm run build
-        working-directory: demo
         env:
           EXPO_PUBLIC_SOURCE_COMMIT: ${{ github.sha }}
-      - run: npx playwright install --with-deps chromium && npm run test:e2e && node scripts/verify-pwa-update.mjs
-        working-directory: demo
+      - run: npx playwright install --with-deps chromium && npm run test:e2e && node scripts/expo/verify-pwa-update.mjs
       - uses: actions/upload-artifact@v5
         with:
           name: Aurea-embedded-remote-${{ github.sha }}
-          path: demo/dist/
+          path: dist/
           if-no-files-found: error
 
   apple-tv-runtime:
     name: Apple TV runtime ${{ matrix.abi }}
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && !inputs.expo_preview
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     strategy:
@@ -94,7 +165,7 @@ jobs:
 
   apple-tv-pure:
     name: Apple TV portable Python dependencies
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && !inputs.expo_preview
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -134,15 +205,14 @@ jobs:
         with:
           node-version: '24'
           cache: npm
-          cache-dependency-path: demo/package-lock.json
+          cache-dependency-path: package-lock.json
       - run: npm ci && npm run typecheck && npm test
         if: github.event_name == 'pull_request'
-        working-directory: demo
 
   android:
     needs: [apple-tv-runtime, apple-tv-pure, web-remote]
     name: Android ${{ matrix.format }}
-    if: github.event_name != 'pull_request' && !inputs.apple_tv_preflight
+    if: github.event_name != 'pull_request' && !inputs.expo_preview && !inputs.apple_tv_preflight
     strategy:
       fail-fast: false
       matrix:
@@ -163,6 +233,12 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
       - name: Collect exact-run Android Python dependencies
         uses: actions/download-artifact@v6
         with:
@@ -256,7 +332,7 @@ jobs:
 
   source:
     name: Corresponding source
-    if: github.event_name != 'pull_request' && !inputs.apple_tv_preflight
+    if: github.event_name != 'pull_request' && !inputs.expo_preview && !inputs.apple_tv_preflight
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
@@ -276,7 +352,7 @@ jobs:
 
   publish:
     name: Publish validated channel
-    if: github.event_name != 'pull_request' && !inputs.apple_tv_preflight && (github.ref_name == 'main' || github.ref_name == 'beta')
+    if: github.event_name != 'pull_request' && !inputs.expo_preview && !inputs.apple_tv_preflight && (github.ref_name == 'main' || github.ref_name == 'beta')
     needs: [checks, android, source, phone-companion]
     runs-on: ubuntu-24.04
     permissions:

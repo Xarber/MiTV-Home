@@ -52,7 +52,7 @@ existing release identity and record the actual source commit before deployment.
 Use Node 24 and `npm --prefix demo ci`. `npm --prefix demo run build` produces the
 complete standalone PWA export. Native TV CI first validates that exact-commit
 export and embeds it under app/src/main/assets/remoteapp; local native builds can
-copy demo/dist there, or retain the legacy remote fallback if absent.
+copy dist there, or retain the legacy remote fallback if absent.
 
 `phone.yml` generates native projects on CI and runs four independent jobs:
 Android universal APK/AAB using the existing managed release key, iOS unsigned

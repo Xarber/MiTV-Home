@@ -12,10 +12,10 @@ import urllib.error
 root=Path(__file__).resolve().parents[1]
 parser=argparse.ArgumentParser();parser.add_argument('--port',type=int,default=8765);parser.add_argument('--build',action='store_true');args=parser.parse_args()
 if not 1024<=args.port<=65535:parser.error('Choose an unprivileged port between 1024 and 65535')
-demo=root/'demo';index=demo/'dist/index.html';url=f'http://127.0.0.1:{args.port}'
+demo=root;index=demo/'dist/index.html';url=f'http://127.0.0.1:{args.port}'
 sources=[demo/'App.tsx',demo/'package.json',demo/'package-lock.json',*list((demo/'src').rglob('*'))]
 if args.build or not index.exists() or any(p.is_file() and p.stat().st_mtime>index.stat().st_mtime for p in sources):
- if not (demo/'node_modules').exists():sys.exit('Run npm ci inside demo first.')
+ if not (demo/'node_modules').exists():sys.exit('Run npm ci at the repository root first.')
  subprocess.run(['npm','run','build'],cwd=demo,check=True)
 def ready():
  try:

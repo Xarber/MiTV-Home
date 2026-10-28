@@ -18,10 +18,10 @@ import org.json.JSONObject;
 
 /** Uses the shared bounded, frosted, D-pad-scrollable settings surface. */
 final class PairedPlaybackPanels {
-    private final MainActivity host;
+    private final LegacyHomeActivity host;
     private final PairedPlayback playback;
     private final SharedPreferences preferences;
-    PairedPlaybackPanels(MainActivity host,PairedPlayback playback){this.host=host;this.playback=playback;preferences=host.getSharedPreferences("paired_device_ui",0);}
+    PairedPlaybackPanels(LegacyHomeActivity host,PairedPlayback playback){this.host=host;this.playback=playback;preferences=host.getSharedPreferences("paired_device_ui",0);}
     void resumePairing(){if(playback.pairingPending()&&(host.panel==null||!host.panel.isShowing()))pin(playback.pairingName());}
     void show(){
         if(playback.pairingPending()){pin(playback.pairingName());return;}
@@ -53,7 +53,7 @@ final class PairedPlaybackPanels {
     }
     private void pin(String name){
         LinearLayout rows=host.dialog("Pair Apple TV");label(rows,name);label(rows,host.tr("You have three minutes to enter the code. The saved pairing does not expire. Show Apple TV on its HDMI input, note the code, then press Home to return here."));
-        EditText input=new EditText(host);input.setTextColor(MainActivity.WHITE);input.setSingleLine(true);input.setInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_VARIATION_PASSWORD);input.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(4)});input.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS);rows.addView(input,host.lp(-1,52));
+        EditText input=new EditText(host);input.setTextColor(LegacyHomeActivity.WHITE);input.setSingleLine(true);input.setInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_VARIATION_PASSWORD);input.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(4)});input.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS);rows.addView(input,host.lp(-1,52));
         TextView status=label(rows,"");host.addControl(rows,"Pair","",()->{
             String value=input.getText().toString();if(!value.matches("[0-9]{4}")){status.setText(host.tr("Enter four digits"));return;}
             status.setText(host.tr("Connecting…"));input.setText("");Dialog expected=host.panel;
@@ -64,35 +64,35 @@ final class PairedPlaybackPanels {
         host.addControl(rows,"Cancel","",()->{cancel();host.closePanel();});host.panel.show();input.requestFocus();Dialog expected=host.panel;
         host.handler.postDelayed(()->{if(host.panel==expected&&expected.isShowing()&&!playback.pairingPending()){input.setText("");host.closePanel();show();}},playback.pairingRemaining()+100);
     }
-    private ArrayList<MainActivity.Entry> registeredInputs(){
-        ArrayList<MainActivity.Entry> result=new ArrayList<>();
+    private ArrayList<LegacyHomeActivity.Entry> registeredInputs(){
+        ArrayList<LegacyHomeActivity.Entry> result=new ArrayList<>();
         TvInputManager manager=(TvInputManager)host.getSystemService(android.content.Context.TV_INPUT_SERVICE);
         if(manager==null)return result;
         try{for(TvInputInfo info:manager.getTvInputList()){
             if(info.getType()!=TvInputInfo.TYPE_HDMI||info.getParentId()!=null)continue;
-            MainActivity.Entry target=null;
-            for(MainActivity.Entry known:host.sources.values())if(known.inputId.equals(info.getId())){target=known;break;}
+            LegacyHomeActivity.Entry target=null;
+            for(LegacyHomeActivity.Entry known:host.sources.values())if(known.inputId.equals(info.getId())){target=known;break;}
             if(target==null){CharSequence custom=info.loadCustomLabel(host),label=custom==null?info.loadLabel(host):custom;
                 target=host.action("pairing-input-"+result.size(),label==null?"HDMI":label.toString(),"hdmi",host.hdmiArt);target.inputId=info.getId();}
             result.add(target);
         }}catch(RuntimeException error){result.clear();}
-        result.sort(Comparator.comparing((MainActivity.Entry input)->input.label));return result;
+        result.sort(Comparator.comparing((LegacyHomeActivity.Entry input)->input.label));return result;
     }
-    private MainActivity.Entry selectedInput(){
+    private LegacyHomeActivity.Entry selectedInput(){
         String selected=preferences.getString("input_id","");
-        for(MainActivity.Entry input:registeredInputs())if(!selected.isEmpty()&&selected.equals(input.inputId))return input;
+        for(LegacyHomeActivity.Entry input:registeredInputs())if(!selected.isEmpty()&&selected.equals(input.inputId))return input;
         return null;
     }
-    private String selectedInputLabel(){MainActivity.Entry input=selectedInput();return input==null?host.tr("Choose HDMI input"):input.label;}
+    private String selectedInputLabel(){LegacyHomeActivity.Entry input=selectedInput();return input==null?host.tr("Choose HDMI input"):input.label;}
     private void showCode(){
-        MainActivity.Entry input=selectedInput();
+        LegacyHomeActivity.Entry input=selectedInput();
         if(input==null){chooseInput(this::showCode);return;}
         host.closePanel();host.openInput(input);
     }
     private void chooseInput(Runnable selected){
         LinearLayout rows=host.dialog("Choose HDMI input");
-        ArrayList<MainActivity.Entry> inputs=registeredInputs();String selectedId=preferences.getString("input_id","");
-        for(MainActivity.Entry input:inputs){if(input.inputId.isEmpty())continue;
+        ArrayList<LegacyHomeActivity.Entry> inputs=registeredInputs();String selectedId=preferences.getString("input_id","");
+        for(LegacyHomeActivity.Entry input:inputs){if(input.inputId.isEmpty())continue;
             host.addControlIcon(rows,input.label,input.inputId.equals(selectedId)?"✓":"","inputs",()->{preferences.edit().putString("input_id",input.inputId).apply();host.closePanel();selected.run();});}
         if(inputs.isEmpty())label(rows,host.tr("No HDMI inputs registered on this TV"));
         host.addControl(rows,"Cancel","",()->{host.closePanel();if(playback.pairingPending())pin(playback.pairingName());else show();});host.panel.show();host.focusFirst(rows);
@@ -115,5 +115,5 @@ final class PairedPlaybackPanels {
         }
     }
     private void cancel(){playback.cancelPairing();}
-    private TextView label(LinearLayout rows,String value){TextView view=host.text(value,13,MainActivity.MUTED);view.setPadding(0,host.dp(6),0,host.dp(8));rows.addView(view,host.lp(-1,-2));return view;}
+    private TextView label(LinearLayout rows,String value){TextView view=host.text(value,13,LegacyHomeActivity.MUTED);view.setPadding(0,host.dp(6),0,host.dp(8));rows.addView(view,host.lp(-1,-2));return view;}
 }

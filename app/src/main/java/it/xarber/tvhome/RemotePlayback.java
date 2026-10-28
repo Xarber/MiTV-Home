@@ -18,6 +18,7 @@ import org.json.JSONObject;
 final class RemotePlayback {
     private final Context context;
     private final PairedPlayback paired;
+    private final boolean presenceOwner;
     private volatile AirPlayService receiver;
     private boolean bound;
     private Bitmap previousArt;
@@ -28,10 +29,11 @@ final class RemotePlayback {
         @Override public void onServiceConnected(ComponentName name,IBinder binder){receiver=((AirPlayService.LocalBinder)binder).getService();}
         @Override public void onServiceDisconnected(ComponentName name){receiver=null;}
     };
-    RemotePlayback(Context context){this.context=context.getApplicationContext();paired=PairedPlayback.get(context);}
+    RemotePlayback(Context context){this(context,true);}
+    RemotePlayback(Context context,boolean presenceOwner){this.presenceOwner=presenceOwner;this.context=context.getApplicationContext();paired=PairedPlayback.get(context);}
     void start(){try{bound=context.bindService(new Intent(context,AirPlayService.class),connection,Context.BIND_AUTO_CREATE);}catch(Exception ignored){}}
     void clients(boolean active){paired.remoteActive(active);}
-    void close(){paired.remoteActive(false);if(bound){context.unbindService(connection);bound=false;}receiver=null;}
+    void close(){if(presenceOwner)paired.remoteActive(false);if(bound){context.unbindService(connection);bound=false;}receiver=null;}
     synchronized JSONObject state(){
         try{
             AirPlayService current=receiver;JSONObject value=new JSONObject();Bitmap image=null;
@@ -57,6 +59,9 @@ final class RemotePlayback {
             value.put("observedAt",System.currentTimeMillis());return value;
         }catch(Exception ignored){return SystemRemoteController.error("playback_unavailable");}
     }
+    boolean receiverReady(){AirPlayService current=receiver;return current!=null&&current.getServerState().getValue().toString().equals("RUNNING");}
+    float[] waveform(){AirPlayService current=receiver;return current!=null&&current.getAudioOnly().getValue()?current.audioWaveform():null;}
+    synchronized Bitmap cover(){return previousArt;}
     synchronized JSONObject artwork(){try{return new JSONObject().put("id",artId).put("image",art);}catch(Exception ignored){return new JSONObject();}}
     JSONObject command(JSONObject payload){
         JSONObject current=state();String action=payload.optString("action"),source=payload.optString("source");

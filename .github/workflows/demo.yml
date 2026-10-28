@@ -2,7 +2,7 @@ name: Aurea Home demo
 on:
   push:
     branches: [beta, main]
-    paths: ['demo/**', 'scripts/start-demo-preview.py', '.github/workflows/demo.yml']
+    paths: ['src/**', 'App.tsx', 'TVHome.tsx', 'package*.json', 'public/**', 'scripts/expo/**', '.github/workflows/demo.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -19,27 +19,21 @@ jobs:
         with:
           node-version: '24'
           cache: npm
-          cache-dependency-path: demo/package-lock.json
+          cache-dependency-path: package-lock.json
       - run: npm ci
-        working-directory: demo
       - run: npm run typecheck && npm test && npm run build
-        working-directory: demo
       - run: npx playwright install --with-deps chromium
-        working-directory: demo
       - run: npm run test:e2e
-        working-directory: demo
-      - run: node scripts/verify-pwa-update.mjs
-        working-directory: demo
+      - run: node scripts/expo/verify-pwa-update.mjs
       - name: Export Android demo JavaScript (not an APK)
         run: npx expo export --platform android --output-dir dist-android
-        working-directory: demo
       - uses: actions/upload-artifact@v5
         with:
           name: Aurea-Home-web-demo-${{ github.sha }}
-          path: demo/dist/
+          path: dist/
           if-no-files-found: error
       - uses: actions/upload-artifact@v5
         if: failure()
         with:
           name: Aurea-Home-demo-test-results-${{ github.sha }}
-          path: demo/playwright-results/
+          path: playwright-results/
