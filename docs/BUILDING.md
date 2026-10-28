@@ -59,3 +59,5 @@ Android universal APK/AAB using the existing managed release key, iOS unsigned
 device IPA and ARM64 simulator app.zip on macos-26. It uploads CI artifacts only.
 No new local SDK/toolchain is installed. Unsigned IPA files require external
 signing. Phone artifacts are not substituted into the TV update manifest.
+
+The established build workflow invokes phone.yml as a reusable workflow, so beta-only workflow files do not need to be added to stable main just to dispatch them. All four companion jobs run in parallel with the TV pipeline; publication waits for the mandatory jobs. Standalone new-workflow dispatch may remain unavailable until the files reach the default branch.

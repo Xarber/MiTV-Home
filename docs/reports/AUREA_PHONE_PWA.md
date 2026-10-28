@@ -55,3 +55,5 @@ unchanged. Namespaces isolate system-remote and phone trust. Failed storage read
 preserve the files. Phone commands are never replayed after reconnection or TV
 switch; stale playback sources reject controls. Existing stable artifacts and
 preferences remain the rollback baseline.
+
+GitHub initially refused standalone dispatch of new beta-only workflow files (404: not on default branch). The established build workflow now calls the phone matrix as a local reusable workflow, preserving the approved testing → beta path and leaving stable main unchanged.
