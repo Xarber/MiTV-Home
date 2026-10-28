@@ -37,3 +37,28 @@ token is bound to that origin. Native/same-TV-origin tokens use a separate class
 OPTIONS is parsed only for this explicit browser policy; default host parser tests
 retain strict same-origin behavior. Authentication is required for every `/api/`
 action regardless of preflight. No credentials/private state enter PWA caches.
+
+## In-process Expo TV adapter
+
+`NativeModules.AureaTV` is registered only by the handwritten TV host. This is not
+an HTTP endpoint and is absent from generated phone apps and the browser preview.
+`execute(operation, JSON)` accepts a bounded JSON object (32 KiB); image results
+are bounded data URIs, never arbitrary URLs. `pairedRequest` has its own smaller
+4 KiB bound and fixed scan/pair/cancel operations. Native methods do not expose
+credentials or unrestricted intent execution.
+
+The typed snapshot includes the real app/input catalog, canonical saved dock,
+appearance/language, network availability, receiver/paired playback, volume,
+remote presence, update state and exact native build metadata. App and input
+launches are validated against the current catalog. Media actions check the
+current source and reported capabilities. Preference writes validate the batch
+before committing. Settings use supported Android intents with explicit fallbacks.
+
+`AureaTVEvent` carries fixed key/home/pairing/notice events. `AureaTVWaveform`
+carries six calculated PCM bands only while the native receiver is active and
+Home is foreground. Paired Apple TV bars remain decorative. No browser example
+is substituted when a native request fails.
+
+`ready` confirms a valid initial snapshot and enables the native startup recovery
+guard. Release/update actions delegate to existing native controllers; backup and
+restore use Android document providers and preserve the existing validation rules.

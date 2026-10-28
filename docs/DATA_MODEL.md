@@ -25,3 +25,14 @@ External Apple TV pairing keeps only the selected HDMI input ID in
 `paired_device_ui` SharedPreferences (no default input). This device-specific UI
 choice is separate from encrypted Apple TV credentials and portable Home exports.
 Pending pairing name/deadline/generation are process-local; the PIN is never saved.
+
+## Expo Home compatibility
+
+The native adapter reads the historical `it.xarber.tvhome.MainActivity`
+preferences explicitly even though that Home component now hosts React. Legacy
+`library` maps to UI `all` at the boundary; installed package IDs and HDMI keys
+remain unchanged. All apps is limited to the sixth slot, while input shortcuts and
+individual sources remain ordinary pinnable entries. The original language,
+receiver, remote trust, release-history, update and Keystore stores retain their
+names. The isolated preview has a different package and intentionally different
+private storage; production updates do not import that preview's test identity.

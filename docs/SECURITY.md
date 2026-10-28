@@ -42,3 +42,16 @@ stable device ID detects IP reuse but is not a TLS server identity. Phone storag
 uses SecureStore or an encrypted origin-scoped web vault. Offline/PWA caching is
 static-only, never pairing/API responses or command queues. See
 [phone security and limitations](features/PHONE_REMOTE.md) and [PWA](features/PWA.md).
+
+## Expo host boundary
+
+The native bridge is trusted in-process code, not an exported network command
+surface. Its operations are allowlisted and bounded. Incoming HTTP clients still
+use the existing authenticated remote API, source/capability checks and origin
+policy. Browser preview fixtures cannot call the TV module. The separate preview
+does not advertise a competing receiver or start the production remote listener.
+
+Wi-Fi SSID access follows Android's permission and location-service restrictions.
+The settings action requests the OS permission interactively; neither build scripts
+nor the application silently grant it. UI navigation logs record only fixed
+movement/group names, not app labels, pairing codes, SSIDs or media metadata.
