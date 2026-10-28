@@ -1,0 +1,100 @@
+name: Aurea Remote companion
+on:
+  push:
+    branches: [beta, main]
+    paths: ['demo/**', 'scripts/phone/**', '.github/workflows/phone.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: aurea-phone-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  android:
+    name: Phone Android ${{ matrix.format }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        format: [apk, aab]
+    env:
+      EXPO_PUBLIC_SOURCE_COMMIT: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: demo/package-lock.json
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v5
+      - run: npm ci && npm run typecheck && npm test && npx expo prebuild --platform android --no-install
+        working-directory: demo
+      - name: Prepare existing release key
+        env:
+          KEYSTORE: ${{ secrets.MITV_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$KEYSTORE"
+          umask 077
+          printf '%s' "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/aurea-release.jks"
+      - name: Build release package
+        working-directory: demo/android
+        env:
+          MITV_STORE_FILE: ${{ runner.temp }}/aurea-release.jks
+          MITV_STORE_PASSWORD: ${{ secrets.MITV_STORE_PASSWORD }}
+          MITV_KEY_ALIAS: ${{ secrets.MITV_KEY_ALIAS }}
+          MITV_KEY_PASSWORD: ${{ secrets.MITV_KEY_PASSWORD }}
+          FORMAT: ${{ matrix.format }}
+        run: |
+          if [ "$FORMAT" = apk ]; then TASK=assembleRelease; else TASK=bundleRelease; fi
+          ./gradlew --init-script ../../scripts/phone/signing.gradle ":app:$TASK" -PreactNativeArchitectures=armeabi-v7a,arm64-v8a,x86,x86_64 --console=plain
+      - name: Validate and name artifact
+        env:
+          FORMAT: ${{ matrix.format }}
+        run: python3 scripts/phone/package.py android "$FORMAT"
+      - uses: actions/upload-artifact@v5
+        with:
+          name: Aurea-Remote-${{ github.ref_name }}-android-${{ matrix.format }}-${{ github.sha }}
+          path: phone-dist/
+          if-no-files-found: error
+      - if: always()
+        run: rm -f "$RUNNER_TEMP/aurea-release.jks"
+  ios:
+    name: Phone iOS ${{ matrix.target }}
+    runs-on: macos-26
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [unsigned, simulator]
+    env:
+      EXPO_PUBLIC_SOURCE_COMMIT: ${{ github.sha }}
+      FORCE_BUNDLING: '1'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: demo/package-lock.json
+      - run: npm ci && npm run typecheck && npm test && npx expo prebuild --platform ios
+        working-directory: demo
+      - name: Compile without signing
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          if [ "$TARGET" = simulator ]; then SDK=iphonesimulator; DEST='generic/platform=iOS Simulator'; else SDK=iphoneos; DEST='generic/platform=iOS'; fi
+          xcodebuild -workspace demo/ios/AureaRemote.xcworkspace -scheme AureaRemote -configuration Release -sdk "$SDK" -destination "$DEST" -derivedDataPath "$RUNNER_TEMP/aurea-ios" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO ARCHS=arm64 ONLY_ACTIVE_ARCH=NO build
+      - name: Package and validate
+        env:
+          TARGET: ${{ matrix.target }}
+        run: python3 scripts/phone/package.py ios "$TARGET"
+      - uses: actions/upload-artifact@v5
+        with:
+          name: Aurea-Remote-${{ github.ref_name }}-ios-${{ matrix.target }}-${{ github.sha }}
+          path: phone-dist/
+          if-no-files-found: error

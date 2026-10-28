@@ -3,11 +3,10 @@
 ## Scope and plan
 
 Build the existing launcher’s interface as an isolated React Native/Expo demo on
-`feature/aurea-expo-demo` in this repository. Keep the Android TV app, identifiers,
+a temporary branch in this repository, promoted through testing → beta. Keep the Android TV app, identifiers,
 release signing, update repository and existing CI channels intact. Adopt the
 platform-neutral display name **Aurea Home**. Do not migrate the native launcher to
-Expo, create an unrelated repository, introduce an iOS target or publish to a new
-hosting destination as an incidental change.
+Expo or create an unrelated repository. The later phone-companion request authorizes separate iOS/Android targets; it does not authorize a new website deployment.
 
 Acceptance: six customizable dock slots; three navigation stops; app/input menus;
 keyboard/mouse/touch navigation; focused, bounded scrollable popups; simulated music
@@ -16,7 +15,7 @@ repeatable web checks and clear separation from physical-device capabilities.
 
 ## Architecture
 
-`demo/` contains the companion runtime, its npm lockfile and no native Gradle files.
+`demo/` contains the shared companion runtime and lockfile. Native phone projects are generated in CI. App.tsx dispatches TVHomeDemo.tsx or the separate phone remote; see [phone architecture](PHONE_REMOTE.md).
 Expo SDK 58.0.20, React Native 0.88.0, React 19.3.0, React Native Web 0.21.4,
 Reanimated 4.7.1 and Worklets 0.13.0 were resolved through Expo’s SDK-aware installer.
 SDK 58 requires a compatible recent Node version; development/CI use Node 24.
@@ -51,12 +50,11 @@ Keyboard instructions appear for 5.5 seconds after loading, then disappear. Repe
 
 ## Simulations and provenance
 
-All app launches, HDMI switches, network state, remote connections, tracks, volume
+In the TV demo only, all app launches, HDMI switches, network state, remote connections, tracks, volume
 and waveform activity are simulated. Track progress is a demo clock, not a sampled
 music source. The first-load preview hint, page title and About identify this as a
 web preview; repeated simulation badges are intentionally absent from normal UI. Music produces no actual audio; its original artwork and two-color
-bars are demonstration visuals. External receiver/pyatv/remote APIs, production
-pairing, update installation, real TV input changes and microphone access are absent.
+bars are demonstration visuals. The TV demo does not use real receiver/remote APIs. The separate phone mode can explicitly pair with a real TV; fixtures and credentials remain isolated.
 No sample records are written to production storage or analytics. Simulated remote
 buttons only alter this demo. No external image/font service is used.
 
@@ -86,9 +84,7 @@ log tag, GitHub repository slug, update URLs, signing lineage and historical rel
 records remain unchanged. This keeps installed updates compatible. Saved custom
 receiver names remain the user’s own names; only the default fallback label changes.
 
-`demo.yml` runs preview checks on this feature branch (and allows manual dispatch),
-exports a web artifact with its source commit, and validates Android JavaScript export. It does not alter the native build
-matrix, auto-publish a new website, create iOS builds or deploy an APK to the TV.
+`demo.yml` runs preview checks on beta/main and manual dispatch. Native TV CI embeds the exact-commit web remote; phone.yml prepares four separate companion build formats. No new website is deployed.
 A static export can be hosted later through an explicitly selected destination.
 
 ## Security and limits

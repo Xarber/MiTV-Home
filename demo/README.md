@@ -2,7 +2,7 @@
 
 React Native + Expo companion to the Android TV launcher, in the same repository.
 This is a simulated showcase, not a replacement launcher or an AirPlay receiver.
-No iOS target, account, remote server, TV connection or paid service is required.
+The separate phone UI supports iOS/Android/web. Open `/?remote=1&preview=1` to try it without a TV, or `/?remote=1` to pair. See docs/features/PHONE_REMOTE.md for real-device requirements.
 
 Use Node 24 (at least 24.3) and npm:
 
@@ -29,8 +29,7 @@ starts the Expo development server instead; keep development tools on trusted ne
 
 Music has three original-artwork demo tracks, progress, pause/skip and simulated
 volume; it emits no audio. Six animated bars are simulated; the preview UI stays minimal. Inputs,
-network, casting and remote connection states are simulated. No real device is
-scanned or controlled. Preferences use only `aurea.demo.preferences.v1` browser
+network, casting and remote connection states are simulated. In TV preview mode no real device is scanned or controlled. Phone mode uses explicit pairing. Preferences use only `aurea.demo.preferences.v1` browser
 storage, separate from Android settings; Restore defaults affects only this demo.
 
 Five original minimal vector wallpapers share palettes with the Android branch.
@@ -47,8 +46,7 @@ npx expo export --platform android --output-dir dist-android
 
 The Android command exports a JavaScript bundle, not a tested or installable APK.
 No native demo was installed during browser validation. The original Gradle Android
-TV application remains the production launcher. Feature-branch / manual `demo.yml` uploads a static
-web artifact without publishing to a hosting service or changing release workflows.
+TV application remains the production launcher. `demo.yml` uploads the installable web export; `phone.yml` builds separate companion packages. No new hosting destination is activated.
 
 See [implementation and limitations](../docs/features/EXPO_DEMO.md).
 Original code is AGPL-3.0-only; inherited project artwork keeps its existing notices.

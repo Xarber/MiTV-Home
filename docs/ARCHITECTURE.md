@@ -33,3 +33,5 @@ launcher runtime. It has no access to TV services or production preferences.
 `WallpaperController` owns native wallpaper settings/lifecycle and `WallpaperArt`
 renders original gradients/curves. MainActivity only delegates presentation hooks.
 See [demo architecture and boundaries](features/EXPO_DEMO.md).
+
+See [phone remote](features/PHONE_REMOTE.md), [PWA](features/PWA.md), and [branding](BRANDING.md) for the separate Expo companion and native background bridge.

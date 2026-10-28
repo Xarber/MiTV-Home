@@ -45,3 +45,5 @@ tools retain their packaged licenses (including Playwright's Apache-2.0 terms).
 The npm lockfile records resolved versions. Original demo icons, SVG wallpapers
 and cover-art drawings are AGPL project contributions; no external album covers,
 fonts or stock photographs are fetched by the demo.
+
+The loopback system-remote bridge uses androidtvremote2 0.3.2 (Apache-2.0), aiofiles 25.1.0 (Apache-2.0), and the existing pinned cryptography/protobuf runtime. Expo companion dependencies retain their upstream notices in the npm lockfile. Original Aurea SVG artwork is AGPL-3.0-only.

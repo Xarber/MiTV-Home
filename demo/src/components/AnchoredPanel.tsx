@@ -12,8 +12,8 @@ export function anchorFor(id:string,fallback:Anchor):Anchor{
 }
 /** Only the childless material layer changes size. Content stays at its final
  * layout, revealing with opacity/transform so text and artwork never stretch. */
-export function AnchoredPanel({kind,anchor,visible,close,children}:{kind:'music'|'settings';anchor:Anchor;visible:boolean;close:()=>void;children:React.ReactNode}){
- const {width,height}=useWindowDimensions();const reduced=useReducedMotion();const progress=useSharedValue(0);const [measured,setMeasured]=useState(0);
+export function AnchoredPanel({kind,anchor,visible,close,children,bounds}:{kind:'music'|'settings';anchor:Anchor;visible:boolean;close:()=>void;children:React.ReactNode;bounds?:{width:number;height:number}}){
+ const viewport=useWindowDimensions();const {width,height}=bounds??viewport;const reduced=useReducedMotion();const progress=useSharedValue(0);const [measured,setMeasured]=useState(0);
  const [origin,setOrigin]=useState(anchor);
  const music=kind==='music';const targetWidth=Math.min(music?470:430,width-40);
  const left=music?Math.min(anchor.left,width-targetWidth-20):width-targetWidth-20;

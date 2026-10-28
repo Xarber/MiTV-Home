@@ -28,6 +28,8 @@ jobs:
         working-directory: demo
       - run: npm run test:e2e
         working-directory: demo
+      - run: node scripts/verify-pwa-update.mjs
+        working-directory: demo
       - name: Export Android demo JavaScript (not an APK)
         run: npx expo export --platform android --output-dir dist-android
         working-directory: demo

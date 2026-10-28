@@ -7,3 +7,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-opt
 @media(prefers-reduced-transparency:reduce),(prefers-contrast:more){[data-group="modal"]{background-color:#171d2b!important}#demo-dialog{background:#080c17!important;backdrop-filter:none!important}}
 
 [data-nav]:focus{outline:none!important}
+
+/* App-owned nested scrolling should not refresh or move the page behind it. */
+html,body{overscroll-behavior:none;-webkit-text-size-adjust:100%}
+#root{height:100dvh}
+#inputs-scroll,#apps-scroll{overscroll-behavior:contain}
+[data-nav],button,[role="button"]{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}

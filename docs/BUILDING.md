@@ -46,3 +46,16 @@ Do not use this shortcut after native-source changes or claim full native-source
 validation. Ordinary CI source builds are unchanged and retain all four ABIs.
 Local bundled builds retain their existing ARM32/ARM64 scope. Sign with the
 existing release identity and record the actual source commit before deployment.
+
+## Expo phone companion and embedded remote
+
+Use Node 24 and `npm --prefix demo ci`. `npm --prefix demo run build` produces the
+complete standalone PWA export. Native TV CI first validates that exact-commit
+export and embeds it under app/src/main/assets/remoteapp; local native builds can
+copy demo/dist there, or retain the legacy remote fallback if absent.
+
+`phone.yml` generates native projects on CI and runs four independent jobs:
+Android universal APK/AAB using the existing managed release key, iOS unsigned
+device IPA and ARM64 simulator app.zip on macos-26. It uploads CI artifacts only.
+No new local SDK/toolchain is installed. Unsigned IPA files require external
+signing. Phone artifacts are not substituted into the TV update manifest.

@@ -22,3 +22,5 @@ The feature branch adds Aurea Home branding, optional native wallpaper themes,
 and the Expo web companion with keyboard navigation, music and remote fixtures.
 See [the feature guide](features/EXPO_DEMO.md) for implemented preview behavior
 and the boundary between browser demonstrations and physical TV capabilities.
+
+See [phone remote](features/PHONE_REMOTE.md), [PWA](features/PWA.md), and [branding](BRANDING.md) for the separate Expo companion and native background bridge.

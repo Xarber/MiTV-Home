@@ -70,7 +70,7 @@ The demo uses static fixtures and a dedicated browser-storage namespace; it call
 no production TV, AirPlay, remote-pairing or update-installation API. Normal preview
 UI omits repeated simulation badges at the user's request; first-load context,
 page title, About and documentation identify the web preview. No simulated data is
-written as genuine production activity. About provides the exact branch source link.
+written as genuine production activity. About provides the integrated testing source link.
 
 Current SDK tooling retains transitive Zod/deepmerge advisories. An incompatible SDK
 downgrade was not used to silence npm audit. The preview serves only the production
@@ -88,8 +88,6 @@ The detached local preview responds at http://127.0.0.1:8765. The launcher remai
 installed at the previously confirmed stable version. Native branding/wallpaper
 changes were compiled/linted but not installed or visually tested on the TV.
 
-The demo workflow checks this feature branch and uploads a static artifact; it
-cannot publish an APK or new website. Existing native release workflows/channels
-remain intact. iOS is intentionally excluded. Native Expo installation, Android TV
+The initial demo-only scope was later expanded to the separate iOS/Android/web phone companion. See AUREA_PHONE_PWA.md for its newer validation and build boundaries. No new website is deployed. Native Expo installation, Android TV
 D-pad/runtime behavior, native wallpaper performance, real AirPlay/HDMI interactions
 and cross-device remote control are not established by these browser tests.

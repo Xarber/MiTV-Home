@@ -3,12 +3,12 @@ import React,{useState} from 'react';
 import {Pressable,StyleSheet,ViewStyle,StyleProp,Platform} from 'react-native';
 import Animated,{useReducedMotion} from 'react-native-reanimated';
 const AnimatedPressable=Animated.createAnimatedComponent(Pressable);
-export function FocusButton({id,children,onPress,onSelect,onLongPress,onDeselect,style,label,group='main',selected=false}:{id:string;children:React.ReactNode;onPress:()=>void;onSelect?:()=>void;onDeselect?:()=>void;onLongPress?:()=>void;style?:StyleProp<ViewStyle>;label:string;group?:string;selected?:boolean}){
+export function FocusButton({id,children,onPress,onSelect,onLongPress,onDeselect,style,label,group='main',selected=false,disabled=false}:{id:string;children:React.ReactNode;onPress:()=>void;onSelect?:()=>void;onDeselect?:()=>void;onLongPress?:()=>void;style?:StyleProp<ViewStyle>;label:string;group?:string;selected?:boolean;disabled?:boolean}){
  const [focus,setFocus]=useState(false);const [pressed,setPressed]=useState(false);const reduced=useReducedMotion();
- return <AnimatedPressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{selected}} tabIndex={0}
+ return <AnimatedPressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{selected,disabled}} disabled={disabled} tabIndex={disabled?-1:0}
  {...(Platform.OS==='web'?{dataSet:{nav:id,group}}:{})} onFocus={()=>{setFocus(true);onSelect?.();}} onBlur={()=>{setFocus(false);onDeselect?.();}} onHoverOut={onDeselect} onHoverIn={onSelect} onPress={onPress} onLongPress={onLongPress} delayLongPress={550}
  onPressIn={()=>setPressed(true)} onPressOut={()=>setPressed(false)}
- style={[styles.base,style,{outlineWidth:0},focus?styles.focus:null,{transform:[{scale:reduced?1:pressed?.97:focus?1.045:1}],transitionProperty:['transform','backgroundColor','borderColor'],transitionDuration:reduced?0:120}]}>
+ style={[styles.base,style,{opacity:disabled?.35:1},{outlineWidth:0},focus?styles.focus:null,{transform:[{scale:reduced?1:pressed?.97:focus?1.045:1}],transitionProperty:['transform','backgroundColor','borderColor'],transitionDuration:reduced?0:120}]}>
  {children}
  </AnimatedPressable>;
 }

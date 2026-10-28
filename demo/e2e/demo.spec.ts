@@ -96,3 +96,9 @@ test('scroll indicators and downward hints never enter keyboard focus',async({pa
  await page.keyboard.press('ArrowDown');await expect(focus(page,'input:hdmi1')).toBeFocused();
  await page.keyboard.press('ArrowDown');await expect(focus(page,'tab-all')).toBeFocused();
 });
+test('mobile source scrolling stays within its navigation stop',async({page})=>{
+ await page.setViewportSize({width:390,height:600});await page.keyboard.press('ArrowDown');await expect(focus(page,'input:hdmi1')).toBeFocused();
+ const input=await focus(page,'input:hdmi1').boundingBox();expect(input!.width).toBeLessThan(200);
+ await page.locator('#inputs-scroll').dispatchEvent('wheel',{deltaY:150,bubbles:true});
+ await expect(page.locator('#launcher-page-1')).toHaveAttribute('aria-hidden','false');await expect(page.locator('#launcher-page-2')).toHaveAttribute('aria-hidden','true');
+});

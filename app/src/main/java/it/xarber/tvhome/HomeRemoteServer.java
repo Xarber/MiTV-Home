@@ -127,7 +127,7 @@ final class HomeRemoteServer implements Runnable {
             try (InputStream page = context.getAssets().open(asset)) { respond(client, 200, "text/html; charset=utf-8", new String(readAll(page), StandardCharsets.UTF_8).replace("<head>","<head><meta name=\"aurea-remote\" content=\"1\">").replace("https://github.com/Xarber/MiTV-Home\"", "https://github.com/Xarber/MiTV-Home/tree/" + io.github.jqssun.airplay.BuildConfig.SOURCE_COMMIT + "\"")); }
             return;
         }
-        if(method.equals("GET")&&(path.startsWith("/_expo/")||path.startsWith("/assets/")||path.equals("/favicon.ico")||path.startsWith("/branding/")||path.equals("/manifest.webmanifest")||path.equals("/remote.webmanifest")||path.equals("/sw.js")||path.equals("/release.json"))){
+        if(method.equals("GET")&&(path.startsWith("/_expo/")||path.startsWith("/assets/")||path.equals("/favicon.ico")||path.startsWith("/branding/")||path.startsWith("/screenshots/")||path.equals("/manifest.webmanifest")||path.equals("/remote.webmanifest")||path.equals("/sw.js")||path.equals("/release.json"))){
             if(path.contains("..")||!path.matches("/[A-Za-z0-9_./-]+")){respond(client,404,"text/plain","not found");return;}
             try(InputStream asset=context.getAssets().open("remoteapp"+path)){
                 String mime=path.endsWith(".webmanifest")?"application/manifest+json":path.endsWith(".json")?"application/json":path.endsWith(".svg")?"image/svg+xml":path.endsWith(".js")?"application/javascript; charset=utf-8":path.endsWith(".css")?"text/css; charset=utf-8":path.endsWith(".png")?"image/png":path.endsWith(".ico")?"image/x-icon":"application/octet-stream";

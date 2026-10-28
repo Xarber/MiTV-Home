@@ -4,6 +4,7 @@ import Svg,{Path,Rect,Circle,Line,Polyline} from 'react-native-svg';
 import type {IconName} from '../model/catalog';
 export function Icon({name,size=24,color='white'}:{name:IconName;size?:number;color?:string}){
  const paths:Partial<Record<IconName,string>>={
+ back:'M14 5l-7 7 7 7',code:'M8 6l-6 6 6 6 M16 6l6 6-6 6 M14 3l-4 18',info:'M12 11v7 M12 7h.01 M22 12a10 10 0 11-20 0 10 10 0 0120 0',
  inputs:'M5 3h14v7H5z M8 10v5h8v-5 M12 15v6',music:'M9 17V5l12-2v12 M9 7l12-2',
  film:'M3 3h18v18H3z M7 3v18 M17 3v18 M3 8h4 M3 16h4 M17 8h4 M17 16h4',
  airplay:'M4 16H3V3h18v13h-1 M12 13l7 8H5z',tv:'M3 7h18v14H3z M8 2l4 5 4-5',

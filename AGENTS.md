@@ -29,7 +29,7 @@ Simulations must remain local, labeled and out of production storage/analytics/e
 
 Apply actual system/developer constraints first. Within project instructions, prefer explicit current task instructions, then repository architecture/approved decisions, then universal defaults, then general conventions. More specific/recent instructions resolve same-level conflicts; ask only for material unresolved or risky decisions. Preserve data, signing identity and existing public GitHub channel authorization. Temporary branches remain allowed, but integrate completed work into testing before beta/main promotion. No workflow migration or new distribution destination is implied by new universal defaults.
 
-Android TV has no iOS/Expo target; those build/update requirements are inapplicable. Do not fabricate Apple packages or add OTA. APK updates use GitHub's public release manifest, installed signing identity, SHA-256/package/version/SDK/ABI checks and official Android installation confirmation. Development-key installations cannot silently move to the release key. See docs/features/UPDATES.md. Never embed a GitHub token or bypass Android prompts.
+The native TV launcher remains Android-only. The user separately authorized iOS/Android phone companions in demo/; phone.yml builds their distinct packages. Do not fabricate Apple packages or add OTA. APK updates use GitHub's public release manifest, installed signing identity, SHA-256/package/version/SDK/ABI checks and official Android installation confirmation. Development-key installations cannot silently move to the release key. See docs/features/UPDATES.md. Never embed a GitHub token or bypass Android prompts.
 
 ## Diagnose before rebuilding
 
@@ -42,14 +42,17 @@ Do not enable raw pyatv binary logging, print PINs/credentials, or claim an old
 error was recovered when that app version never recorded it. Use failure class,
 HTTP status, HAP phase and stack locations as evidence before choosing a fix.
 
-## Aurea Home demo branch
+## Aurea Home and Remote companion
 
-`feature/aurea-expo-demo` adds the `demo/` Expo web companion within this repository.
-Keep this user-requested preview branch separate from stable promotion until
-reviewed. Native Android remains the real launcher; no iOS target or Expo rewrite.
-Retain package/update repository/signing identities when changing visible branding.
-Demo state is isolated browser storage; no production TV/receiver API calls.
-Music is a top-left focus-driven live activity, not a centered modal. Settings
-grow from the time/date bubble into a right sidebar. Preserve single-line sliding
-activity details, consistent black material, and nonfocusable navigation hints.
-See docs/features/EXPO_DEMO.md and demo/README.md.
+The user authorized testing → beta promotion of the Expo work and companion
+builds. Keep stable main unchanged until separately validated. Native Android TV
+remains the launcher; demo/ dispatches the web TV preview and iOS/Android/web phone
+remote. Preserve separate package IDs, update channels and signing continuity.
+Multiple saved TVs have isolated credentials and cancellation on switching. Never
+replay commands after reconnect, treat an example as a real TV, cache private API
+requests or claim physical background remote support from browser tests.
+PWA manifests/service worker are required for production exports; installation
+requires a secure browser context. See docs/features/PHONE_REMOTE.md and PWA.md.
+Music stays a top-left focus-driven activity; settings grow from the clock bubble.
+Preserve sliding details, black activity material and nonfocusable navigation hints.
+Temporary branch cleanup must preserve active Dependabot PRs and other worktrees.

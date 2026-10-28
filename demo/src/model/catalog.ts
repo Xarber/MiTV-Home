@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-export type IconName = 'inputs'|'apps'|'music'|'film'|'play'|'airplay'|'settings'|'tv'|'game'|'apple'|'remote'|'wifi'|'sun'|'volume'|'chevron'|'pause'|'next'|'previous'|'close'|'home'|'check'|'wallpaper';
+export type IconName = 'code'|'info'|'back'|'inputs'|'apps'|'music'|'film'|'play'|'airplay'|'settings'|'tv'|'game'|'apple'|'remote'|'wifi'|'sun'|'volume'|'chevron'|'pause'|'next'|'previous'|'close'|'home'|'check'|'wallpaper';
 export interface AppEntry { id:string; name:string; icon:IconName; color:string; category:'apps'|'system'|'casting'|'inputs'; mark?:string; subtitle?:string; }
 export const catalog:AppEntry[] = [
  {id:'inputs',name:'Inputs',icon:'inputs',color:'#555a75',category:'system'},

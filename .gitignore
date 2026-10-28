@@ -33,3 +33,9 @@ node_modules/
 
 /demo/dist-android/
 /demo/test-results/
+
+# Reproducible Expo exports and generated native companion projects
+/app/src/main/assets/remoteapp/
+/demo/android/
+/demo/ios/
+/demo/dist-ios/
