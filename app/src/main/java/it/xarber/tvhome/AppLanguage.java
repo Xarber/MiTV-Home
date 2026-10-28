@@ -91,7 +91,7 @@ public final class AppLanguage {
   IT.put("Download paused — waiting for network","Download in pausa — in attesa della rete");
   IT.put("Download status unavailable — retry","Stato download non disponibile — riprova");
   IT.put("Download cancelled","Download annullato");
-  IT.put("Allow MiTV Home to install updates, then return","Consenti a MiTV Home di installare aggiornamenti, poi torna qui");
+  IT.put("Allow Aurea Home to install updates, then return","Consenti a Aurea Home di installare aggiornamenti, poi torna qui");
   IT.put("Installation permission screen unavailable","Schermata autorizzazione installazione non disponibile");
   IT.put("Preparing Android installer…","Preparazione installazione Android…");
   IT.put("Installation needs confirmation","L’installazione richiede conferma");
@@ -115,7 +115,7 @@ public final class AppLanguage {
 
   IT.put("Restore previous preferences","Ripristina preferenze precedenti");
   IT.put("Includes %d earlier updates in the full changelog","La cronologia completa include %d aggiornamenti precedenti");
-  IT.put("About MiTV Home","Informazioni su MiTV Home");
+  IT.put("About Aurea Home","Informazioni su Aurea Home");
   IT.put("Build","Build");
   IT.put("Changelog","Cronologia versioni");
   IT.put("What’s New","Novità");
@@ -188,6 +188,9 @@ public final class AppLanguage {
   IT.put("Connected remote","Telecomando connesso");
   IT.put("Remote connected","Telecomando connesso");
   IT.put("Appearance","Aspetto");
+  IT.put("Wallpapers","Sfondi");
+  IT.put("Animated wallpapers","Sfondi animati");
+  IT.put("Classic","Classico");
   IT.put("Activity background","Sfondo delle attività");
   IT.put("Black","Nero");
   IT.put("Transparent","Trasparente");

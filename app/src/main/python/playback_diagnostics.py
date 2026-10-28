@@ -10,7 +10,7 @@ import re
 import threading
 import time
 
-OPERATIONS={"scan","pair_begin","pair_finish","connect","state","command","disconnect","cancel_pairing","shutdown"}
+OPERATIONS={"scan","pair_begin","pair_finish","connect","state","command","disconnect","cancel_pairing","shutdown","system_prepare","system_pair_begin","system_pair_finish","system_key","system_disconnect"}
 ERRORS={"connection_failed","authorization_rejected","http_error","timeout","authentication_failed","receiver_backoff","network_error","invalid_pin","pairing_failed","device_unavailable","pairing_required","disconnected","unsupported","invalid_volume","storage_failed","runtime_unavailable","pairing_expired","pairing_canceled","busy"}
 PATHS={"/pair-pin-start","/pair-setup","/pair-verify"}
 IDENTIFIER=re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,63}$")
@@ -34,9 +34,10 @@ def exception_details(error):
 
 class Recorder:
     LIMIT=131072
-    def __init__(self,directory,version,commit,sink=None):
+    def __init__(self,directory,version,commit,sink=None,basename="paired-playback"):
         self.directory=Path(directory);self.directory.mkdir(parents=True,exist_ok=True)
-        self.path=self.directory/"paired-playback.jsonl";self.previous=self.directory/"paired-playback.previous.jsonl"
+        if basename not in {"paired-playback","system-remote"}:raise ValueError("Unknown diagnostic scope")
+        self.path=self.directory/(basename+".jsonl");self.previous=self.directory/(basename+".previous.jsonl")
         self.version=version if re.fullmatch(r"\d+\.\d+\.\d+",version) else "unknown"
         self.commit=commit if re.fullmatch(r"[0-9a-f]{7,40}",commit) else "unknown"
         self.sink=sink;self.lock=threading.Lock()

@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "Aurea Remote",
+    "slug": "aurea-remote",
+    "version": "1.8.0",
+    "platforms": [
+      "android",
+      "ios",
+      "web"
+    ],
+    "orientation": "default",
+    "userInterfaceStyle": "dark",
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "name": "Aurea Home \u00b7 Interactive demo",
+      "favicon": "./public/branding/icon-192.png"
+    },
+    "android": {
+      "package": "it.xarber.aurea.remote",
+      "versionCode": 24
+    },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
+    ],
+    "scheme": "aurea",
+    "ios": {
+      "bundleIdentifier": "it.xarber.aurea.remote",
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocalNetworkUsageDescription": "Connect to your television on home Wi-Fi to control Aurea Home.",
+        "NSAppTransportSecurity": {
+          "NSAllowsLocalNetworking": true
+        }
+      },
+      "buildNumber": "24"
+    },
+    "icon": "./public/branding/icon-1024.png"
+  }
+}

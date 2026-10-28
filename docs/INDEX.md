@@ -1,5 +1,7 @@
 # Documentation map
 
+- [Aurea Home / Expo demo and wallpapers](features/EXPO_DEMO.md).
+
 - [Architecture](ARCHITECTURE.md): components, ownership and data flow.
 - [Features](FEATURES.md): implemented behavior and limitations.
 - [Data model](DATA_MODEL.md): preferences, release history and transient sessions.
@@ -16,3 +18,5 @@
 - [Standards implementation report](reports/STANDARDS_1.5.md) and [revised standards report](reports/REVISED_STANDARDS_1.5.1.md).
 
 See also [changelog](../CHANGELOG.md), [security](../SECURITY.md), [contributing](../CONTRIBUTING.md), and [agent instructions](../AGENTS.md).
+
+See [phone remote](features/PHONE_REMOTE.md), [PWA](features/PWA.md), and [branding](BRANDING.md) for the separate Expo companion and native background bridge.

@@ -1,0 +1,16 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Only the generated companion project consumes this init script. No secrets on disk.
+allprojects { project ->
+    project.afterEvaluate {
+        if (project.plugins.hasPlugin('com.android.application')) {
+            def android = project.extensions.getByName('android')
+            def releaseKey = android.signingConfigs.create('aureaRelease') {
+                storeFile = new File(System.getenv('MITV_STORE_FILE'))
+                storePassword = System.getenv('MITV_STORE_PASSWORD')
+                keyAlias = System.getenv('MITV_KEY_ALIAS')
+                keyPassword = System.getenv('MITV_KEY_PASSWORD')
+            }
+            android.buildTypes.getByName('release').signingConfig = releaseKey
+        }
+    }
+}

@@ -32,3 +32,13 @@ payloads/headers, PINs, credentials, addresses, device names or artwork are reco
 The safe handler does not format arbitrary upstream debug records. Release builds
 can expose these sanitized diagnostics through authorized ADB without enabling
 root/debuggable mode or opening a remote shell service in the app.
+
+## Phone companion and PWA
+
+The remote now uses an app-owned connected-device foreground service, encrypted
+persistent phone trust, per-origin browser tokens and explicit system-service
+pairing on loopback. The HTTP transport still requires trusted Wi-Fi; a random
+stable device ID detects IP reuse but is not a TLS server identity. Phone storage
+uses SecureStore or an encrypted origin-scoped web vault. Offline/PWA caching is
+static-only, never pairing/API responses or command queues. See
+[phone security and limitations](features/PHONE_REMOTE.md) and [PWA](features/PWA.md).

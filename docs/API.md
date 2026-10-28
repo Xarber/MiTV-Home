@@ -1,21 +1,39 @@
-# Home remote HTTP API
+# Local remote HTTP API
 
-Server exists only while Home is resumed. Requests must originate from loopback/link-local/private LAN addresses. URL is the actual TV IPv4 address and active port; port 80 may fall back to 8765. Use trusted LANs: HTTP has no transport encryption and tokens are readable to a capable local-network observer. Do not expose this listener to the Internet. Pairing is authorization, not TLS.
+`HomeRemoteService` owns the listener independently of the Home activity. Private,
+link-local or loopback peers only; exact Host validation. Port 80 falls back to
+8765 if unavailable. Use the actual address shown on the TV. HTTP pairing is
+explicit authorization, not TLS; use trusted home Wi-Fi and never expose it to the
+Internet. See [phone companion](features/PHONE_REMOTE.md) for the complete contract.
 
-## Routes
-
-| Method/path | JSON body | Result |
+| Method/path | Request | Result |
 | --- | --- | --- |
-| GET `/` or `/index.html` | None | Embedded remote page and corresponding-source link |
-| POST `/pair/start` | None | Requests top-left PIN notification or refreshes open QR panel |
-| POST `/pair` | `pin` string | 192-bit URL-safe token; rotates PIN and closes QR panel |
-| POST `/api/key` | `token`, `command` | Executes allowlisted key; refreshes presence |
-| POST `/api/presence` | `token`, optional `disconnect` bool | Heartbeat or disconnect |
+| GET `/` | None | Embedded phone remote, source link |
+| POST `/hello` | Empty object | Schema and random persistent application ID; no private state |
+| POST `/pair/start` | Empty object | Top-left code notification or open QR refresh |
+| POST `/pair` | Six-digit `pin` | Token and TV ID; persists trust, rotates PIN, closes QR |
+| POST `/api/state` | `token` | Device name, actual playback/system-control state, timestamps |
+| POST `/api/catalog` | `token` | Allowlisted installed apps and actual TV inputs |
+| POST `/api/icon`, `/api/artwork` | `token`, catalog/artwork `id` | Bounded supplied image data |
+| POST `/api/key` | `token`, allowlisted `command` | Foreground launcher or paired system-service key |
+| POST `/api/launch` | `token`, catalog `id` | Known app/input/live-TV launch |
+| POST `/api/media` | `token`, `source`, `action`, optional numeric `value` | Capability/source-checked playback control |
+| POST `/api/presence` | `token`, optional `disconnect` | Presence lease |
+| POST `/api/revoke` | `token` | Revokes this token only |
+| POST `/api/system/pair/start` | `token` | Starts explicit loopback system-service pairing |
+| POST `/api/system/pair/finish` | `token`, six-hex-digit `pin` | Completes system-service pairing |
 
-Commands: up/down/left/right/ok/back/home/volumeup/volumedown/playpause/next/previous. PIN expires after five minutes. Five failed PIN attempts per minute are allowed. Notice requests are throttled to one per three seconds. At most 16 tokens exist in memory. Backgrounding Home/revocation invalidates all tokens. Presence heartbeat is 5s; stale presence expires after 15s. QR stores PIN in a fragment cleared before request transmission. Authenticated presence drives the remote activity.
+Keys: up/down/left/right/ok/back/home/volumeup/volumedown/playpause/next/previous.
+Five-minute phone PIN, five failed attempts/minute, notices throttled to three
+seconds. Up to 16 encrypted tokens persist across service restarts. Presence
+expires after 15 seconds; the phone refreshes actual state every two seconds while
+active. No commands are queued for replay. QR PIN fragments are removed before
+API requests and may complete same-origin pairing automatically.
 
-## Validation and errors
-
-HTTP/1.1 only, exact local Host authority, matching Origin when supplied, no transfer encoding or duplicate headers, 8 KiB headers, 4 KiB JSON bodies, complete reads and 3s per-client timeout. POST bodies must be application/json. The listener processes one connection at a time: slow clients can temporarily delay other clients within the timeout; no remote public access is intended.
-
-400 malformed request/JSON, 401 unknown token, 403 incorrect/expired PIN or foreign Host/Origin, 404 unknown route, 405 method, 413 oversized body, 415 media type, 429 pairing throttled, 431 oversized headers. Responses are no-store, nosniff, deny framing and restrict page connections to the same origin. No cross-origin permission is granted.
+HTTP/1.1, bounded 8 KiB headers/4 KiB JSON bodies, duplicate/transfer-encoding
+rejection, complete reads and read timeout. Foreign origins require a well-formed
+HTTPS origin (localhost development exception). CORS is exact-origin; each browser
+token is bound to that origin. Native/same-TV-origin tokens use a separate class.
+OPTIONS is parsed only for this explicit browser policy; default host parser tests
+retain strict same-origin behavior. Authentication is required for every `/api/`
+action regardless of preflight. No credentials/private state enter PWA caches.
