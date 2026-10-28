@@ -5,7 +5,7 @@ import {revealFocus} from '../platform/focus';
 import {LinearGradient} from 'expo-linear-gradient';
 /** Edge hints change only when crossing boundaries, never one React render per frame. */
 export function FadedScroll({children}:{children:React.ReactNode}){
- const container=useRef<View>(null);
+ const container=useRef<React.ComponentRef<typeof View>>(null);
  const measurements=useRef({height:0,content:0,offset:0});const last=useRef({top:false,bottom:false});const [edges,setEdges]=useState(last.current);
  const update=useCallback(()=>{const {height,content,offset}=measurements.current;const next={top:offset>8,bottom:height>0&&content-offset-height>8};if(next.top!==last.current.top||next.bottom!==last.current.bottom){last.current=next;setEdges(next);}},[]);
  useEffect(()=>{

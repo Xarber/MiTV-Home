@@ -63,3 +63,9 @@ focus check during a resize/entrance transition. Scroll containers now re-reveal
 focused content after their size changes; the assertion waits for the animated
 layout to settle. The targeted local regression passes. The earlier failed build
 was prevented from publishing; the corrected source requires its new CI run.
+
+A subsequent Linux CI typecheck exposed a React Native ref-type difference not
+reported by the local compiler: the scroll observer now uses the component's
+inferred public instance type. PR host checks also run the locked Expo type/model
+checks before promotion. Root README now describes the phone/PWA scope and
+background-service limitations instead of the older demo-only scope.

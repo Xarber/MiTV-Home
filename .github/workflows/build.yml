@@ -129,6 +129,15 @@ jobs:
           distribution: temurin
           java-version: '21'
       - run: scripts/check-host.sh
+      - uses: actions/setup-node@v6
+        if: github.event_name == 'pull_request'
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: demo/package-lock.json
+      - run: npm ci && npm run typecheck && npm test
+        if: github.event_name == 'pull_request'
+        working-directory: demo
 
   android:
     needs: [apple-tv-runtime, apple-tv-pure, web-remote]
