@@ -12,11 +12,11 @@
 
 ![MiTV Home dock](docs/assets/home.png)
 
-## Interactive Expo demo — feature branch
+## Expo preview and phone companion
 
 This branch adds a React Native + Expo web demo inside this repository, with
 keyboard navigation, simulated music/remote controls and minimal animated wallpapers.
-The Android TV launcher remains the production app. No iOS target is included.
+The launcher remains native Android TV. A separate iOS/Android/web phone UI supports saved TVs, app/input switching and in-app music controls. Open `/?remote=1&preview=1` for the phone demo, or `/?remote=1` to pair with a real TV.
 
 ```sh
 cd demo && npm ci
@@ -58,7 +58,7 @@ Android 8/API 26 or newer is required. CI compiles native libraries for ARMv7, A
 
 AirPlay support comes from the integrated open-source receiver. Sender, codec, DRM, and network compatibility vary. This is not an Apple-certified product. Screen mirroring was tested on the reference TV; the compact audio indicator and focused expanded controls were also checked on the reference TV. Sender-specific artwork and track metadata still need broader validation.
 
-The phone remote runs while Home is foreground. It tries HTTP port 80 first. Stock Android can restrict privileged ports; on the reference TV the working fallback is **8765**. The QR always contains the actual address. The QR includes a short-lived pairing code in its URL fragment, which the browser clears before pairing.
+The phone remote service remains available while Home is in the background, subject to Android service restrictions. System-wide navigation requires a separate Android TV Remote Service pairing. Physical background operation still needs verification. It tries HTTP port 80 first. Stock Android can restrict privileged ports; on the reference TV the working fallback is **8765**. The QR always contains the actual address. The QR includes a short-lived pairing code in its URL fragment, which the browser clears before pairing.
 
 ## Install
 
