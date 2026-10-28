@@ -17,5 +17,8 @@ class BootReceiver : BroadcastReceiver() {
         val serviceIntent = Intent(context, AirPlayService::class.java)
             .setAction(AirPlayService.ACTION_START_SERVER)
         ContextCompat.startForegroundService(context, serviceIntent)
+        if (context.getSharedPreferences("phone_remote", Context.MODE_PRIVATE).getBoolean("enabled", true)) {
+            ContextCompat.startForegroundService(context, Intent(context, it.xarber.tvhome.HomeRemoteService::class.java))
+        }
     }
 }

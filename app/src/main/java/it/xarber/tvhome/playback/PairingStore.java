@@ -17,15 +17,16 @@ import org.json.JSONObject;
 
 /** Device-bound credentials, deliberately outside Android backups and portable preferences. */
 public final class PairingStore {
-    private static final String ALIAS="mitv.paired-apple-tv.v1";
+    private final String alias;
     private final Context context;
     private final AtomicFile file;
-    public PairingStore(Context context){this.context=context.getApplicationContext();file=new AtomicFile(new File(context.getNoBackupFilesDir(),"paired-apple-tv.enc"));}
+    public PairingStore(Context context){this(context,"paired-apple-tv");}
+    public PairingStore(Context context,String namespace){if(!namespace.matches("[a-z-]{1,40}"))throw new IllegalArgumentException("Invalid credential namespace");this.context=context.getApplicationContext();alias="mitv."+namespace+".v1";file=new AtomicFile(new File(context.getNoBackupFilesDir(),namespace+".enc"));}
     private SecretKey key() throws Exception {
         KeyStore store=KeyStore.getInstance("AndroidKeyStore");store.load(null);
-        if(store.containsAlias(ALIAS))return (SecretKey)store.getKey(ALIAS,null);
+        if(store.containsAlias(alias))return (SecretKey)store.getKey(alias,null);
         KeyGenerator generator=KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES,"AndroidKeyStore");
-        generator.init(new KeyGenParameterSpec.Builder(ALIAS,KeyProperties.PURPOSE_ENCRYPT|KeyProperties.PURPOSE_DECRYPT)
+        generator.init(new KeyGenParameterSpec.Builder(alias,KeyProperties.PURPOSE_ENCRYPT|KeyProperties.PURPOSE_DECRYPT)
             .setBlockModes(KeyProperties.BLOCK_MODE_GCM).setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE).setRandomizedEncryptionRequired(true).build());
         return generator.generateKey();
     }

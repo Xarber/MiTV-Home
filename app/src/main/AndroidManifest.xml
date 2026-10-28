@@ -50,6 +50,7 @@
 
         </activity>
 
+        <service android:name="it.xarber.tvhome.HomeRemoteService" android:exported="false" android:foregroundServiceType="connectedDevice" />
         <service
             android:name=".service.AirPlayService"
             android:foregroundServiceType="connectedDevice|mediaPlayback"

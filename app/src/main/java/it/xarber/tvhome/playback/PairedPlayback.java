@@ -36,6 +36,7 @@ public final class PairedPlayback {
     private PyObject client;
     private WifiManager.MulticastLock multicast;
     private volatile boolean foreground,closed,busy;
+    private boolean homeOwner,remoteOwner;
     private long retryAt;
     private int failures;
     private volatile JSONObject state=new JSONObject();
@@ -60,8 +61,14 @@ public final class PairedPlayback {
     public JSONObject state(){return state;}
     public Bitmap artwork(){return artwork;}
     public boolean active(){return foreground&&SystemClock.elapsedRealtime()-observed<12000&&Math.abs(System.currentTimeMillis()/1000.-state.optDouble("observed_at",0))<12&&state.optBoolean("active");}
-    public void resume(){foreground=true;retryAt=0;if(monitorJob==null||monitorJob.isCancelled())monitorJob=worker.scheduleWithFixedDelay(this::poll,0,2,TimeUnit.SECONDS);}
-    public void pause(){foreground=false;if(monitorJob!=null)monitorJob.cancel(false);worker.execute(()->{if(client!=null&&!pairing.pending())call("disconnect",new JSONObject());resetState();if(!pairing.pending())releaseMulticast();});}
+    public void resume(){homeOwner=true;updateOwners();}
+    public void pause(){homeOwner=false;updateOwners();}
+    public void remoteActive(boolean active){if(android.os.Looper.myLooper()!=android.os.Looper.getMainLooper()){main.post(()->remoteActive(active));return;}if(remoteOwner==active)return;remoteOwner=active;updateOwners();}
+    private void updateOwners(){
+        boolean active=homeOwner||remoteOwner;if(foreground==active)return;foreground=active;
+        if(active){retryAt=0;if(monitorJob==null||monitorJob.isCancelled())monitorJob=worker.scheduleWithFixedDelay(this::poll,0,2,TimeUnit.SECONDS);}
+        else {if(monitorJob!=null)monitorJob.cancel(false);worker.execute(()->{if(foreground)return;if(client!=null&&!pairing.pending())call("disconnect",new JSONObject());resetState();if(!pairing.pending())releaseMulticast();});}
+    }
     public void close(){pairing.clear();closed=true;foreground=false;observer=null;worker.execute(()->{if(client!=null)call("shutdown",new JSONObject());releaseMulticast();});worker.shutdown();}
     private void notifyChange(){main.post(()->{if(!closed&&observer!=null)observer.run();});}
     private void lockMulticast(){if(multicast!=null)return;WifiManager wifi=(WifiManager)context.getSystemService(Context.WIFI_SERVICE);if(wifi!=null){multicast=wifi.createMulticastLock("MiTVAppleTVDiscovery");multicast.setReferenceCounted(false);multicast.acquire();}}

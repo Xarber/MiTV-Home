@@ -1,6 +1,10 @@
 package io.github.jqssun.airplay.discovery
 
 import android.content.Context
+import android.net.ConnectivityManager
+import android.net.Network
+import android.os.Handler
+import android.os.Looper
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
 import android.net.wifi.WifiManager
@@ -22,7 +26,38 @@ class NsdServiceManager(private val ctx: Context) {
         }
     }
 
-    fun register(services: List<MdnsService>) = services.forEach(::_register)
+    private val handler = Handler(Looper.getMainLooper())
+    private val connectivity = ctx.getSystemService(ConnectivityManager::class.java)
+    private var services: List<MdnsService> = emptyList()
+    private var watching = false
+    private var released = false
+    private var lastNetwork: Network? = connectivity.activeNetwork
+    private val refresh = Runnable {
+        if (!released && connectivity.activeNetwork != null) {
+            unregister()
+            services.forEach(::_register)
+        }
+    }
+    private val networkCallback = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) { handler.post {
+            if (!released && network != lastNetwork) {
+                lastNetwork = network
+                handler.removeCallbacks(refresh)
+                handler.postDelayed(refresh, 1500)
+            }
+        } }
+        override fun onLost(network: Network) { handler.post {
+            if (network == lastNetwork) lastNetwork = null
+        } }
+    }
+    fun register(services: List<MdnsService>) {
+        this.services = services.toList()
+        services.forEach(::_register)
+        if (!watching) try {
+            connectivity.registerDefaultNetworkCallback(networkCallback)
+            watching = true
+        } catch (_: SecurityException) { Log.w(TAG, "Network discovery recovery unavailable") }
+    }
 
     private fun _register(s: MdnsService) {
         val info = NsdServiceInfo().apply {
@@ -51,11 +86,18 @@ class NsdServiceManager(private val ctx: Context) {
         registrations += listener
     }
 
-    fun release() {
+    private fun unregister() {
         registrations.forEach {
             try { nsdManager.unregisterService(it) } catch (_: Exception) {}
         }
         registrations.clear()
+    }
+    fun release() {
+        released = true
+        handler.removeCallbacksAndMessages(null)
+        if (watching) try { connectivity.unregisterNetworkCallback(networkCallback) } catch (_: Exception) {}
+        watching = false
+        unregister()
         multicastLock?.release()
         multicastLock = null
     }
