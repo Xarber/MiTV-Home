@@ -24,6 +24,7 @@ final class RemotePlayback {
     private Bitmap previousArt;
     private String art="",artId="";
     private int artVersion;
+    private org.json.JSONArray palette=new org.json.JSONArray().put("#e6eaf0").put("#929aa8");
     private final long session=android.os.SystemClock.elapsedRealtime();
     private final ServiceConnection connection=new ServiceConnection(){
         @Override public void onServiceConnected(ComponentName name,IBinder binder){receiver=((AirPlayService.LocalBinder)binder).getService();}
@@ -50,12 +51,14 @@ final class RemotePlayback {
                 if(!supplied.isNull("volume"))value.put("volume",supplied.optDouble("volume"));
                 value.put("controls",supplied.optJSONObject("controls"));
             }else value.put("active",false);
-            if(image!=previousArt){previousArt=image;art="";artId="";if(image!=null&&!image.isRecycled()){
+            if(image!=previousArt){palette=new org.json.JSONArray();for(int color:WavePalette.from(image))palette.put(String.format(java.util.Locale.US,"#%06x",color&0xffffff));previousArt=image;art="";artId="";if(image!=null&&!image.isRecycled()){
                 Bitmap scaled=Bitmap.createScaledBitmap(image,Math.max(1,Math.min(384,image.getWidth())),Math.max(1,Math.min(384,image.getHeight())),true);
                 ByteArrayOutputStream bytes=new ByteArrayOutputStream();scaled.compress(Bitmap.CompressFormat.JPEG,85,bytes);if(scaled!=image)scaled.recycle();
                 if(bytes.size()<=120000){art="data:image/jpeg;base64,"+Base64.encodeToString(bytes.toByteArray(),Base64.NO_WRAP);artId=session+"-"+(++artVersion);}
             }}
             if(!artId.isEmpty())value.put("artworkId",artId);
+            value.put("colors",palette);
+            float[] measured=waveform();if(measured!=null&&measured.length==6&&value.optString("source").equals("airplay")){org.json.JSONArray bands=new org.json.JSONArray();for(float band:measured)bands.put(Float.isFinite(band)?Math.max(0,Math.min(1,band)):0);value.put("bands",bands);}
             value.put("observedAt",System.currentTimeMillis());return value;
         }catch(Exception ignored){return SystemRemoteController.error("playback_unavailable");}
     }

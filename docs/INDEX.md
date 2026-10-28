@@ -20,3 +20,6 @@
 See also [changelog](../CHANGELOG.md), [security](../SECURITY.md), [contributing](../CONTRIBUTING.md), and [agent instructions](../AGENTS.md).
 
 See [phone remote](features/PHONE_REMOTE.md), [PWA](features/PWA.md), and [branding](BRANDING.md) for the separate Expo companion and native background bridge.
+
+- [Phone remote and launcher preview](features/phone-remote.md)
+- [Expo remote batch and untested boundaries](reports/2026-10-28-expo-remote-batch.md)

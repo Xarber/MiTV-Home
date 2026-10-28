@@ -36,7 +36,7 @@ final class RemoteCatalog {
         }
         TvInputManager manager=(TvInputManager)context.getSystemService(Context.TV_INPUT_SERVICE);
         if(manager!=null)for(TvInputInfo input:manager.getTvInputList()){
-            if(input.getType()!=TvInputInfo.TYPE_HDMI||sources.length()>=64)continue;
+            if(input.getType()!=TvInputInfo.TYPE_HDMI||input.getParentId()!=null||sources.length()>=64)continue;
             String id="input:"+input.getId();if(id.length()>512)continue;inputs.put(id,input.getId());
             sources.put(new JSONObject().put("id",id).put("name",bounded(String.valueOf(input.loadLabel(context)),100)).put("kind","input").put("connected",manager.getInputState(input.getId())==TvInputManager.INPUT_STATE_CONNECTED));
         }

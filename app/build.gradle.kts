@@ -32,6 +32,7 @@ val sourceCommit = providers.environmentVariable("GITHUB_SHA").getOrElse(archive
 val buildChannel = providers.environmentVariable("MITV_BUILD_CHANNEL").getOrElse(archivedSource.getProperty("channel", gitValue("branch", "--show-current")))
 val buildEpoch = providers.environmentVariable("SOURCE_DATE_EPOCH").orNull ?: archivedSource.getProperty("epoch", gitValue("show", "-s", "--format=%ct", "HEAD"))
 val buildDate = buildEpoch.toLongOrNull()?.let { Instant.ofEpochSecond(it).toString() } ?: "unknown"
+val mobileRemote = project.hasProperty("mobileRemote")
 val allAbis = if (project.hasProperty("useBundledNative")) providers.gradleProperty("reactNativeArchitectures").orNull?.split(",")?.filter { it == "arm64-v8a" || it == "armeabi-v7a" }?.also { require(it.isNotEmpty()) } ?: listOf("arm64-v8a", "armeabi-v7a")
     else listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
 
@@ -63,6 +64,11 @@ android {
         applicationId = providers.gradleProperty("homeApplicationId").getOrElse("it.xarber.mitvhome")
         minSdk = 26
         targetSdk = 34
+        manifestPlaceholders["homeCategory"] = if (mobileRemote) "android.intent.category.LAUNCHER" else "android.intent.category.HOME"
+        manifestPlaceholders["homeOrientation"] = if (mobileRemote) "unspecified" else "landscape"
+        manifestPlaceholders["homeLabel"] = if (mobileRemote) "Aurea Remote" else "Aurea Home"
+        manifestPlaceholders["homeExcludeRecents"] = if (mobileRemote) "false" else "true"
+        buildConfigField("boolean", "MOBILE_REMOTE", mobileRemote.toString())
         versionCode = 26
         versionName = "2.0.0"
         buildConfigField("String", "SOURCE_COMMIT", buildString(sourceCommit))

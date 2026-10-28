@@ -17,6 +17,8 @@ export function parseState(raw:Record<string,unknown>):RemoteState{
  if(raw.schema!==1||!text(raw.name,256)||!finite(raw.observedAt)||typeof raw.homeActive!=='boolean')throw new RemoteError('invalid_response');
  const system=raw.systemRemote as Record<string,unknown>|undefined,music=raw.music as Record<string,unknown>|undefined;
  if(!system||typeof system.paired!=='boolean'||!text(system.status,64)||!music||typeof music.active!=='boolean')throw new RemoteError('invalid_response');
+ if(music.colors!==undefined&&(!Array.isArray(music.colors)||music.colors.length!==2||!music.colors.every(value=>typeof value==='string'&&/^#[0-9a-f]{6}$/i.test(value))))delete music.colors;
+ if(music.bands!==undefined&&(!Array.isArray(music.bands)||music.bands.length!==6||!music.bands.every(value=>finite(value)&&Number(value)<=1)))delete music.bands;
  if(music.active){
   if(!['airplay','paired-apple-tv'].includes(String(music.source)))throw new RemoteError('invalid_response');
   for(const key of ['title','artist','album'])if(music[key]!==undefined&&!text(music[key],512))throw new RemoteError('invalid_response');

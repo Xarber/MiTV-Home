@@ -61,7 +61,7 @@ export function PhonePlayer({
       </View>
       <View style={{ transform: [{ scale: 0.85 }] }}>
         {waveform ?? (
-          <Waveform playing={!!music.playing && connected} track={0} />
+          <Waveform playing={!!music.playing && connected} track={0} colors={music.colors} bands={music.bands} />
         )}
       </View>
     </View>

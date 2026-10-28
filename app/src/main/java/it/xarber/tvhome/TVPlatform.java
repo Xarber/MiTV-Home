@@ -42,7 +42,7 @@ public final class TVPlatform {
     private JSONArray palette=new JSONArray().put("#e6eaf0").put("#929aa8");
     private final Handler main=new Handler(Looper.getMainLooper());
     private TVPlatform(Context context){this.context=context;prefs=context.getSharedPreferences("it.xarber.tvhome.MainActivity",0);catalog=new TVHomeCatalog(context,prefs);paired=PairedPlayback.get(context);playback=new RemotePlayback(context,false);if(!BuildConfig.APPLICATION_ID.endsWith(".preview"))playback.start();updates=UpdateController.get(context);}
-    public void resume(Activity host){activity=new WeakReference<>(host);foreground=true;paired.resume();updates.observe(this::notifyUpdate);updates.resume();if(!BuildConfig.APPLICATION_ID.endsWith(".preview")){HomeRemoteService.ensure(context);ensureReceiver();}}
+    public void resume(Activity host){activity=new WeakReference<>(host);foreground=true;paired.resume();if(!BuildConfig.MOBILE_REMOTE){updates.observe(this::notifyUpdate);updates.resume();}if(!BuildConfig.MOBILE_REMOTE&&!BuildConfig.APPLICATION_ID.endsWith(".preview")){HomeRemoteService.ensure(context);ensureReceiver();}}
     public void pause(Activity host){if(activity.get()!=host)return;foreground=false;paired.pause();updates.pause();}
     private void ensureReceiver(){context.getSharedPreferences("settings",0).edit().putBoolean("auto_start",true).putBoolean("boot_auto_start",true).putBoolean("run_in_background",true).putBoolean("launch_on_connect",true).putBoolean("auto_fullscreen",true).apply();try{context.startForegroundService(new Intent(context,io.github.jqssun.airplay.service.AirPlayService.class).setAction(io.github.jqssun.airplay.service.AirPlayService.ACTION_START_SERVER));}catch(Exception failure){AureaTVModule.event("notice",safe("message","AirPlay service could not start"));}}
     static JSONObject safe(String key,Object value){JSONObject result=new JSONObject();try{result.put(key,value);}catch(Exception ignored){}return result;}
@@ -90,7 +90,8 @@ public final class TVPlatform {
         case "appInfo":catalog.appAction(data.getString("id"),false);return safe("accepted",true);
         case "media":return playback.command(data);
         case "volume":int value=data.getInt("value");if(value<0||value>100)throw new IllegalArgumentException("invalid_volume");AudioManager audio=context.getSystemService(AudioManager.class);audio.setStreamVolume(AudioManager.STREAM_MUSIC,Math.round(audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC)*value/100f),0);return safe("accepted",true);
-        case "remote":return remoteInfo();
+        case "startReceiver":main.post(this::ensureReceiver);return safe("accepted",true);
+        case "remote":HomeRemoteService.enable(context);return remoteInfo();
         case "revokeRemotes":HomeRemoteServer remote=HomeRemoteService.server();if(remote!=null)remote.revokeAll();return safe("accepted",true);
         case "exportPreferences":return safe("text",HomePreferences.export(context,prefs));
         case "restorePreferences":HomePreferences.restore(context,prefs,data.getString("text"));return snapshot(true);

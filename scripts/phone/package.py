@@ -6,7 +6,7 @@ from pathlib import Path
 platform,kind=sys.argv[1:];config=json.loads(Path('app.json').read_text())['expo'];commit=os.environ['GITHUB_SHA'];channel=os.environ['GITHUB_REF_NAME'];version=config['version']
 out=Path('phone-dist');out.mkdir(exist_ok=True);stem=f'Aurea-Remote-v{version}-{channel}-{commit[:7]}'
 if platform=='android':
-    candidates=list(Path('.phone-native/android/app/build/outputs').rglob('app-release.'+kind));assert len(candidates)==1
+    candidates=list(Path(os.environ.get('AUREA_ANDROID_OUTPUTS','.phone-native/android/app/build/outputs')).rglob('app-release.'+kind));assert len(candidates)==1
     target=out/f'{stem}-android-{("universal" if kind=="apk" else "bundle")}.{kind}';shutil.copy2(candidates[0],target)
     with zipfile.ZipFile(target) as z:
         assert z.testzip() is None
@@ -22,7 +22,7 @@ else:
     sdk='iphonesimulator' if kind=='simulator' else 'iphoneos'
     app=Path(os.environ['RUNNER_TEMP'])/f'aurea-ios/Build/Products/Release-{sdk}/AureaRemote.app';assert app.is_dir()
     info=plistlib.loads((app/'Info.plist').read_bytes());assert info['CFBundleIdentifier']=='it.xarber.aurea.remote';assert info['CFBundleShortVersionString']==version;assert (app/'main.jsbundle').is_file()
-    subprocess.run(['lipo','-verify_arch','arm64',str(app/info['CFBundleExecutable'])],check=True)
+    subprocess.run(['lipo',str(app/info['CFBundleExecutable']),'-verify_arch','arm64'],check=True)
     platform_info=subprocess.check_output(['xcrun','vtool','-show-build',str(app/info['CFBundleExecutable'])],text=True);assert ('IOSSIMULATOR' if kind=='simulator' else 'IOS') in platform_info
     target=out/f'{stem}-ios-{kind}.{("app.zip" if kind=="simulator" else "ipa")}'
     if kind=='unsigned':

@@ -68,7 +68,7 @@ export class RemoteClient {
    if(device.music.active&&artworkId){
     if(this.lastArt!==artworkId){const art=await this.rpc('artwork',{id:artworkId}).catch(()=>({} as Record<string,unknown>));if(generation!==this.generation)return;const image=safeImage(art.image);if(image&&art.id===artworkId){this.lastArt=artworkId;this.update({artwork:image});}}
    }else if(this.snapshot.artwork){this.lastArt=undefined;this.update({artwork:undefined});}
-   this.schedule(2000);
+   this.schedule(device.music.active&&device.music.source==='airplay'?500:2000);
   }catch(error){if(generation!==this.generation||!this.active)return;const code=this.code(error);if(code==='auth_required'||code==='device_changed'){this.update({status:'auth_required',error:code});}else{this.update({status:'reconnecting',error:code});this.schedule(retryDelay(this.attempts++));}}
   finally{if(generation===this.generation)this.polling=false;}
  }

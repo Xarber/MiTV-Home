@@ -33,12 +33,12 @@
         android:icon="@drawable/icon_apps"
         android:roundIcon="@drawable/icon_apps"
         android:banner="@drawable/banner"
-        android:label="Aurea Home"
+        android:label="${homeLabel}"
         android:supportsRtl="true"
         android:theme="@style/Theme.AirPlayServer">
 
-        <activity android:name="it.xarber.tvhome.MainActivity" android:theme="@style/AureaExpoHome" android:exported="true" android:screenOrientation="landscape" android:launchMode="singleTask" android:configChanges="orientation|screenSize|keyboard|keyboardHidden|uiMode" android:excludeFromRecents="true">
-            <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.HOME"/><category android:name="android.intent.category.DEFAULT"/></intent-filter>
+        <activity android:name="it.xarber.tvhome.MainActivity" android:theme="@style/AureaExpoHome" android:exported="true" android:screenOrientation="${homeOrientation}" android:launchMode="singleTask" android:configChanges="orientation|screenSize|keyboard|keyboardHidden|uiMode" android:excludeFromRecents="${homeExcludeRecents}">
+            <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="${homeCategory}"/><category android:name="android.intent.category.DEFAULT"/></intent-filter>
             <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LEANBACK_LAUNCHER"/></intent-filter>
         </activity>
         <activity android:name="it.xarber.tvhome.LegacyHomeActivity" android:theme="@style/AppTheme" android:exported="false" android:screenOrientation="landscape" android:configChanges="orientation|screenSize|keyboard|keyboardHidden|uiMode" />
