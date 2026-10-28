@@ -30,3 +30,14 @@ Simulations must remain local, labeled and out of production storage/analytics/e
 Apply actual system/developer constraints first. Within project instructions, prefer explicit current task instructions, then repository architecture/approved decisions, then universal defaults, then general conventions. More specific/recent instructions resolve same-level conflicts; ask only for material unresolved or risky decisions. Preserve data, signing identity and existing public GitHub channel authorization. Temporary branches remain allowed, but integrate completed work into testing before beta/main promotion. No workflow migration or new distribution destination is implied by new universal defaults.
 
 Android TV has no iOS/Expo target; those build/update requirements are inapplicable. Do not fabricate Apple packages or add OTA. APK updates use GitHub's public release manifest, installed signing identity, SHA-256/package/version/SDK/ABI checks and official Android installation confirmation. Development-key installations cannot silently move to the release key. See docs/features/UPDATES.md. Never embed a GitHub token or bypass Android prompts.
+
+## Diagnose before rebuilding
+
+For TV pairing failures, collect existing diagnostics before changing code or
+requesting another build. Use `scripts/collect_tv_diagnostics.py` with the actual
+ADB serial/server port and a private output directory. Paired-client release logs
+persist under the app's external `files/diagnostics` directory and the safe
+`MiTVPairing` logcat tag. Developer details/copy/export include recent history.
+Do not enable raw pyatv binary logging, print PINs/credentials, or claim an old
+error was recovered when that app version never recorded it. Use failure class,
+HTTP status, HAP phase and stack locations as evidence before choosing a fix.

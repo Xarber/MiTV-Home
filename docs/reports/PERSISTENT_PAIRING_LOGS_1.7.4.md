@@ -33,3 +33,26 @@ locations, bounded rotation and persistence across recorder recreation. Tests us
 fake protocol data; they do not establish a physical authentication result.
 The next local Android build, installed-log retrieval and actual pairing failure
 capture remain pending at report creation.
+
+## Local build and physical verification
+
+Local release compilation and lint passed in 1m43s with the existing Android SDK,
+Python 3.11 and verified prebuilt app-owned/native Python ARM32/ARM64 libraries.
+This is not a fresh C/C++ source build or a four-ABI universal build. Source commit
+`323d2eb`, version 1.7.4 / code 22, was signed with the existing release identity.
+Verified package/version/commit, non-debuggable mode and Android 10 signing before
+installing in place. Installation reported Success; package listing confirmed code
+22, cold launch completed and installed bytes matched the local verified APK.
+Previous working GitHub v1.7.3 APK and private backups remain available.
+
+A harmless real discovery scan initialized the recorder. The first collection,
+before client startup completed, truthfully reported no file. A second collection
+successfully retrieved the persistent JSONL and matching safe logcat records from
+the stock release build. The file contained scan start/success records. This proves
+that future error records can be read without another diagnostic build, not that
+an authenticated pairing or specific failure has been captured yet.
+
+Added `scripts/collect_tv_diagnostics.py` to retrieve existing release logs safely,
+and repository agent guidance requiring log collection before speculative fixes.
+The user was asked to reproduce once so the actual immediate failure could be read.
+No PIN or credentials were requested or printed.

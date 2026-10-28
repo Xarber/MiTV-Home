@@ -52,3 +52,12 @@ Files, retained across ordinary app restarts and in-place updates:
 
 Do not enable arbitrary pyatv binary debug output: its messages can contain pairing
 secrets. Old failures cannot be reconstructed when they were never recorded.
+
+### Collect before changing code
+
+Run `python3 scripts/collect_tv_diagnostics.py --serial DEVICE --out PRIVATE_FOLDER`
+using `--adb-server-port` if this host uses an isolated ADB server. The script reads
+existing safe files and the `MiTVPairing` tag without modifying app data or requiring
+a debug build. It reports whether each source was available and preserves private
+output permissions. A missing file is reported as unavailable, not as an empty
+successful diagnostic. Reproduce only after collecting any already-recorded failure.
