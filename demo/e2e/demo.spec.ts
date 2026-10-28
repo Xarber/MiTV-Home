@@ -46,7 +46,7 @@ test('long Enter opens app options and scrolling keeps modal focus visible',asyn
  await page.keyboard.down('Enter');await page.waitForTimeout(650);await page.keyboard.up('Enter');await expect(focus(page,'panel-Pin to dock')).toBeVisible();await page.keyboard.press('Escape');
  await page.setViewportSize({width:740,height:520});await page.keyboard.press('c');
  await focus(page,'panel-close').focus();for(let i=0;i<10;i++)await page.keyboard.press('ArrowDown');
- const focused=page.locator('[data-group="modal"]:focus');await expect(focused).toHaveCount(1);const box=await focused.boundingBox();expect(box!.y).toBeGreaterThanOrEqual(0);expect(box!.y+box!.height).toBeLessThanOrEqual(520);
+ const focused=page.locator('[data-group="modal"]:focus');await expect(focused).toHaveCount(1);await expect.poll(async()=>{const box=await focused.boundingBox();return !!box&&box.y>=0&&box.y+box.height<=520;}).toBe(true);
 });
 test('portrait viewport keeps all six dock targets inside the screen',async({page})=>{
  await page.setViewportSize({width:390,height:844});await page.reload();await expect(focus(page,'dock:inputs')).toBeFocused();

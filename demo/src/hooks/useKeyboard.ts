@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import {useEffect,useRef} from 'react';
 import {Platform} from 'react-native';
+import {revealFocus} from '../platform/focus';
 import {neighbor,Direction} from '../model/navigation';
 
 export function focusId(id:string){
@@ -8,17 +9,8 @@ export function focusId(id:string){
  const element=document.querySelector<HTMLElement>(`[data-nav="${id}"]`);
  if(!element)return;
  element.focus({preventScroll:true});
- // Scroll only the nearest scroll view; never move the three-stage canvas.
- let parent=element.parentElement;
- while(parent){
-  if(['auto','scroll'].includes(getComputedStyle(parent).overflowY)){
-   const item=element.getBoundingClientRect(),viewport=parent.getBoundingClientRect();
-   if(item.bottom>viewport.bottom-18)parent.scrollTop+=item.bottom-viewport.bottom+18;
-   else if(item.top<viewport.top+18)parent.scrollTop+=item.top-viewport.top-18;
-   break;
-  }
-  parent=parent.parentElement;
- }
+ revealFocus(element);
+ requestAnimationFrame(()=>{if(document.activeElement===element)revealFocus(element);});
 }
 interface Options {
  panel:string|null;close:()=>void;control:()=>void;page:number;
