@@ -1,9 +1,7 @@
-# Status — 26 October 2026
+# Status — 27 October 2026
 
-Version 1.1 builds locally and passes Android lint without errors. Checked on the MiTV-MOOQ0/Android 10: dock boundaries, three scroll landing positions, Sources hold menu, app category switching, fresh popup blur, wrapped popup headings, and the remote QR code. The QR was decoded independently to the server URL. The small AirPlay circle and expanded controls were observed on the TV, with playback focused on opening. The five bars measure separate frequency bands from bass on the left to treble on the right, with gentle attack/release smoothing. This is an independent implementation, not Apple’s proprietary processing.
+The 1.5.0 beta pipeline passed signed universal APK, AAB, source packaging and publication (run 40496251252). The 1.5.1 batch adds icon-led progressive disclosure and explicit diagnostics/simulation provenance. See the [revised report](reports/REVISED_STANDARDS_1.5.1.md) for checks and missing device evidence.
 
-The receiver’s ARMv7 and ARM64 libraries were rebuilt to include the waveform JNI method. The HTTP server attempts port 80; this stock TV rejects it with EACCES. The working fallback is 8765, included in the QR code.
+The user's accepted activity/remote behavior is preserved. iPad radio and local library playback were reported working; direct Mac Music remains unresolved and deferred. Experimental v2 handshake tests do not prove complete AirPlay 2 support. HTTP remote uses 8765 when stock Android denies port 80.
 
-CI validation is deliberately unfinished at the user’s request. Earlier setup failures involved an obsolete SDK package and an SDK manager missing from PATH. The workflow now locates the executable explicitly. The latest full native build and signed release pipeline still need confirmation. No stable public release has been published yet.
-
-Next session: inspect current main/beta runs, resolve remaining build failures, verify the signed APK and checksum, then publish the stable release. `testing` intentionally has no workflow files. Keep the release key backup private and preserve the existing TV launcher preferences.
+Full source-built four-ABI APK/AAB CI and release status must be read from the current workflow. A local ARM simulator build does not substitute for native/hardware validation. Promote testing → beta → main only through pull requests and report queued/running/published states separately.

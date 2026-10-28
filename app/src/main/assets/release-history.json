@@ -1,0 +1,515 @@
+{
+  "schema": 1,
+  "releases": [
+    {
+      "version": "1.7.5",
+      "code": 23,
+      "date": "2026-10-28",
+      "critical": false,
+      "highlights": {
+        "en": "Fixes the immediate error when submitting an Apple TV pairing code.",
+        "it": "Corregge l’errore immediato quando si inserisce il codice di abbinamento Apple TV."
+      },
+      "fixes": {
+        "en": "Updates the HAP SRP call for the bundled authentication library and pins its version for reproducible builds.",
+        "it": "Aggiorna la chiamata HAP SRP per la libreria di autenticazione inclusa e ne fissa la versione per build riproducibili."
+      },
+      "compatibility": {
+        "en": "Apple TV pairing confirmed on the physical TV. Playback metadata depends on the Apple TV app; simultaneous phone streaming remains unverified.",
+        "it": "Abbinamento Apple TV confermato sulla TV fisica. I metadati dipendono dall’app su Apple TV; lo streaming simultaneo dal telefono non è ancora verificato."
+      },
+      "features": [
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Pairing compatibility fix",
+            "it": "Correzione compatibilità abbinamento"
+          },
+          "detail": {
+            "en": "Removes a local argument error before the PIN proof can be sent. Authentication checks remain enabled.",
+            "it": "Elimina un errore locale negli argomenti prima dell’invio della prova del PIN. I controlli di autenticazione restano attivi."
+          }
+        }
+      ]
+    },
+    {
+      "version": "1.7.4",
+      "code": 22,
+      "date": "2026-10-28",
+      "critical": false,
+      "highlights": {
+        "en": "Persistent pairing diagnostics that can be retrieved from the TV without rebuilding for every failure.",
+        "it": "Diagnostica di abbinamento persistente, recuperabile dalla TV senza ricompilare per ogni errore."
+      },
+      "fixes": {
+        "en": "Records pairing phases, HTTP status, timings and safe exception locations in rotating files and Android logs; developer copy/export includes recent history.",
+        "it": "Registra fasi, stato HTTP, tempi e posizioni sicure delle eccezioni in file a rotazione e log Android; copia/esportazione sviluppatore includono la cronologia recente."
+      },
+      "compatibility": {
+        "en": "Logs exclude PINs, credentials, addresses, device names, raw packets and exception messages. Diagnostics do not themselves fix every pairing error.",
+        "it": "I log escludono PIN, credenziali, indirizzi, nomi dispositivi, pacchetti grezzi e messaggi delle eccezioni. La diagnostica non risolve da sola ogni errore."
+      },
+      "features": [
+        {
+          "icon": "code",
+          "label": {
+            "en": "Persistent protocol diagnostics",
+            "it": "Diagnostica protocollo persistente"
+          },
+          "detail": {
+            "en": "Retains bounded safe request phases, responses and error traces across app restarts, accessible through developer diagnostics or ADB.",
+            "it": "Conserva fasi delle richieste, risposte e tracce di errore sicure e limitate anche dopo il riavvio, accessibili dalla diagnostica sviluppatore o ADB."
+          }
+        }
+      ]
+    },
+    {
+      "version": "1.7.3",
+      "code": 21,
+      "date": "2026-10-28",
+      "critical": false,
+      "highlights": {
+        "en": "Understand why Apple TV pairing fails, with safe and specific error details.",
+        "it": "Scopri perché l’abbinamento Apple TV non riesce, con dettagli di errore specifici e sicuri."
+      },
+      "fixes": {
+        "en": "Distinguishes receiver authorization rejection, HTTP status, authentication failure, timeout, interrupted connection and secure storage errors without exposing PINs or credentials.",
+        "it": "Distingue rifiuto di autorizzazione, stato HTTP, mancata autenticazione, timeout, connessione interrotta ed errori di salvataggio sicuro senza esporre PIN o credenziali."
+      },
+      "compatibility": {
+        "en": "Diagnostic improvements do not resolve every tvOS pairing rejection. Remote-only control and simultaneous phone AirPlay still require successful pairing and physical coexistence tests.",
+        "it": "La diagnostica non risolve ogni rifiuto di abbinamento tvOS. Il controllo remoto e AirPlay dal telefono simultanei richiedono abbinamento riuscito e verifica fisica."
+      },
+      "features": [
+        {
+          "icon": "info",
+          "label": {
+            "en": "Specific pairing errors",
+            "it": "Errori di abbinamento specifici"
+          },
+          "detail": {
+            "en": "Reports a safe failure category and bounded HTTP status rather than replacing every failure with a generic message.",
+            "it": "Mostra una categoria di errore sicura e lo stato HTTP anziché sostituire ogni errore con un messaggio generico."
+          }
+        }
+      ]
+    },
+    {
+      "version": "1.7.2",
+      "code": 20,
+      "date": "2026-10-28",
+      "critical": false,
+      "highlights": {
+        "en": "Send the client name required for tvOS 27 pairing codes and hide software receivers from Apple TV discovery.",
+        "it": "Invia il nome client richiesto dai codici di abbinamento di tvOS 27 e nascondi i ricevitori software dalla ricerca Apple TV."
+      },
+      "fixes": {
+        "en": "Filters this launcher’s local addresses, marked receiver/preview instances and the legacy UxPlay simulated Apple TV fingerprint without relying on device names.",
+        "it": "Filtra gli indirizzi locali del launcher, i ricevitori e le anteprime contrassegnati e l’identità simulata UxPlay precedente senza usare i nomi dei dispositivi."
+      },
+      "compatibility": {
+        "en": "The tvOS 27 patch targets PIN display only. Successful authenticated playback still requires device validation.",
+        "it": "La correzione tvOS 27 riguarda solo la visualizzazione del PIN. La riproduzione autenticata richiede ancora verifica sul dispositivo."
+      },
+      "features": [
+        {
+          "icon": "airplay",
+          "label": {
+            "en": "tvOS 27 pairing compatibility",
+            "it": "Compatibilità abbinamento tvOS 27"
+          },
+          "detail": {
+            "en": "Adds a per-attempt client-name header to every AirPlay HAP pairing request using the focused upstream fix.",
+            "it": "Aggiunge il nome client a ogni richiesta di abbinamento AirPlay HAP usando la correzione upstream mirata."
+          }
+        },
+        {
+          "icon": "shield",
+          "label": {
+            "en": "Real Apple TV discovery",
+            "it": "Ricerca Apple TV reali"
+          },
+          "detail": {
+            "en": "Excludes launcher receivers and preview instances while keeping genuine devices with duplicate names or older model identifiers.",
+            "it": "Esclude ricevitori e anteprime del launcher mantenendo dispositivi reali con nomi duplicati o modelli precedenti."
+          }
+        }
+      ]
+    },
+    {
+      "version": "1.7.1",
+      "code": 19,
+      "date": "2026-10-28",
+      "critical": false,
+      "highlights": {
+        "en": "Choose the Apple TV HDMI input and return Home to enter its pairing code.",
+        "it": "Scegli l’ingresso HDMI di Apple TV e torna alla Home per inserire il codice di abbinamento."
+      },
+      "fixes": {
+        "en": "Pending pairing survives HDMI switching and Home recreation. Only unfinished code entry expires after three minutes; saved pairing has no application expiry timer.",
+        "it": "L’abbinamento in corso sopravvive al cambio HDMI e alla ricreazione della Home. Solo l’inserimento del codice scade dopo tre minuti; l’abbinamento salvato non ha un timer di scadenza nell’app."
+      },
+      "compatibility": {
+        "en": "HDMI selection uses registered TV inputs with no default port. A complete app-process restart requires starting an unfinished pairing again. Apple TV interoperability still requires physical pairing tests.",
+        "it": "La selezione HDMI usa gli ingressi registrati dalla TV senza porta predefinita. Dopo il riavvio completo del processo occorre ricominciare un abbinamento incompleto. L’interoperabilità Apple TV richiede ancora test fisici di abbinamento."
+      },
+      "features": [
+        {
+          "icon": "inputs",
+          "label": {
+            "en": "Choose your HDMI input",
+            "it": "Scegli il tuo ingresso HDMI"
+          },
+          "detail": {
+            "en": "Select any registered physical HDMI input, remember its identity and change it from paired-device settings. No port is selected automatically.",
+            "it": "Seleziona un ingresso HDMI fisico registrato, memorizzane l’identità e cambialo nelle impostazioni del dispositivo abbinato. Nessuna porta viene scelta automaticamente."
+          }
+        },
+        {
+          "icon": "airplay",
+          "label": {
+            "en": "Read the code and return",
+            "it": "Leggi il codice e torna"
+          },
+          "detail": {
+            "en": "Show pairing code switches to the selected HDMI. Press Home to restore PIN entry within the original three-minute window.",
+            "it": "Mostra codice di abbinamento apre l’HDMI scelto. Premi Home per ripristinare l’inserimento entro i tre minuti originali."
+          }
+        }
+      ]
+    },
+    {
+      "version": "1.7.0",
+      "code": 18,
+      "date": "2026-10-27",
+      "critical": false,
+      "highlights": {
+        "en": "Pair an Apple TV to show its playback and available controls in the music activity.",
+        "it": "Abbina Apple TV per mostrare la riproduzione e i controlli disponibili nell’attività musicale."
+      },
+      "fixes": {
+        "en": "Keeps local AirPlay audio priority, protects saved pairing credentials and hides unavailable remote controls.",
+        "it": "Mantiene la priorità dell’audio AirPlay locale, protegge le credenziali e nasconde i controlli remoti non disponibili."
+      },
+      "compatibility": {
+        "en": "Apple TV interoperability requires device testing. Metadata, artwork and controls depend on tvOS and the playing app. This client does not fix Mac Music receiver compatibility.",
+        "it": "L’interoperabilità Apple TV richiede test sul dispositivo. Metadati, copertina e controlli dipendono da tvOS e dall’app. Questo client non risolve la compatibilità del ricevitore con Musica sul Mac."
+      },
+      "features": [
+        {
+          "icon": "airplay",
+          "label": {
+            "en": "Paired Apple TV",
+            "it": "Apple TV abbinata"
+          },
+          "detail": {
+            "en": "Discover, PIN-pair and observe an Apple TV directly from the launcher without an always-on PC.",
+            "it": "Trova, abbina con PIN e osserva Apple TV dal launcher senza un PC sempre acceso."
+          }
+        },
+        {
+          "icon": "sound",
+          "label": {
+            "en": "Remote playback activity",
+            "it": "Attività di riproduzione remota"
+          },
+          "detail": {
+            "en": "Reuses the music activity with supplied artwork and controls; remote bars are a playback animation, not measured sound.",
+            "it": "Riutilizza l’attività musicale con copertina e controlli disponibili; le barre remote sono un’animazione, non una misura audio."
+          }
+        }
+      ]
+    },
+    {
+      "version": "1.6.0",
+      "code": 17,
+      "date": "2026-10-27",
+      "critical": false,
+      "highlights": {
+        "en": "Discover GitHub updates in Home, read release notes and download verified APKs inside the launcher.",
+        "it": "Scopri gli aggiornamenti GitHub nella Home, leggi le novità e scarica APK verificati nel launcher."
+      },
+      "fixes": {
+        "en": "Cached checks, channel and signing compatibility, metered-network preferences and Android installation confirmation preserve existing app data.",
+        "it": "Controlli con cache, compatibilità di canale e firma, preferenze di rete e conferma Android preservano i dati esistenti."
+      },
+      "compatibility": {
+        "en": "Updates require the same signing identity. Development-signed installations cannot accept the public release key. Mac Music remains unresolved.",
+        "it": "Gli aggiornamenti richiedono la stessa identità di firma. Le installazioni con firma di sviluppo non accettano la chiave pubblica di rilascio. Musica sul Mac resta da risolvere."
+      },
+      "features": [
+        {
+          "icon": "history",
+          "label": {
+            "en": "Automatic update discovery",
+            "it": "Ricerca automatica aggiornamenti"
+          },
+          "detail": {
+            "en": "Checks GitHub Releases on launch and periodically on foreground return, with caching and stable/beta filtering.",
+            "it": "Controlla GitHub Releases all’avvio e periodicamente al ritorno in primo piano, con cache e filtri stabile/beta."
+          }
+        },
+        {
+          "icon": "transfer",
+          "label": {
+            "en": "Download inside Home",
+            "it": "Scarica nella Home"
+          },
+          "detail": {
+            "en": "Read release notes while DownloadManager retrieves the universal APK with progress, network recovery and cancellation.",
+            "it": "Leggi le novità mentre DownloadManager scarica l’APK universale con avanzamento, recupero della rete e annullamento."
+          }
+        },
+        {
+          "icon": "shield",
+          "label": {
+            "en": "Verified Android installation",
+            "it": "Installazione Android verificata"
+          },
+          "detail": {
+            "en": "Checks checksum, package, version, architecture and the installed signing identity, then opens Android’s official confirmation flow.",
+            "it": "Verifica checksum, pacchetto, versione, architettura e identità di firma installata, poi apre la conferma ufficiale Android."
+          }
+        }
+      ]
+    },
+    {
+      "version": "1.5.1",
+      "code": 16,
+      "date": "2026-10-27",
+      "highlights": {
+        "en": "Clearer changelog cards with contextual icons and expandable details; compact developer tools.",
+        "it": "Schede novità più chiare con icone contestuali e dettagli espandibili; strumenti sviluppatore compatti."
+      },
+      "fixes": {
+        "en": "Remote interactions keep temporary developer access active. Diagnostics identify observation time and local-only simulations. Existing dock, AirPlay and pairing behavior is preserved.",
+        "it": "Le interazioni dal telecomando mantengono attivo l’accesso sviluppatore temporaneo. La diagnostica distingue istante di osservazione e simulazioni locali. Comportamento di dock, AirPlay e abbinamento conservato."
+      },
+      "features": [
+        {
+          "icon": "history",
+          "label": {
+            "en": "Clearer release notes",
+            "it": "Novità più chiare"
+          },
+          "detail": {
+            "en": "Each release groups features with contextual icons; fixes stay in one expandable section.",
+            "it": "Ogni versione raggruppa le funzionalità con icone contestuali; le correzioni restano in una sezione espandibile."
+          }
+        },
+        {
+          "icon": "info",
+          "label": {
+            "en": "Details on demand",
+            "it": "Dettagli su richiesta"
+          },
+          "detail": {
+            "en": "Select a feature to expand its explanation. Compatibility information remains visible in release details.",
+            "it": "Seleziona una funzionalità per espanderne la spiegazione. La compatibilità resta visibile nei dettagli della versione."
+          }
+        },
+        {
+          "icon": "code",
+          "label": {
+            "en": "Compact developer tools",
+            "it": "Strumenti sviluppatore compatti"
+          },
+          "detail": {
+            "en": "A short menu opens detailed diagnostics only on request. Triple-press access and idle expiry are unchanged.",
+            "it": "Un menu compatto apre la diagnostica dettagliata solo su richiesta. Accesso con tre pressioni e scadenza per inattività invariati."
+          }
+        }
+      ],
+      "compatibility": {
+        "en": "Direct Mac Music playback remains unresolved. Android TV hardware support varies by device.",
+        "it": "La riproduzione diretta da Musica sul Mac resta da risolvere. Il supporto hardware Android TV dipende dal dispositivo."
+      }
+    },
+    {
+      "version": "1.5.0",
+      "code": 15,
+      "date": "2026-10-27",
+      "highlights": {
+        "en": "Developer tools, a permanent changelog and portable Home preferences.",
+        "it": "Strumenti sviluppatore, cronologia permanente e preferenze Home trasferibili."
+      },
+      "fixes": {
+        "en": "Stronger remote request validation, private diagnostic exports and reproducible release builds.",
+        "it": "Richieste del telecomando più sicure, diagnostica privata e build riproducibili."
+      },
+      "features": [
+        {
+          "icon": "code",
+          "label": {
+            "en": "Developer tools",
+            "it": "Strumenti sviluppatore"
+          },
+          "detail": {
+            "en": "Triple-press the version in About to temporarily access safe diagnostics, simulations and remote revocation.",
+            "it": "Premi tre volte la versione in Informazioni per accedere temporaneamente a diagnostica, simulazioni e revoca dei telecomandi."
+          }
+        },
+        {
+          "icon": "history",
+          "label": {
+            "en": "Release history",
+            "it": "Cronologia versioni"
+          },
+          "detail": {
+            "en": "Read previous releases in Settings and see a summary once after each native update.",
+            "it": "Consulta le versioni precedenti nelle impostazioni e visualizza un riepilogo una volta dopo ogni aggiornamento nativo."
+          }
+        },
+        {
+          "icon": "transfer",
+          "label": {
+            "en": "Portable Home preferences",
+            "it": "Preferenze Home trasferibili"
+          },
+          "detail": {
+            "en": "Export and validate dock, input profiles, language and activity appearance with a recoverable import.",
+            "it": "Esporta e valida dock, profili ingressi, lingua e aspetto delle attività con importazione ripristinabile."
+          }
+        }
+      ],
+      "compatibility": {
+        "en": "Direct Mac Music playback remains unresolved. Android TV hardware support varies by device.",
+        "it": "La riproduzione diretta da Musica sul Mac resta da risolvere. Il supporto hardware Android TV dipende dal dispositivo."
+      }
+    },
+    {
+      "version": "1.4",
+      "code": 14,
+      "date": "2026-10-27",
+      "highlights": {
+        "en": "Music and remote activities reveal details on focus; choose black or transparent backgrounds.",
+        "it": "Le attività musica e telecomando mostrano dettagli al focus; sfondo nero o trasparente a scelta."
+      },
+      "fixes": {
+        "en": "Six frequency bands, album-color gradients, inset artwork and focused playback controls. Mac Music playback remains unresolved.",
+        "it": "Sei bande audio, gradienti dalla copertina e controlli con focus. La riproduzione da Musica sul Mac resta da risolvere."
+      },
+      "features": [
+        {
+          "icon": "sound",
+          "label": {
+            "en": "Music activity details",
+            "it": "Dettagli attività musica"
+          },
+          "detail": {
+            "en": "Focus the music activity to reveal supplied artwork and title; expand it for playback controls.",
+            "it": "Porta il focus sull’attività musica per vedere copertina e titolo ricevuti; espandila per i controlli di riproduzione."
+          }
+        },
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Connected remote activity",
+            "it": "Attività telecomando connesso"
+          },
+          "detail": {
+            "en": "An authenticated phone heartbeat shows the connected remote activity. Stale presence expires.",
+            "it": "L’attività telecomando appare con un heartbeat autenticato del telefono. La presenza non aggiornata scade."
+          }
+        },
+        {
+          "icon": "controls",
+          "label": {
+            "en": "Activity appearance",
+            "it": "Aspetto delle attività"
+          },
+          "detail": {
+            "en": "Choose black or transparent activity backgrounds without changing the dock layout.",
+            "it": "Scegli uno sfondo nero o trasparente per le attività senza cambiare la disposizione del dock."
+          }
+        }
+      ],
+      "compatibility": {
+        "en": "Direct Mac Music playback remains unresolved. Android TV hardware support varies by device.",
+        "it": "La riproduzione diretta da Musica sul Mac resta da risolvere. Il supporto hardware Android TV dipende dal dispositivo."
+      }
+    },
+    {
+      "version": "1.3",
+      "code": 13,
+      "date": "2026-10-27",
+      "highlights": {
+        "en": "QR pairing includes its short-lived code and dismisses after pairing.",
+        "it": "Il QR include il codice temporaneo e si chiude dopo l’abbinamento."
+      },
+      "fixes": {
+        "en": "Experimental FairPlay v2 handshake framing; this does not provide complete AirPlay 2 or guarantee Mac Music playback.",
+        "it": "Handshake sperimentale FairPlay v2: non equivale ad AirPlay 2 completo e non garantisce Musica sul Mac."
+      },
+      "features": [
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Automatic QR pairing",
+            "it": "Abbinamento QR automatico"
+          },
+          "detail": {
+            "en": "Scan the short-lived code, pair once and close the QR window automatically.",
+            "it": "Scansiona il codice temporaneo, abbina il dispositivo e chiudi automaticamente la finestra QR."
+          }
+        }
+      ],
+      "compatibility": {
+        "en": "Direct Mac Music playback remains unresolved. Android TV hardware support varies by device.",
+        "it": "La riproduzione diretta da Musica sul Mac resta da risolvere. Il supporto hardware Android TV dipende dal dispositivo."
+      }
+    },
+    {
+      "version": "1.1",
+      "code": 11,
+      "date": "2026-10-26",
+      "highlights": {
+        "en": "Customizable six-position dock, HDMI shortcuts, integrated AirPlay and phone remote.",
+        "it": "Dock personalizzabile a sei posizioni, ingressi HDMI, AirPlay e telecomando dal telefono."
+      },
+      "fixes": {
+        "en": "Three animated navigation stops, Italian and English, and fresh popup backdrops.",
+        "it": "Tre punti di navigazione animati, italiano e inglese, sfondi aggiornati per i popup."
+      },
+      "features": [
+        {
+          "icon": "apps",
+          "label": {
+            "en": "Customizable dock",
+            "it": "Dock personalizzabile"
+          },
+          "detail": {
+            "en": "Arrange six positions; All Apps is available in the final slot and Sources can be moved.",
+            "it": "Organizza sei posizioni: Tutte le app è disponibile nell’ultimo posto e Ingressi può essere spostato."
+          }
+        },
+        {
+          "icon": "inputs",
+          "label": {
+            "en": "HDMI shortcuts",
+            "it": "Scorciatoie HDMI"
+          },
+          "detail": {
+            "en": "Pin registered HDMI inputs and Live TV. Unsupported devices retain the system input-picker fallback.",
+            "it": "Aggiungi ingressi HDMI registrati e TV in diretta. Sui dispositivi non supportati resta il selettore ingressi di sistema."
+          }
+        },
+        {
+          "icon": "airplay",
+          "label": {
+            "en": "Integrated AirPlay",
+            "it": "AirPlay integrato"
+          },
+          "detail": {
+            "en": "The receiver starts with Home and may stay in the background; supported video and mirroring open fullscreen.",
+            "it": "Il ricevitore si avvia con la Home e può restare in background; video e duplicazione supportati si aprono a schermo intero."
+          }
+        }
+      ],
+      "compatibility": {
+        "en": "Direct Mac Music playback remains unresolved. Android TV hardware support varies by device.",
+        "it": "La riproduzione diretta da Musica sul Mac resta da risolvere. Il supporto hardware Android TV dipende dal dispositivo."
+      }
+    }
+  ]
+}

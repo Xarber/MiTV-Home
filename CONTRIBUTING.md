@@ -1,7 +1,5 @@
 # Contributing
 
-Use `testing` for experiments, `beta` for installable candidates, and `main` for stable changes. Report the TV model, Android version, launcher version, and exact remote actions. Remove personal network names, credentials, and pairing codes from screenshots/logs.
+Read AGENTS.md, docs/INDEX.md and docs/DEVELOPMENT.md. Discuss major architecture, permission or platform changes before implementation. Develop on testing, use small Conventional Commits and update documentation. Test the batch, record results/limitations and open a testing→beta pull request; promote validated beta to main by pull request.
 
-Build and lint the relevant variant. For focus, inputs, audio, and motion, distinguish emulator checks from physical-TV evidence. Preserve TV apps and preferences. Device-specific input mappings need a system-picker fallback.
-
-Keep motion short, interruptible, and respectful of system animation settings. Prefer cached artwork and native transforms to continuous fullscreen effects.
+Run scripts/check-host.sh, relevant Android build/lint and fresh emulator UI checks. Native edits need source builds; physical TV behavior needs actual hardware. Keep source and dependency notices intact. Original contributions are AGPL-3.0-only; you must have rights to submit them. Never commit signing material, private captures or credentials. Do not clear user data or disable system packages for tests.

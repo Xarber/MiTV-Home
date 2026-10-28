@@ -88,7 +88,7 @@ class AudioRenderer {
 
     @Synchronized
     fun waveform(): FloatArray {
-        val values = FloatArray(5)
+        val values = FloatArray(6)
         if (serverHandle != 0L) NativeBridge.nativeServerAudioWaveform(serverHandle, values)
         return values
     }

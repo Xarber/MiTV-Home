@@ -30,6 +30,8 @@ class NsdServiceManager(private val ctx: Context) {
             serviceType = s.type
             port = s.port
             s.txt.forEach { (k, v) -> setAttribute(k, v) }
+            // Identify the software receiver without changing Apple's compatibility model.
+            if (s.type.startsWith("_airplay.")) setAttribute("mitvhome", "receiver-v1")
         }
         val listener = object : NsdManager.RegistrationListener {
             override fun onServiceRegistered(info: NsdServiceInfo) {

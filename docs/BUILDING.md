@@ -27,4 +27,22 @@ GitHub Actions requires four repository secrets:
 
 Keep a private backup of the keystore and passwords. They are never committed.
 
-Pushes to `main` or `beta` build a signed APK, run lint, and upload an artifact plus SHA-256 checksum. Publishing a release targeting `main` waits for the successful main build at the exact tagged commit, verifies its checksum, and attaches that signed APK to the release. Beta never publishes a release. The `testing` branch has no workflow files.
+Pushes to beta/main compile signed universal APK and AAB in parallel from all four supported ABIs, run validation and publish only after required jobs succeed. Testing has no automatic runs. See RELEASES.md for promotion and artifact naming.
+
+For an existing local SDK: `ANDROID_HOME=/path/to/sdk ./gradlew -PuseBundledNative :app:assembleDebug :app:lintDebug`. Native bundled previews are ARM-only and do not test C/C++ changes. CI generates build metadata and developer history for the exact commit.
+
+### Fast local TV builds after Python-client-only changes
+
+Use an existing Python 3.11 interpreter on PATH with the installed Android SDK.
+ARMv7 requires the Python 3.11 Android runtime; newer 64-bit-only runtimes are not
+substitutes. Build the patched pyatv wheel with
+`scripts/apple_tv/patch_pyatv.py --output build/apple-tv-wheels` and obtain the
+verified native Python wheels from a successful matching dependency workflow.
+
+`-PuseBundledNative -PbundledNativeRoot=/absolute/path/to/verified/jniLibs` permits
+reusing unchanged app-owned native libraries extracted from a checksum-verified
+known-working APK. It builds Java/Kotlin/Python locally without recompiling C/C++.
+Do not use this shortcut after native-source changes or claim full native-source
+validation. Ordinary CI source builds are unchanged and retain all four ABIs.
+Local bundled builds retain their existing ARM32/ARM64 scope. Sign with the
+existing release identity and record the actual source commit before deployment.
