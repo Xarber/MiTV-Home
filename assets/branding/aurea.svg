@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Aurea">
+ <defs><linearGradient id="ink" x2="1" y2="1"><stop stop-color="#303447"/><stop offset="1" stop-color="#0d111b"/></linearGradient><linearGradient id="light" x2="1" y2="1"><stop stop-color="#fff6e3"/><stop offset="1" stop-color="#c6c6ee"/></linearGradient></defs>
+ <g id="background"><rect width="1024" height="1024" rx="220" fill="url(#ink)"/></g>
+ <g id="primary-symbol" fill="none" stroke="url(#light)" stroke-width="65" stroke-linecap="round" stroke-linejoin="round"><path d="M300 647 512 290 724 647"/><path d="M415 538h194"/></g>
+ <g id="dock-accent"><rect x="370" y="718" width="284" height="34" rx="17" fill="#d5b88a"/></g>
+</svg>

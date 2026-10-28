@@ -1,4 +1,4 @@
-<p align="center"><img src="docs/assets/banner.svg" alt="MiTV Home — a quieter home for your TV" width="100%"></p>
+<p align="center"><img src="docs/assets/banner.svg" alt="Aurea Home — a quieter home for your TV" width="100%"></p>
 <p align="center">
 <a href="https://github.com/Xarber/MiTV-Home/actions/workflows/build.yml"><img src="https://github.com/Xarber/MiTV-Home/actions/workflows/build.yml/badge.svg?branch=main" alt="Build"></a>
 <a href="https://github.com/Xarber/MiTV-Home/releases"><img src="https://img.shields.io/github/v/release/Xarber/MiTV-Home?color=858bea" alt="Release"></a>
@@ -6,11 +6,27 @@
 <img src="https://img.shields.io/badge/Android-8%2B-9acda9" alt="Android 8 or newer">
 </p>
 
-A remote-first Android TV launcher with a six-item dock, fullscreen artwork, fast input shortcuts, and an integrated AirPlay receiver. Built for the living room, with Italian and English throughout.
+**Aurea Home** (formerly MiTV Home) is a remote-first Android TV launcher with a six-item dock, fullscreen artwork, fast input shortcuts, and an integrated AirPlay receiver. Built for the living room, with Italian and English throughout.
 
 <p align="center"><a href="https://github.com/Xarber/MiTV-Home/releases/latest"><strong>Download APK</strong></a> · <a href="docs/INSTALL.md">Install & restore</a> · <a href="docs/BUILDING.md">Build it yourself</a> · <a href="https://github.com/Xarber/MiTV-Home/issues">Report an issue</a></p>
 
 ![MiTV Home dock](docs/assets/home.png)
+
+## Interactive Expo demo — feature branch
+
+This branch adds a React Native + Expo web demo inside this repository, with
+keyboard navigation, simulated music/remote controls and minimal animated wallpapers.
+The Android TV launcher remains the production app. No iOS target is included.
+
+```sh
+cd demo && npm ci
+cd .. && python3 scripts/start-demo-preview.py
+```
+
+Open http://127.0.0.1:8765. [Demo guide](demo/README.md) ·
+[Architecture and limitations](docs/features/EXPO_DEMO.md).
+
+![Actual interactive web demo, not the physical TV](docs/assets/demo/home.png)
 
 ## Your TV, arranged your way
 

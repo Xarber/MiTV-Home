@@ -261,7 +261,7 @@ fun SettingsScreen(viewModel: MainViewModel) {
         )
 
         ListItem(
-            headlineContent = { Text("MiTV Home ${BuildConfig.VERSION_NAME}") },
+            headlineContent = { Text("Aurea Home ${BuildConfig.VERSION_NAME}") },
             supportingContent = { Text("${BuildConfig.VERSION_CODE} · ${BuildConfig.SOURCE_COMMIT}") },
             modifier = Modifier.clickable {
                 developerToggleShown = developerSession.tapVersion() || developerOptions

@@ -2,6 +2,48 @@
   "schema": 1,
   "releases": [
     {
+      "version": "1.8.0",
+      "code": 24,
+      "date": "2026-10-28",
+      "critical": false,
+      "highlights": {
+        "en": "Aurea Home identity, minimal wallpapers and a paired phone remote.",
+        "it": "Identità Aurea Home, sfondi minimal e telecomando abbinato per telefono."
+      },
+      "fixes": {
+        "en": "Improves small-screen sources, reconnects discovery after network changes and separates credentials for each TV.",
+        "it": "Migliora le sorgenti su schermi piccoli, ripristina la scoperta dopo cambi di rete e separa le credenziali di ogni TV."
+      },
+      "compatibility": {
+        "en": "Phone companion and background system controls require device validation. System-wide navigation needs a separate Android TV Remote Service pairing; unavailable services fail safely.",
+        "it": "Companion per telefono e comandi di sistema in background richiedono verifica sui dispositivi. La navigazione globale richiede un abbinamento separato al servizio telecomando Android TV; i servizi non disponibili vengono segnalati."
+      },
+      "features": [
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Phone remote",
+            "it": "Telecomando per telefono"
+          },
+          "detail": {
+            "en": "Saved TVs, apps, inputs and in-app playback controls over the local network.",
+            "it": "TV salvate, app, sorgenti e controlli musicali nell’app sulla rete locale."
+          }
+        },
+        {
+          "icon": "apps",
+          "label": {
+            "en": "Aurea Home",
+            "it": "Aurea Home"
+          },
+          "detail": {
+            "en": "New identity and optional original minimal wallpapers; existing app data and signing identity stay compatible.",
+            "it": "Nuova identità e sfondi minimal originali opzionali; dati e firma restano compatibili."
+          }
+        }
+      ]
+    },
+    {
       "version": "1.7.5",
       "code": 23,
       "date": "2026-10-28",

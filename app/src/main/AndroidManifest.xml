@@ -33,7 +33,7 @@
         android:icon="@drawable/icon_apps"
         android:roundIcon="@drawable/icon_apps"
         android:banner="@drawable/banner"
-        android:label="MiTV Home"
+        android:label="Aurea Home"
         android:supportsRtl="true"
         android:theme="@style/Theme.AirPlayServer">
 
@@ -50,6 +50,7 @@
 
         </activity>
 
+        <service android:name="it.xarber.tvhome.HomeRemoteService" android:exported="false" android:foregroundServiceType="connectedDevice" />
         <service
             android:name=".service.AirPlayService"
             android:foregroundServiceType="connectedDevice|mediaPlayback"

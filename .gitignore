@@ -24,3 +24,18 @@
 
 /app/src/main/assets/developer-changelog.txt
 __pycache__/
+
+# Expo demo (isolated from native Android release artifacts)
+node_modules/
+/demo/.expo/
+/demo/dist/
+/demo/playwright-results/
+
+/demo/dist-android/
+/demo/test-results/
+
+# Reproducible Expo exports and generated native companion projects
+/app/src/main/assets/remoteapp/
+/demo/android/
+/demo/ios/
+/demo/dist-ios/

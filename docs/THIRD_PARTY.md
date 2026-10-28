@@ -36,3 +36,14 @@ change from https://github.com/postlund/pyatv/pull/2894 at
 `scripts/apple_tv/patches`; it preserves upstream licensing and is not an upgrade
 to an unpinned fork. Build metadata records both original source and patched-wheel
 hashes. Header-boundary tests exercise the actual patched wheel.
+
+## Expo preview branch
+
+The companion uses Expo, React/React DOM, React Native/Web, Reanimated/Worklets,
+react-native-svg and Expo Linear Gradient under their MIT licenses. Development
+tools retain their packaged licenses (including Playwright's Apache-2.0 terms).
+The npm lockfile records resolved versions. Original demo icons, SVG wallpapers
+and cover-art drawings are AGPL project contributions; no external album covers,
+fonts or stock photographs are fetched by the demo.
+
+The loopback system-remote bridge uses androidtvremote2 0.3.2 (Apache-2.0), aiofiles 25.1.0 (Apache-2.0), and the existing pinned cryptography/protobuf runtime. Expo companion dependencies retain their upstream notices in the npm lockfile. Original Aurea SVG artwork is AGPL-3.0-only.

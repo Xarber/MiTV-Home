@@ -28,6 +28,11 @@ public final class HostChecks {
         reject(head+"Content-Type: text/plain\r\nContent-Length: 2\r\n\r\n{}",415);
         reject(head+"Content-Type: application/json\r\nContent-Length: 3\r\n\r\n{}",400);
         reject(head+"X-Fill: "+"x".repeat(8192)+"\r\n\r\n",431);
+        String browser="OPTIONS /api/state HTTP/1.1\r\nHost: 192.168.1.101:8765\r\nOrigin: https://remote.example\r\n\r\n";
+        check(RemoteRequest.read(new ByteArrayInputStream(browser.getBytes(StandardCharsets.UTF_8)),"192.168.1.101:8765",true).origin.equals("https://remote.example"),"bounded browser origin parsed");
+        check(!RemoteRequest.safeOrigin("https://remote.example/path"),"origin cannot include path");
+        check(!RemoteRequest.safeOrigin("https://user@remote.example"),"origin cannot include credentials");
+        check(!RemoteRequest.safeOrigin("http://remote.example"),"insecure foreign origin rejected");
         System.out.println("PASS: developer lifecycle and remote hostile-request checks");
     }
 }

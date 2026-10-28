@@ -2,6 +2,14 @@
 
 Generated from `app/src/main/assets/release-history.json`. Legacy versions reflect repository history; dates describe implementation, not a verified public release.
 
+## 1.8.0 — 2026-10-28
+
+Aurea Home identity, minimal wallpapers and a paired phone remote.
+
+### Fixes & Improvements
+
+Improves small-screen sources, reconnects discovery after network changes and separates credentials for each TV.
+
 ## 1.7.5 — 2026-10-28
 
 Fixes the immediate error when submitting an Apple TV pairing code.

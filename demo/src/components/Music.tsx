@@ -1,0 +1,20 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+import React from 'react';
+import {View,Text,StyleSheet,useWindowDimensions} from 'react-native';
+import {LinearGradient} from 'expo-linear-gradient';
+import Animated,{useReducedMotion} from 'react-native-reanimated';
+import Svg,{Circle,Path} from 'react-native-svg';
+import {tracks,timeLabel} from '../model/catalog';
+import {FocusButton} from './FocusButton';
+import {Icon} from './Icon';
+import type {Demo} from '../hooks/useDemo';
+export function Artwork({track=0,size=60}:{track?:number;size?:number}){const colors=tracks[track]!.colors;return <View style={{width:size,height:size,borderRadius:size*.19,overflow:'hidden'}}><LinearGradient colors={colors} style={StyleSheet.absoluteFill}/><View style={{zIndex:1}}><Svg width={size} height={size} viewBox="0 0 100 100"><Circle cx="64" cy="29" r="17" fill="#fff" opacity=".46"/><Path d="M-5 85 Q38 26 110 65 L110 110 H-5" fill="#281f36" opacity=".3"/><Path d="M-5 95 Q35 47 110 85 L110 110 H-5" fill="#292936" opacity=".4"/></Svg></View></View>;}
+export function Waveform({playing,track,small=false}:{playing:boolean;track:number;small?:boolean}){const reduced=useReducedMotion();const colors=tracks[track]!.colors;return <View accessibilityLabel="Simulated music animation" style={{flexDirection:'row',alignItems:'center',height:small?22:32,gap:small?2:4}}>{[.32,.62,.9,.75,.5,.3].map((n,i)=><Animated.View key={i} style={{width:small?2:5,height:(small?20:32)*n,borderRadius:9,overflow:'hidden',animationName:playing&&!reduced?{from:{transform:[{scaleY:.3}]},to:{transform:[{scaleY:1}]}}:undefined,animationDuration:600+i*127,animationDirection:'alternate',animationIterationCount:'infinite',animationDelay:i*-170}}><LinearGradient colors={colors} style={StyleSheet.absoluteFill}/></Animated.View>)}</View>;}
+export function MusicPanel({demo,t}:{demo:Demo;t:(s:string)=>string}){const compact=useWindowDimensions().width<600;const song=tracks[demo.track]!;return <>
+ <View style={{flexDirection:'row',gap:compact?14:22,alignItems:'center',marginTop:0}}><Artwork track={demo.track} size={compact?68:84}/><View style={{flex:1,gap:7}}><Text style={s.title}>{song.title}</Text><Text style={s.artist}>{song.artist}</Text><Text style={s.hint}>{song.album}</Text></View>{!compact&&<View style={{transform:[{scale:.85}]}}><Waveform track={demo.track} playing={demo.playing}/></View>}</View>
+ <View style={{marginTop:16,gap:7}}><View style={s.progress}><View style={{height:4,borderRadius:2,backgroundColor:'#fff',width:`${demo.position/song.duration*100}%`}}/></View><View style={{flexDirection:'row',justifyContent:'space-between'}}><Text style={s.time}>{timeLabel(demo.position)}</Text><Text style={s.time}>−{timeLabel(song.duration-demo.position)}</Text></View></View>
+ <View style={{flexDirection:'row',justifyContent:'center',alignItems:'center',gap:30,marginVertical:8}}>{(['previous',demo.playing?'pause':'play','next'] as const).map((icon,i)=><FocusButton key={i} id={`music-${i}`} group="modal" label={t(i===0?'Previous':i===2?'Next':demo.playing?'Pause':'Play')} onPress={()=>i===1?demo.toggle():demo.next(i===0?-1:1)} style={{width:52,height:52,borderRadius:30}}><Icon name={icon} size={i===1?32:26}/></FocusButton>)}</View>
+ <View style={{flexDirection:'row',gap:14,alignItems:'center'}}><Icon name="volume" size={18}/><FocusButton id="volume-minus" group="modal" label="Decrease volume" onPress={()=>demo.setVolume(v=>Math.max(0,v-5))}><Text style={s.title}>−</Text></FocusButton><View style={[s.progress,{flex:1}]}><View style={{height:4,width:`${demo.volume}%`,backgroundColor:'#ddd',borderRadius:3}}/></View><FocusButton id="volume-plus" group="modal" label="Increase volume" onPress={()=>demo.setVolume(v=>Math.min(100,v+5))}><Text style={s.title}>+</Text></FocusButton><Text style={s.time}>{demo.volume}%</Text></View>
+
+ </>;}
+const s=StyleSheet.create({title:{fontSize:21,fontWeight:'700',color:'#fff'},artist:{fontSize:15,color:'#c4c2ce'},hint:{fontSize:12,lineHeight:18,color:'#9da1ae'},time:{fontSize:12,color:'#bbc0cd',fontVariant:['tabular-nums']},progress:{height:4,backgroundColor:'#ffffff25',borderRadius:4,overflow:'hidden'}});
