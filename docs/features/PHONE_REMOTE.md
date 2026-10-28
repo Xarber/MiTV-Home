@@ -102,3 +102,12 @@ never TV launcher updates (`it.xarber.mitvhome`). No store, phone update feed or
 new website deployment is activated. Existing native-TV update feeds stay intact.
 See [PWA behavior](PWA.md), [branding](../BRANDING.md) and the
 [validation report](../reports/AUREA_PHONE_PWA.md).
+
+### Android asset packaging
+
+AGP 9.4's default asset filter skips underscore-prefixed directories, including
+Expo's `_expo`. Version 1.8.1 retains the other default filters while allowing
+those directories. Release validation checks HTML script/link references and every
+exported web asset inside both APK and AAB, preventing a working HTML shell with
+missing JavaScript from being published. The defect was found by fetching the
+actual installed TV's script URL; browser-only exports did not expose it.

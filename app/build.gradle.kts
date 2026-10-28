@@ -38,6 +38,11 @@ android {
     compileSdk = 37
     ndkVersion = "27.0.12077973"
 
+    // Keep Expo's _expo asset directory; retain the other AGP 9.4 defaults.
+    androidResources {
+        ignoreAssetsPatterns += listOf("!.svn", "!.git", "!.ds_store", "!*.scc", ".*", "!CVS", "!thumbs.db", "!picasa.ini", "!*~")
+    }
+
     if (localProps.containsKey("storeFile")) {
         signingConfigs {
             create("release") {
@@ -55,8 +60,8 @@ android {
         applicationId = providers.gradleProperty("homeApplicationId").getOrElse("it.xarber.mitvhome")
         minSdk = 26
         targetSdk = 34
-        versionCode = 24
-        versionName = "1.8.0"
+        versionCode = 25
+        versionName = "1.8.1"
         buildConfigField("String", "SOURCE_COMMIT", buildString(sourceCommit))
         buildConfigField("String", "BUILD_CHANNEL", buildString(buildChannel))
         buildConfigField("String", "BUILD_DATE", buildString(buildDate))
@@ -127,7 +132,7 @@ val generateHomeBuildInfo = tasks.register("generateHomeBuildInfo") {
     outputs.files(file("src/main/assets/build-metadata.json"), file("src/main/assets/developer-changelog.txt"))
     doLast {
         file("src/main/assets/build-metadata.json").writeText("""
-            {"version":"1.8.0","code":24,"commit":${buildString(sourceCommit)},"channel":${buildString(buildChannel)},"variant":"github-extended","date":${buildString(buildDate)}}
+            {"version":"1.8.1","code":25,"commit":${buildString(sourceCommit)},"channel":${buildString(buildChannel)},"variant":"github-extended","date":${buildString(buildDate)}}
         """.trimIndent()+"\n")
         val history = gitValue("log", "--reverse", "--format=%H %ad %s%n%b", "--date=short", "98cbd64^..HEAD")
         val historyFile = file("src/main/assets/developer-changelog.txt")

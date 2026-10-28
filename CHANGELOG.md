@@ -2,6 +2,14 @@
 
 Generated from `app/src/main/assets/release-history.json`. Legacy versions reflect repository history; dates describe implementation, not a verified public release.
 
+## 1.8.1 — 2026-10-28
+
+Fixes the phone remote page bundled inside the TV app.
+
+### Fixes & Improvements
+
+Preserves Expo JavaScript and CSS during Android asset packaging and verifies required web files before publication.
+
 ## 1.8.0 — 2026-10-28
 
 Aurea Home identity, minimal wallpapers and a paired phone remote.

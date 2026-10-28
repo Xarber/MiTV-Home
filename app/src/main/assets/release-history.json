@@ -2,6 +2,37 @@
   "schema": 1,
   "releases": [
     {
+      "version": "1.8.1",
+      "code": 25,
+      "date": "2026-10-28",
+      "critical": false,
+      "highlights": {
+        "en": "Fixes the phone remote page bundled inside the TV app.",
+        "it": "Corregge la pagina telecomando per telefono inclusa nell’app TV."
+      },
+      "fixes": {
+        "en": "Preserves Expo JavaScript and CSS during Android asset packaging and verifies required web files before publication.",
+        "it": "Mantiene JavaScript e CSS di Expo durante il confezionamento Android e verifica i file web necessari prima della pubblicazione."
+      },
+      "compatibility": {
+        "en": "Keeps the existing package, signing key and settings. Global phone navigation still requires separate Android TV Remote Service pairing.",
+        "it": "Mantiene pacchetto, firma e impostazioni esistenti. La navigazione globale dal telefono richiede ancora l’abbinamento separato al servizio telecomando Android TV."
+      },
+      "features": [
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Working bundled remote page",
+            "it": "Pagina telecomando inclusa funzionante"
+          },
+          "detail": {
+            "en": "Prevents Android from silently dropping the generated _expo directory.",
+            "it": "Impedisce ad Android di omettere silenziosamente la cartella _expo generata."
+          }
+        }
+      ]
+    },
+    {
       "version": "1.8.0",
       "code": 24,
       "date": "2026-10-28",

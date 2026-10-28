@@ -2,7 +2,7 @@
   "expo": {
     "name": "Aurea Remote",
     "slug": "aurea-remote",
-    "version": "1.8.0",
+    "version": "1.8.1",
     "platforms": [
       "android",
       "ios",
@@ -18,7 +18,7 @@
     },
     "android": {
       "package": "it.xarber.aurea.remote",
-      "versionCode": 24
+      "versionCode": 25
     },
     "plugins": [
       "expo-secure-store",
@@ -41,7 +41,7 @@
           "NSAllowsLocalNetworking": true
         }
       },
-      "buildNumber": "24"
+      "buildNumber": "25"
     },
     "icon": "./public/branding/icon-1024.png"
   }
