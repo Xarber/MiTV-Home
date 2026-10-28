@@ -15,7 +15,7 @@ final class ReleasePanels {
         for (int i = 0; i < releases.length(); i++) {
             JSONObject release = releases.optJSONObject(i);
             if (release == null || release.optInt("code") > io.github.jqssun.airplay.BuildConfig.VERSION_CODE) continue;
-            host.addControlIcon(rows, "MiTV Home " + release.optString("version"), release.optString("date"), "history", () -> {
+            host.addControlIcon(rows, "Aurea Home " + release.optString("version"), release.optString("date"), "history", () -> {
                 host.closePanel(); host.showRelease(release);
             });
         }

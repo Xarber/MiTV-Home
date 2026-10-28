@@ -91,7 +91,7 @@ class Client:
         if operation == "pair_begin":
             await self._disconnect()
             self.selected = self.devices[data["id"]]
-            self.pairing = await pyatv.pair(self.selected, Protocol.AirPlay, self.loop, name="MiTV Home")
+            self.pairing = await pyatv.pair(self.selected, Protocol.AirPlay, self.loop, name="Aurea Home")
             await self.pairing.begin()
             return {"status": "pin_required", "name": self.selected.name}
         if operation == "pair_finish":

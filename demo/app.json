@@ -1,0 +1,1 @@
+{"expo":{"name":"Aurea Home Demo","slug":"aurea-home-demo","version":"1.0.0","platforms":["android","web"],"orientation":"landscape","userInterfaceStyle":"dark","web":{"bundler":"metro","output":"single","name":"Aurea Home · Interactive demo","favicon":"./assets/favicon.png"},"android":{"package":"it.xarber.aurea.demo"}}}

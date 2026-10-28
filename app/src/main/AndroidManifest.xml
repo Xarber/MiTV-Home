@@ -33,7 +33,7 @@
         android:icon="@drawable/icon_apps"
         android:roundIcon="@drawable/icon_apps"
         android:banner="@drawable/banner"
-        android:label="MiTV Home"
+        android:label="Aurea Home"
         android:supportsRtl="true"
         android:theme="@style/Theme.AirPlayServer">
 

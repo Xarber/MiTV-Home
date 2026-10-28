@@ -15,3 +15,10 @@
 ## Limits
 
 Mac Music playback is unresolved; do not advertise complete AirPlay 2/FairPlay v2 support. User reported iPad radio and local library working. DRM/photo/sender-specific modes require actual validation. Live HDMI/tuner behavior depends on TV manufacturer APIs. No external plugin loader, iOS app, OTA engine, root/port bypass, debloating or store submission is implemented.
+
+## Aurea preview branch (not a stable release)
+
+The feature branch adds Aurea Home branding, optional native wallpaper themes,
+and the Expo web companion with keyboard navigation, music and remote fixtures.
+See [the feature guide](features/EXPO_DEMO.md) for implemented preview behavior
+and the boundary between browser demonstrations and physical TV capabilities.

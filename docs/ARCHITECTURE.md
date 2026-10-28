@@ -25,3 +25,11 @@ Home starts/binds the receiver, then starts HTTP remote while resumed. Pausing s
 UI work is on Android's main thread; app discovery/art preparation use the existing single worker; media work stays in native/service threads. Popup backgrounds are captured when opened and discarded on dismiss. Never reintroduce stale cross-banner backdrop caches. Reduced-motion settings disable decorative transitions.
 
 The existing renderer remains in MainActivity; new state and validation live in separate modules. Further renderer extraction should preserve focus and hardware behavior in small reviewed steps. MainActivity is not a public plugin API.
+
+## Aurea Home preview branch
+
+The optional `demo/` Expo companion shares the repository, not the production
+launcher runtime. It has no access to TV services or production preferences.
+`WallpaperController` owns native wallpaper settings/lifecycle and `WallpaperArt`
+renders original gradients/curves. MainActivity only delegates presentation hooks.
+See [demo architecture and boundaries](features/EXPO_DEMO.md).

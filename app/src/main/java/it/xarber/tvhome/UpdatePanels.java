@@ -18,7 +18,7 @@ final class UpdatePanels {
     UpdatePanels(MainActivity host,UpdateController updates){this.host=host;this.updates=updates;}
     void showSettings(){
         LinearLayout rows=host.dialog("Updates");
-        label(rows,"MiTV Home "+BuildConfig.VERSION_NAME+" · "+BuildConfig.VERSION_CODE+"\n"+host.tr("Release channel")+": "+host.tr(updates.channel.equals("beta")?"Beta":"Stable"));
+        label(rows,"Aurea Home "+BuildConfig.VERSION_NAME+" · "+BuildConfig.VERSION_CODE+"\n"+host.tr("Release channel")+": "+host.tr(updates.channel.equals("beta")?"Beta":"Stable"));
         status=label(rows,"");progress=label(rows,"");
         host.addControlIcon(rows,"Check for Updates","","history",()->updates.check(true));
         toggle(rows,"Automatic update checks","auto_check",updates.autoCheck());
@@ -33,7 +33,7 @@ final class UpdatePanels {
     private void toggle(LinearLayout rows,String title,String key,boolean enabled){host.addControlIcon(rows,title,host.tr(enabled?"On":"Off"),"controls",()->{updates.toggle(key);showSettings();});}
     void showOffer(){
         UpdateCandidate offer=updates.candidate;if(offer==null){showSettings();return;}
-        LinearLayout rows=host.dialog("MiTV Home "+offer.version);
+        LinearLayout rows=host.dialog("Aurea Home "+offer.version);
         if(offer.critical)label(rows,host.tr("Security-critical update"));
         label(rows,host.tr("Download size")+": "+size(offer.size));status=label(rows,"");progress=label(rows,"");
         host.addControlIcon(rows,updates.ready?"Install update":"Update Now","","transfer",()->{if(updates.ready)updates.install();else updates.download();});

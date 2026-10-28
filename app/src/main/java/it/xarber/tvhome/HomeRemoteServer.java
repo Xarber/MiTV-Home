@@ -15,7 +15,7 @@ import java.security.SecureRandom;
 import java.util.Locale;
 import org.json.JSONObject;
 
-/** Small, pairing-code protected remote UI, active only while MiTV Home is foreground. */
+/** Small, pairing-code protected remote UI, active only while Aurea Home is foreground. */
 final class HomeRemoteServer implements Runnable {
     interface Commands { void run(String command); }
     private final Context context;

@@ -1,5 +1,7 @@
 # Documentation map
 
+- [Aurea Home / Expo demo and wallpapers](features/EXPO_DEMO.md).
+
 - [Architecture](ARCHITECTURE.md): components, ownership and data flow.
 - [Features](FEATURES.md): implemented behavior and limitations.
 - [Data model](DATA_MODEL.md): preferences, release history and transient sessions.

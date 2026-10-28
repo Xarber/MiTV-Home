@@ -41,3 +41,15 @@ persist under the app's external `files/diagnostics` directory and the safe
 Do not enable raw pyatv binary logging, print PINs/credentials, or claim an old
 error was recovered when that app version never recorded it. Use failure class,
 HTTP status, HAP phase and stack locations as evidence before choosing a fix.
+
+## Aurea Home demo branch
+
+`feature/aurea-expo-demo` adds the `demo/` Expo web companion within this repository.
+Keep this user-requested preview branch separate from stable promotion until
+reviewed. Native Android remains the real launcher; no iOS target or Expo rewrite.
+Retain package/update repository/signing identities when changing visible branding.
+Demo state is isolated browser storage; no production TV/receiver API calls.
+Music is a top-left focus-driven live activity, not a centered modal. Settings
+grow from the time/date bubble into a right sidebar. Preserve single-line sliding
+activity details, consistent black material, and nonfocusable navigation hints.
+See docs/features/EXPO_DEMO.md and demo/README.md.

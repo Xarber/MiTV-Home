@@ -23,7 +23,7 @@ public final class Diagnostics {
         ConnectivityManager manager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkCapabilities network = manager == null ? null : manager.getNetworkCapabilities(manager.getActiveNetwork());
         String transport = network == null ? "offline" : network.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ? "wifi" : network.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) ? "ethernet" : "other";
-        StringBuilder text = new StringBuilder("MiTV Home diagnostics v2\n")
+        StringBuilder text = new StringBuilder("Aurea Home diagnostics v2\n")
             .append("snapshot_utc=").append(java.time.Instant.now()).append("\nsource=local Android APIs; current snapshot\n")
             .append("version=").append(BuildConfig.VERSION_NAME).append(" (").append(BuildConfig.VERSION_CODE).append(")\n")
             .append("commit=").append(BuildConfig.SOURCE_COMMIT).append("\nbranch=").append(BuildConfig.BUILD_CHANNEL)
