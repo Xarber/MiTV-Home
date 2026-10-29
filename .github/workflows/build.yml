@@ -361,6 +361,9 @@ jobs:
 
   distribution-sources:
     name: Update AltSource and Obtainium sources
+    concurrency:
+      group: aurea-distribution-sources
+      cancel-in-progress: false
     needs: publish
     if: github.event_name != 'pull_request' && (github.ref_name == 'main' || github.ref_name == 'beta')
     runs-on: ubuntu-24.04
