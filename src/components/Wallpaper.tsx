@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import React,{useEffect,useId,useState} from 'react';
-import {StyleSheet,View,AppState} from 'react-native';
+import {Platform,StyleSheet,View,AppState} from 'react-native';
 import {LinearGradient} from 'expo-linear-gradient';
 import Svg,{Path,Defs,LinearGradient as SvgGradient,Stop} from 'react-native-svg';
 import Animated,{useSharedValue,useAnimatedStyle,withRepeat,withTiming,Easing,cancelAnimation,useReducedMotion} from 'react-native-reanimated';
 import {usePaletteTransition} from '../hooks/usePaletteTransition';
+import {tvColor} from '../model/tvColor';
 import {wallpapers} from '../model/catalog';
 export function Wallpaper({id,motion=false,mini=false}:{id:string;motion?:boolean;mini?:boolean}){
  const [active,setActive]=useState(AppState.currentState!=='background'&&AppState.currentState!=='inactive');
@@ -12,10 +13,11 @@ export function Wallpaper({id,motion=false,mini=false}:{id:string;motion?:boolea
  const wallpaper=wallpapers.find(w=>w.id===id)??wallpapers[0]!;const reduced=useReducedMotion();
  const drift=useSharedValue(0);
  useEffect(()=>{cancelAnimation(drift);drift.set(0);if(motion&&!reduced&&!mini&&active)drift.set(withRepeat(withTiming(1,{duration:10000,easing:Easing.inOut(Easing.sin)}),-1,true));return()=>cancelAnimation(drift);},[motion,reduced,mini,active]);
- const {layers,fade}=usePaletteTransition(wallpaper.colors,mini);
+ const palette=wallpaper.colors.map(color=>Platform.isTV?tvColor(color):color) as [string,string,string];
+ const {layers,fade}=usePaletteTransition(palette,mini);
  const style=useAnimatedStyle(()=>({transform:[{translateX:drift.get()*90},{translateY:drift.get()*-38},{scale:1.08}]}));
- return <View testID={mini?undefined:'wallpaper-background'} style={[StyleSheet.absoluteFill,{overflow:'hidden',backgroundColor:wallpaper.colors[0]}]} pointerEvents="none">
- <WallpaperScene colors={(mini?[...wallpaper.colors]:layers.from) as [string,string,string]} style={style} motionId={mini?undefined:'wallpaper-motion'}/>
+ return <View testID={mini?undefined:'wallpaper-background'} style={[StyleSheet.absoluteFill,{overflow:'hidden',backgroundColor:palette[0]}]} pointerEvents="none">
+ <WallpaperScene colors={(mini?palette:layers.from) as [string,string,string]} style={style} motionId={mini?undefined:'wallpaper-motion'}/>
  {!mini&&<Animated.View testID="wallpaper-fade" style={[StyleSheet.absoluteFill,fade]}><WallpaperScene colors={layers.to as [string,string,string]} style={style}/></Animated.View>}
  </View>;
 }

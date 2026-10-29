@@ -1,0 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+import {test} from 'node:test';import assert from 'node:assert/strict';import {tvColor} from '../../src/model/tvColor.ts';
+const luminance=(color:string)=>[1,3,5].map(offset=>{const n=parseInt(color.slice(offset,offset+2),16)/255;return n<=.04045?n/12.92:((n+.055)/1.055)**2.4;}).reduce((sum,n,index)=>sum+n*[.2126,.7152,.0722][index]!,0);
+test('TV chroma compensation preserves calculated luminance without brightening neutral tones',()=>{for(const color of ['#6b739f','#183d47','#668d91','#ff0000','#00ff00','#111b2c'])assert.ok(Math.abs(luminance(tvColor(color))-luminance(color))<.003);assert.equal(tvColor('#888888'),'#888888');assert.equal(tvColor('#000000'),'#000000');assert.equal(tvColor('#ffffff'),'#ffffff');assert.notEqual(tvColor('#6b739f'),'#6b739f');});

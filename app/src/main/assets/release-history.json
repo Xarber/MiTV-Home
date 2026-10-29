@@ -2,6 +2,48 @@
   "schema": 1,
   "releases": [
     {
+      "version": "2.0.5",
+      "code": 32,
+      "date": "2026-10-29",
+      "critical": false,
+      "highlights": {
+        "en": "More TV controls and deeper TV wallpaper colors.",
+        "it": "Più controlli TV e colori degli sfondi più intensi."
+      },
+      "fixes": {
+        "en": "Separate system-service errors from launcher connectivity, reconnect without replaying keys, correct TV manifest lint, and wait for rendered animation frames in browser checks.",
+        "it": "Distingue gli errori del telecomando di sistema, riconnette senza ripetere i tasti, corregge il manifest TV e verifica i fotogrammi effettivi delle animazioni."
+      },
+      "compatibility": {
+        "en": "System keys require Android TV Remote Service pairing and depend on the current app. Voice opens the TV assistant; phone microphone streaming is not included. TV color adjustment preserves calculated luminance; physical appearance needs testing.",
+        "it": "I tasti di sistema richiedono l’abbinamento al servizio telecomando Android TV e dipendono dall’app. La voce apre l’assistente TV; il microfono del telefono non viene trasmesso. I colori TV mantengono la luminanza calcolata e richiedono verifica sullo schermo."
+      },
+      "features": [
+        {
+          "icon": "remote",
+          "label": {
+            "en": "TV controls",
+            "it": "Controlli TV"
+          },
+          "detail": {
+            "en": "Home, Back, volume and mute, channels, media transport, colored keys and TV voice assistant.",
+            "it": "Home, Indietro, volume e silenzioso, canali, controlli multimediali, tasti colorati e assistente vocale TV."
+          }
+        },
+        {
+          "icon": "apps",
+          "label": {
+            "en": "Deeper TV colors",
+            "it": "Colori TV più intensi"
+          },
+          "detail": {
+            "en": "TV-only chroma compensation; web colors, blur and app banners are unchanged.",
+            "it": "Compensazione cromatica solo sulla TV; colori web, sfocatura e banner delle app invariati."
+          }
+        }
+      ]
+    },
+    {
       "version": "2.0.4",
       "code": 30,
       "date": "2026-10-29",

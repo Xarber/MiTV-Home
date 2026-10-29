@@ -35,3 +35,4 @@ See [phone remote](features/PHONE_REMOTE.md), [PWA](features/PWA.md), and [brand
 - [Palette transitions, demo phone bridge and Android build correction](reports/2026-10-29-palette-demo.md)
 - [Android build failures and physical 2.0.2 installation](reports/2026-10-29-android-build-recovery.md)
 - [Input ownership, background permission and wallpaper transitions](reports/2026-10-29-input-foreground-recovery.md)
+- [System controls, build triage and TV colors](reports/2026-10-29-system-controls-colors.md)

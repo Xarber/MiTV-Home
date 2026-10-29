@@ -2,6 +2,14 @@
 
 Generated from `app/src/main/assets/release-history.json`. Legacy versions reflect repository history; dates describe implementation, not a verified public release.
 
+## 2.0.5 — 2026-10-29
+
+More TV controls and deeper TV wallpaper colors.
+
+### Fixes & Improvements
+
+Separate system-service errors from launcher connectivity, reconnect without replaying keys, correct TV manifest lint, and wait for rendered animation frames in browser checks.
+
 ## 2.0.4 — 2026-10-29
 
 More reliable Home controls and smoother wallpaper changes.

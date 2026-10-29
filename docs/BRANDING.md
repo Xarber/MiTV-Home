@@ -23,3 +23,8 @@ their previous TV icon has not been silently replaced as part of PWA work.
 
 A full legal naming check and expanded light/tinted native icon variants remain
 branding follow-up work, not release validation claimed here.
+
+TV-only wallpaper rendering may apply a bounded 1.18 chroma expansion around
+linear-light Rec.709 luminance. It preserves calculated luminance and neutrals,
+leaving source brand assets, banners, web and phone palettes untouched. This is
+rendering compensation, not a measured display profile or physical calibration.
