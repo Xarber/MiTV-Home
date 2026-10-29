@@ -77,3 +77,9 @@ owner snapshots and returns phone presence plus the LAN URL. Both require the
 in-memory owner header and matching tab identity. `/__demo/health` reports owner
 availability without credentials. No private endpoint or authenticated response
 is cached by the PWA. See EXPO_DEMO.md for security and lifecycle constraints.
+
+Music state may include activityVisible:boolean (presentation only); false hides a
+paused activity without ending its playback session or disabling controls. Native
+key payloads carry eventId to reject duplicate bridged delivery. Background Home
+failure returns foreground_access_required; permission is requested through the
+TV's Remote settings, never granted automatically by the application.

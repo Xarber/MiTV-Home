@@ -26,7 +26,14 @@ function decode(value: string): Record<string, unknown> {
     throw new Error('invalid_native_response');
   return result as Record<string, unknown>;
 }
+const inputOwners=new Set<(event:TVEvent)=>void>();
+let inputBridge:(()=>void)|undefined;
 export const tv = {
+  subscribeInput(listener:(event:TVEvent)=>void){
+    inputOwners.add(listener);
+    inputBridge??=tv.subscribe(event=>[...inputOwners].at(-1)?.(event));
+    return()=>{inputOwners.delete(listener);if(!inputOwners.size){inputBridge?.();inputBridge=undefined;}};
+  },
   async execute(operation: string, payload: Record<string, unknown> = {}) {
     if (!module) throw new Error('native_bridge_unavailable');
     return decode(await module.execute(operation, JSON.stringify(payload)));

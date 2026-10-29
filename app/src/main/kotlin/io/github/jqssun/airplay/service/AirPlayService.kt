@@ -693,6 +693,7 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         _videoTitle.value = ""
         _videoPlaybackActive.value = true
         airPlayVideoPlayer.play(location, startPositionSeconds)
+        visualActivityLaunched = false
         launchVisualActivity()
         // claim media-button routing for keys that arrive as media-session events
         mediaSession?.isActive = true
@@ -934,6 +935,7 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
         if (prev != audioOnly) it.xarber.tvhome.AureaTVModule.event("playback", org.json.JSONObject())
         _refreshDacpPlayer()
         if (audioOnly && !prev) {
+            if (prefs[Prefs.LAUNCH_ON_CONNECT] && !io.github.jqssun.airplay.BuildConfig.MOBILE_REMOTE) it.xarber.tvhome.HomeForeground.request(this,false)
             mediaSession?.isActive = true
             log("Audio mode")
         } else if (!audioOnly && prev) {
@@ -1193,13 +1195,7 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
 
     private fun launchMainActivity() {
         Handler(Looper.getMainLooper()).post {
-            val launchIntent = Intent(this, MainActivity::class.java)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
-            try {
-                startActivity(launchIntent)
-            } catch (e: Exception) {
-                Log.w(TAG, "Failed to launch activity", e)
-            }
+            it.xarber.tvhome.HomeForeground.request(this,true)
         }
     }
 

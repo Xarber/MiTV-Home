@@ -25,6 +25,7 @@ let revision = 0,
   transition = 0,
   transitioning = false;
 let coordinateScale = 1;
+let transitionDeadline=0;
 function space(node: Node) {
   if (node.id.startsWith('app:')) return 'page-2-content';
   if (node.id.startsWith('input:')) return 'page-1-content';
@@ -43,14 +44,17 @@ export const nativeFocus = {
     coordinateScale = value;
   },
   get transitioning() {
+    if(transitioning&&Date.now()>=transitionDeadline){transitioning=false;transition++;}
     return transitioning;
   },
   beginTransition() {
     transitioning = true;
+    transitionDeadline=Date.now()+2000;
     return ++transition;
   },
   endTransition(token: number) {
-    if (token === transition) transitioning = false;
+    if(token!==transition)return false;
+    transitioning=false;return true;
   },
   shiftSpace(name: string, dx: number, dy: number) {
     for (const node of nodes.values())
@@ -95,7 +99,14 @@ export const nativeFocus = {
       done?.();
     });
   },
+  suspend() {transitioning=false;transition++;},
+  recover() {
+    this.suspend();
+    const node=nodes.get(current);
+    if(node&&this.allowed(node.group))this.measureGroup(node.group,()=>this.focus(node.id));
+  },
   focused(id: string) {
+    const node=nodes.get(id);if(!node||!this.allowed(node.group))return;
     current = id;
     for (const listener of focusListeners) listener(id);
   },

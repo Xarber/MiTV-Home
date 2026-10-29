@@ -21,6 +21,7 @@ final class RemotePlayback {
     private final boolean presenceOwner;
     private volatile AirPlayService receiver;
     private boolean bound;
+    private final it.xarber.tvhome.playback.MusicActivityClock activityClock=new it.xarber.tvhome.playback.MusicActivityClock();
     private Bitmap previousArt;
     private String art="",artId="";
     private int artVersion;
@@ -33,6 +34,12 @@ final class RemotePlayback {
     RemotePlayback(Context context){this(context,true);}
     RemotePlayback(Context context,boolean presenceOwner){this.presenceOwner=presenceOwner;this.context=context.getApplicationContext();paired=PairedPlayback.get(context);}
     void start(){new android.os.Handler(android.os.Looper.getMainLooper()).post(()->{if(bound)return;try{bound=context.bindService(new Intent(context,AirPlayService.class),connection,Context.BIND_AUTO_CREATE);}catch(Exception ignored){bound=false;}});}
+    void tickActivity(){
+        AirPlayService current=receiver;
+        if(current!=null&&current.getAudioOnly().getValue())activityClock.visible(true,current.getPlaying().getValue(),android.os.SystemClock.elapsedRealtime());
+        else if(paired.active())activityClock.visible(true,paired.state().optBoolean("playing"),android.os.SystemClock.elapsedRealtime());
+        else activityClock.visible(false,false,android.os.SystemClock.elapsedRealtime());
+    }
     void clients(boolean active){paired.remoteActive(active);}
     void close(){if(presenceOwner)paired.remoteActive(false);if(bound){context.unbindService(connection);bound=false;}receiver=null;}
     synchronized JSONObject state(){
@@ -51,6 +58,7 @@ final class RemotePlayback {
                 if(!supplied.isNull("volume"))value.put("volume",supplied.optDouble("volume"));
                 value.put("controls",supplied.optJSONObject("controls"));
             }else value.put("active",false);
+            value.put("activityVisible",activityClock.visible(value.optBoolean("active"),value.optBoolean("playing"),android.os.SystemClock.elapsedRealtime()));
             if(image!=previousArt){palette=new org.json.JSONArray();for(int color:WavePalette.from(image))palette.put(String.format(java.util.Locale.US,"#%06x",color&0xffffff));previousArt=image;art="";artId="";if(image!=null&&!image.isRecycled()){
                 Bitmap scaled=Bitmap.createScaledBitmap(image,Math.max(1,Math.min(384,image.getWidth())),Math.max(1,Math.min(384,image.getHeight())),true);
                 ByteArrayOutputStream bytes=new ByteArrayOutputStream();scaled.compress(Bitmap.CompressFormat.JPEG,85,bytes);if(scaled!=image)scaled.recycle();

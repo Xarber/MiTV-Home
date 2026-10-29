@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { useEffect, useRef } from 'react';
-import { BackHandler, Platform } from 'react-native';
+import { AppState, BackHandler, Platform } from 'react-native';
 import { nativeFocus } from '../platform/native/focus';
 import { tv } from '../platform/native/tv';
+import {NativeInputGate} from '../model/nativeInput';
 import { HeldPress } from '../model/heldPress';
 interface Options {
   panel: string | null;
@@ -57,15 +58,17 @@ export function useNativeKeyboard(options: Options) {
           clearTimeout(handle as ReturnType<typeof setTimeout>),
       },
     );
-    const directionsDown=new Map<string,number>();
-    const unsubscribe = tv.subscribe((event) => {
+    const directionsDown=new Map<string,number>(),gate=new NativeInputGate();
+    const recover=()=>{press.cancel();gate.reset();directionsDown.clear();nativeFocus.recover();};
+    const lifecycle=AppState.addEventListener('change',state=>{if(state==='active')recover();else{press.cancel();gate.reset();directionsDown.clear();nativeFocus.suspend();}});
+    const unsubscribe = tv.subscribeInput((event) => {
       const current = latest.current;
-      if(event.type==='home-resumed'){directionsDown.clear();return;}
+      if(event.type==='home-resumed'){recover();return;}
       if (event.type === 'back') {
         back();
         return;
       }
-      if (event.type !== 'key') return;
+      if (event.type !== 'key'||!gate.accept(event.payload.eventId)) return;
       const key = event.payload.key,
         phase = event.payload.phase,
         repeat = event.payload.repeat;
@@ -125,6 +128,7 @@ export function useNativeKeyboard(options: Options) {
     return () => {
       unsubscribe();
       subscription.remove();
+      lifecycle.remove();
       press.cancel();
     };
   }, []);

@@ -291,6 +291,9 @@ export function NativePanels({
         )}
         {panel === 'remote' && (
           <>
+            {row('Background Home & AirPlay', 'apps',()=>action('backgroundAccess'))}
+            {remote.backgroundAccess===false&&text('Allow display over other apps to let Home and AirPlay return from the background.')}
+
             {typeof remote.qr === 'string' && (
               <Image
                 source={{ uri: remote.qr }}

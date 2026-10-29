@@ -33,7 +33,7 @@ public final class HomeRemoteService extends Service {
     private volatile RemotePlayback playback;
     private volatile String pendingLaunch;
     private volatile long launchDeadline;
-    private final Runnable monitor=new Runnable(){public void run(){if(playback!=null)playback.clients(server!=null&&server.hasActiveRemote());main.postDelayed(this,5000);}};
+    private final Runnable monitor=new Runnable(){public void run(){if(playback!=null){playback.clients(server!=null&&server.hasActiveRemote());playback.tickActivity();}main.postDelayed(this,5000);}};
 
     static synchronized void attach(LegacyHomeActivity home){visibleHome=new WeakReference<>(home);HomeRemoteService service=instance;if(service!=null&&service.pendingLaunch!=null&&SystemClock.elapsedRealtime()<service.launchDeadline){String target=service.pendingLaunch;service.pendingLaunch=null;service.main.post(()->{if(home.resumed)service.catalog.launch(home,target);});}}
     static synchronized void attachExpo(MainActivity home){HomeRemoteService service=instance;if(service!=null&&service.pendingLaunch!=null&&SystemClock.elapsedRealtime()<service.launchDeadline){String target=service.pendingLaunch;service.pendingLaunch=null;service.main.post(()->service.catalog.launch(home,target));}}
@@ -94,14 +94,15 @@ public final class HomeRemoteService extends Service {
         if(home()!=null)return onMain(()->{LegacyHomeActivity activity=home();if(activity==null)return SystemRemoteController.error("home_changed");activity.remoteCommand(command);return accepted();});
         if(command.equals("control"))return SystemRemoteController.error("home_required");
         if(command.equals("home")){
-            android.content.pm.ResolveInfo resolved=getPackageManager().resolveActivity(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME),android.content.pm.PackageManager.MATCH_DEFAULT_ONLY);
-            boolean ownHome=resolved!=null&&resolved.activityInfo!=null&&getPackageName().equals(resolved.activityInfo.packageName);
-            if(ownHome||Settings.canDrawOverlays(this))return onMain(()->{startActivity(new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_REORDER_TO_FRONT));return accepted();});
+            HomeForeground.request(this,false);
+            long deadline=SystemClock.elapsedRealtime()+2500;
+            while(!TVPlatform.foreground()&&SystemClock.elapsedRealtime()<deadline)Thread.sleep(40);
+            if(TVPlatform.foreground())return AureaTVModule.listening()?TVPlatform.remoteKey("home"):accepted();
+            if(!system.state().optBoolean("paired"))return SystemRemoteController.error("foreground_access_required");
         }
         JSONObject result=system.state().optBoolean("paired")?system.request("key",new JSONObject().put("command",command)):SystemRemoteController.error("system_pairing_required");
         if(!result.has("error"))return result;
         // Capability-based fallback, never replay global navigation into another app.
-        if(command.equals("home")&&Settings.canDrawOverlays(this)){main.post(()->startActivity(new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP)));return accepted();}
         if(command.equals("volumeup")||command.equals("volumedown")){AudioManager audio=(AudioManager)getSystemService(AUDIO_SERVICE);audio.adjustStreamVolume(AudioManager.STREAM_MUSIC,command.equals("volumeup")?AudioManager.ADJUST_RAISE:AudioManager.ADJUST_LOWER,AudioManager.FLAG_SHOW_UI);return accepted();}
         return result.optString("error").equals("authentication_failed")?SystemRemoteController.error("system_pairing_required"):result;
     }

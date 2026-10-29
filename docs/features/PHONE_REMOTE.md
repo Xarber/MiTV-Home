@@ -135,3 +135,13 @@ the currently blended palette; reduced motion applies the target immediately.
 Six shared spectrum bars use their actual height with a minimum equal to their
 width, preserving circular zero levels in collapsed and expanded views. Existing
 native receiver bands remain measured; remote-player fallback bars are animation.
+
+### Home ownership and paused activities (2.0.4)
+
+Optional music.activityVisible is false after five paused minutes; active playback
+state is preserved for controls, and playback restores visibility. A matching UI
+clock supports older servers. Home uses canonical Android Home/task restoration
+without system pairing, acknowledges foreground arrival, and reports missing
+background access. Remote settings on the TV expose Android's Display over other
+apps permission page. The grant remains user-controlled. Other apps' navigation
+continues to require the system remote service.
