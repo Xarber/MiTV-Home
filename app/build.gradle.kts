@@ -72,8 +72,8 @@ android {
         manifestPlaceholders["homeLabel"] = if (mobileRemote) "Aurea Remote" else "Aurea Home"
         manifestPlaceholders["homeExcludeRecents"] = if (mobileRemote) "false" else "true"
         buildConfigField("boolean", "MOBILE_REMOTE", mobileRemote.toString())
-        versionCode = 27
-        versionName = "2.0.1"
+        versionCode = 28
+        versionName = "2.0.2"
         buildConfigField("String", "SOURCE_COMMIT", buildString(sourceCommit))
         buildConfigField("String", "BUILD_CHANNEL", buildString(buildChannel))
         buildConfigField("String", "BUILD_DATE", buildString(buildDate))
@@ -146,7 +146,7 @@ val generateHomeBuildInfo = tasks.register("generateHomeBuildInfo") {
     outputs.files(file("src/main/assets/build-metadata.json"), file("src/main/assets/developer-changelog.txt"))
     doLast {
         file("src/main/assets/build-metadata.json").writeText("""
-            {"version":"2.0.1","code":27,"commit":${buildString(sourceCommit)},"channel":${buildString(buildChannel)},"variant":"github-extended","date":${buildString(buildDate)}}
+            {"version":"2.0.2","code":28,"commit":${buildString(sourceCommit)},"channel":${buildString(buildChannel)},"variant":"github-extended","date":${buildString(buildDate)}}
         """.trimIndent()+"\n")
         val history = gitValue("log", "--reverse", "--format=%H %ad %s%n%b", "--date=short", "98cbd64^..HEAD")
         val historyFile = file("src/main/assets/developer-changelog.txt")

@@ -24,3 +24,9 @@ For browser checks without interrupting an existing local preview, use `DEMO_POR
 `tests/python/test_ci_collection.py` uses synthetic files to verify incomplete, wrong-commit and tampered artifact rejection plus partial-run reporting. Those fixtures are not evidence of native package compilation.
 
 Always validate the real TV before claiming installation, HDMI, receiver or remote-control success. See [RELEASES.md](RELEASES.md) for the complete build entry point.
+
+`npm run test:demo-bridge` runs the local demo bridge against two headless browser
+pages with in-memory pairing credentials. It does not contact physical TVs. The
+shared browser CI job runs this after regular navigation checks. Spectrum geometry
+and interruptible palette fades are checked in the regular browser suite. Native
+Java compilation runs before Android packaging in each full-build job.

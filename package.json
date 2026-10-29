@@ -1,6 +1,6 @@
 {
   "name": "aurea-home",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "private": true,
   "license": "AGPL-3.0-only",
   "main": "index.ts",
@@ -9,11 +9,13 @@
     "web": "expo start --web",
     "build": "expo export --platform web && node scripts/expo/pwa.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test tests/expo/*.test.ts",
+    "test": "node --experimental-strip-types --test tests/expo/*.test.ts tests/expo/*.test.mjs",
     "test:e2e": "playwright test",
     "test:pwa": "node scripts/expo/verify-pwa-update.mjs",
     "android:tv": "./gradlew :app:assembleRelease",
-    "android:remote": "python3 scripts/phone/prepare.py && cd .phone-native && AUREA_TARGET=remote npx expo run:android"
+    "android:remote": "python3 scripts/phone/prepare.py && cd .phone-native && AUREA_TARGET=remote npx expo run:android",
+    "demo:remote": "python3 scripts/start-demo-preview.py --remote --port 8768",
+    "test:demo-bridge": "node scripts/expo/verify-demo-bridge.mjs"
   },
   "dependencies": {
     "@expo/metro-runtime": "~58.0.15",

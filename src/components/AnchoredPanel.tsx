@@ -82,7 +82,7 @@ export function AnchoredPanel({
   const targetWidth = Math.min(music ? 470 : preferredWidth??430, width - safe.left-safe.right-40);
   const left = music
     ? Math.max(safe.left+20,Math.min(anchor.left, width - safe.right-targetWidth - 20))
-    : width-safe.right - targetWidth - 20;
+    : phone?Math.max(safe.left+20,Math.min(anchor.left+anchor.width-targetWidth,width-safe.right-targetWidth-20)):width-safe.right - targetWidth - 20;
   const top = music ? Math.max(safe.top+20, Math.min(anchor.top,height-safe.bottom-160)) : safe.top+20;
   const maxHeight = Math.max(80,height - top - Math.max(54,safe.bottom+20));
   const targetHeight = music ? Math.min(measured || 350, maxHeight) : maxHeight;

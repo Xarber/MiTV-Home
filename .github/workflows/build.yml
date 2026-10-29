@@ -198,6 +198,7 @@ jobs:
           FLAGS=()
           if [ "$TARGET" = remote ]; then FLAGS+=(-PmobileRemote -PhomeApplicationId=it.xarber.aurea.remote); fi
           if [ "$PACKAGE_FORMAT" = apk ]; then TASK=assembleRelease; else TASK=bundleRelease; fi
+          ./gradlew :app:compileReleaseJavaWithJavac "${FLAGS[@]}" --console=plain --stacktrace
           ./gradlew ":app:$TASK" "${FLAGS[@]}" --console=plain --stacktrace
       - name: Verify signed packages and embedded provenance
         env:

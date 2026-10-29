@@ -31,3 +31,5 @@ See [phone remote](features/PHONE_REMOTE.md), [PWA](features/PWA.md), and [brand
 - [Workflow simplification and validation report](reports/2026-10-29-workflows.md)
 
 - [Native remote and music follow-up](reports/2026-10-29-remote-native.md)
+
+- [Palette transitions, demo phone bridge and Android build correction](reports/2026-10-29-palette-demo.md)

@@ -13,7 +13,7 @@ export function Wallpaper({id,motion=false,mini=false}:{id:string;motion?:boolea
  const drift=useSharedValue(0);
  useEffect(()=>{cancelAnimation(drift);drift.set(0);if(motion&&!reduced&&!mini&&active)drift.set(withRepeat(withTiming(1,{duration:10000,easing:Easing.inOut(Easing.sin)}),-1,true));return()=>cancelAnimation(drift);},[motion,reduced,mini,id,active]);
  const style=useAnimatedStyle(()=>({transform:[{translateX:drift.get()*90},{translateY:drift.get()*-38},{scale:1.08}]}));
- return <View style={[StyleSheet.absoluteFill,{overflow:'hidden',backgroundColor:wallpaper.colors[0]}]} pointerEvents="none">
+ return <View testID={mini?undefined:'wallpaper-background'} style={[StyleSheet.absoluteFill,{overflow:'hidden',backgroundColor:wallpaper.colors[0]}]} pointerEvents="none">
  <LinearGradient colors={wallpaper.colors} start={{x:0,y:0}} end={{x:1,y:1}} style={StyleSheet.absoluteFill}/>
  <Animated.View nativeID={mini?undefined:'wallpaper-motion'} style={[StyleSheet.absoluteFill,style]}>
  <Svg width="100%" height="100%" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">

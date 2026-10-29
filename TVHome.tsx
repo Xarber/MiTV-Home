@@ -41,6 +41,7 @@ import { Panels } from './src/components/Panels';
 import { SlidingDetails } from './src/components/SlidingDetails';
 import { anchorFor, Anchor } from './src/components/AnchoredPanel';
 import { BlurTargetView } from 'expo-blur';
+import {useDemoRemoteServer} from './src/hooks/useDemoRemoteServer';
 import {MusicTint} from './src/components/MusicTint';
 import { Glass, GlassTarget, BlurEnabled } from './src/components/Glass';
 import { scheduleOnRN } from 'react-native-worklets';
@@ -184,6 +185,7 @@ function LauncherView({ demo,onTarget }: { demo: Launcher;onTarget?:(id:string)=
     [changePage, openMusic, control, demo.native, demo.execute,onTarget],
   );
 
+  const demoServer=useDemoRemoteServer(demo,launch);
   const menu = useCallback(
     (id: string) => {
       if (catalog.some((a) => a.id === id)) demo.setPanel(`menu:${id}`);
@@ -913,6 +915,7 @@ function LauncherView({ demo,onTarget }: { demo: Launcher;onTarget?:(id:string)=
           />
         ) : (
           <Panels
+            server={demoServer}
             demo={demo}
             t={t}
             launch={launch}

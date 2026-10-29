@@ -2,6 +2,14 @@
 
 Generated from `app/src/main/assets/release-history.json`. Legacy versions reflect repository history; dates describe implementation, not a verified public release.
 
+## 2.0.2 — 2026-10-29
+
+Smooth music colors and a phone-controllable web demo.
+
+### Fixes & Improvements
+
+Remote wallpaper follows the TV across the full window; minimum waveform bars stay circular. Corrects the Android host compilation failure.
+
 ## 2.0.1 — 2026-10-29
 
 Refined native remote, pairing recovery and music-themed wallpapers.

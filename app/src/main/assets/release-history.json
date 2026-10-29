@@ -2,6 +2,48 @@
   "schema": 1,
   "releases": [
     {
+      "version": "2.0.2",
+      "code": 28,
+      "date": "2026-10-29",
+      "critical": false,
+      "highlights": {
+        "en": "Smooth music colors and a phone-controllable web demo.",
+        "it": "Colori musicali fluidi e demo web controllabile dal telefono."
+      },
+      "fixes": {
+        "en": "Remote wallpaper follows the TV across the full window; minimum waveform bars stay circular. Corrects the Android host compilation failure.",
+        "it": "Lo sfondo del telecomando segue la TV su tutta la finestra; le onde minime restano circolari. Corregge la compilazione del servizio Android."
+      },
+      "compatibility": {
+        "en": "Web demo remote control requires the opt-in local LAN server and an open owner browser. It never controls real TV services. Native builds still require device testing.",
+        "it": "Il controllo della demo richiede il server LAN locale e il browser del computer aperto. Non controlla servizi TV reali. Le build native richiedono verifica sul dispositivo."
+      },
+      "features": [
+        {
+          "icon": "sound",
+          "label": {
+            "en": "Gradual artwork colors",
+            "it": "Colori della copertina graduali"
+          },
+          "detail": {
+            "en": "Wallpaper tint and waveform colors crossfade over 1.8 seconds and continue smoothly after quick song changes.",
+            "it": "Sfumatura e onde cambiano colore in 1,8 secondi, anche dopo cambi rapidi di brano."
+          }
+        },
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Connected wallpaper and web demo",
+            "it": "Sfondo connesso e demo web"
+          },
+          "detail": {
+            "en": "The remote follows TV wallpaper preferences. An opt-in local demo server supports approved phone pairing, in-app controls and Bonjour advertising.",
+            "it": "Il telecomando segue le preferenze dello sfondo TV. Un server demo locale opzionale supporta abbinamento, controlli e annuncio Bonjour."
+          }
+        }
+      ]
+    },
+    {
       "version": "2.0.1",
       "code": 27,
       "date": "2026-10-29",

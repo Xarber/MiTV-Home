@@ -39,3 +39,31 @@ Use `gh workflow run build.yml --ref testing` for complete native verification. 
 SSID names can be redacted by Android when location access is missing. Network
 settings exposes the official permission/settings flow and never grants it silently.
 Reference: [Android WifiInfo/getSSID](https://developer.android.com/reference/android/net/wifi/WifiInfo#getSSID()).
+
+## Phone control of the browser demo
+
+Run `npm run demo:remote` to start the exported web app and its local Node bridge
+on port 8768, detached from the terminal. Open `http://127.0.0.1:8768/` on the
+computer. In Control Center → Remote, open the displayed LAN URL on the phone.
+Enter the six-digit notification code from the computer's launcher. No Android
+system pairing is needed. The phone controls fixture apps, inputs, music and
+navigation in that browser tab. Its wallpaper follows the demo's selection.
+
+The server advertises `_aurea-remote._tcp` with `role=demo` using macOS `dns-sd`
+or Linux `avahi-publish-service` when installed. Direct URLs work without Bonjour;
+browsers do not provide a general Bonjour browsing API or incoming HTTP listener.
+A static public website cannot provide this alone. The owner tab must remain open
+on the host computer. One owner tab controls the session; a reload reconnects.
+The server must be reachable on the same trusted LAN and the host firewall must
+allow its port. HTTP on LAN uses session-only credential storage in the web remote.
+Restarting the demo server changes its identity and requires fresh pairing.
+
+The bridge never calls ADB, Android platform adapters, or real playback. Owner
+commands require a loopback-only header credential; phone PINs and origin-bound
+session tokens exist only in memory. PINs are displayed on request, expire after
+five minutes, and are rate-limited. Commands are not queued or replayed during
+owner disconnection. State explicitly carries `provenance: simulated` and a `demo`
+music source. Do not expose this development bridge to the public Internet.
+
+`npm run test:demo-bridge` checks separate launcher/phone browser pages, PIN pairing,
+app launch, music activity, navigation, wallpaper synchronization and owner reload.

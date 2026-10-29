@@ -21,6 +21,8 @@ Expo at the repository root now hosts the Android TV interface, web preview, and
 ```sh
 npm ci
 python3 scripts/start-demo-preview.py
+# Or enable LAN phone pairing / Bonjour for the browser demo:
+npm run demo:remote
 ```
 
 Open http://127.0.0.1:8765. [Expo guide](docs/features/EXPO_DEMO.md) ·

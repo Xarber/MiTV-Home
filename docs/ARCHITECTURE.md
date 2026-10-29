@@ -55,3 +55,15 @@ Scroll offsets update only the corresponding content geometry; fixed category
 tabs and popup Close buttons do not move with scrolling. Native focus rectangles
 must not be refreshed for one focused item while leaving its siblings in a prior
 page coordinate system. Tests cover that specific sideways-navigation regression.
+
+## Shared music and local demo transport
+
+Spectrum owns six isolated rounded bar slots for native and web renderers;
+PaletteGradient crossfades static gradient layers using UI-thread opacity and
+samples the visible blend only when a new song interrupts it. MusicTint composes
+that palette with the existing wallpaper motion. No blur implementation changes.
+
+The optional useDemoRemoteServer hook runs only when the explicit Node server
+provides a loopback owner credential. It publishes fixture snapshots and maps
+validated commands to the existing demo model. Native platform adapters and
+phone trust storage remain separate. See features/EXPO_DEMO.md.

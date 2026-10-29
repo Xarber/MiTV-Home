@@ -123,3 +123,15 @@ System pairing distinguishes accepted trust from control-channel readiness. If t
 The Android phone build never renders Native TV Home merely because it was installed on a television and does not register a Leanback launcher entry. It remains a different package from TV production. Package identity cannot migrate automatically across historical prototypes.
 
 Developer Preview launcher requests landscape and restores the previous orientation policy on exit. Resizable iOS 27 windows and browsers can refuse orientation locks; the layout continues to adapt to the actual window. These changes require a native binary; they are not an OTA update.
+
+### Wallpaper and palette rendering (2.0.2)
+
+The optional state `wallpaper` object carries canonical TV preference `id`, `motion`
+and `musicTint`. Older servers remain compatible and use the remote's Ink fallback.
+The remote renders one full-window background, with centered controls on desktop;
+popup anchors use that same full-window coordinate space. Artwork-derived colors
+crossfade for 1.8 seconds in tint and spectrum gradients. Rapid changes begin from
+the currently blended palette; reduced motion applies the target immediately.
+Six shared spectrum bars use their actual height with a minimum equal to their
+width, preserving circular zero levels in collapsed and expanded views. Existing
+native receiver bands remain measured; remote-player fallback bars are animation.

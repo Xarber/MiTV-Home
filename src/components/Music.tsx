@@ -1,15 +1,20 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import React from 'react';
+import React,{useEffect} from 'react';
+import {Spectrum} from './Spectrum';
 import {View,Text,StyleSheet,useWindowDimensions} from 'react-native';
 import {LinearGradient} from 'expo-linear-gradient';
-import Animated,{useReducedMotion} from 'react-native-reanimated';
+import Animated,{useReducedMotion,useSharedValue} from 'react-native-reanimated';
 import Svg,{Circle,Path} from 'react-native-svg';
 import {tracks,timeLabel} from '../model/catalog';
 import {FocusButton} from './FocusButton';
 import {Icon} from './Icon';
 import type {Demo} from '../hooks/useDemo';
 export function Artwork({track=0,size=60}:{track?:number;size?:number}){const colors=tracks[track]!.colors;return <View style={{width:size,height:size,borderRadius:size*.19,overflow:'hidden'}}><LinearGradient colors={colors} style={StyleSheet.absoluteFill}/><View style={{zIndex:1}}><Svg width={size} height={size} viewBox="0 0 100 100"><Circle cx="64" cy="29" r="17" fill="#fff" opacity="0.46"/><Path d="M-5 85 Q38 26 110 65 L110 110 H-5" fill="#281f36" opacity="0.3"/><Path d="M-5 95 Q35 47 110 85 L110 110 H-5" fill="#292936" opacity="0.4"/></Svg></View></View>;}
-export function Waveform({playing,track,small=false,colors:palette,bands}:{playing:boolean;track:number;small?:boolean;colors?:[string,string];bands?:number[]}){const reduced=useReducedMotion();const colors=palette??tracks[track]!.colors;const measured=bands?.length===6;return <View accessibilityLabel={measured?'Sampled audio spectrum':'Playback animation'} style={{flexDirection:'row',alignItems:'center',height:small?22:32,gap:small?2:4}}>{[.32,.62,.9,.75,.5,.3].map((n,i)=><Animated.View key={i} style={{width:small?2:5,height:playing?(small?20:32)*(measured?(playing?Math.max(.12,Math.min(.92,(20*Math.log10(Math.max(.0001,bands![i]!))+52)/46)):.12):n):2,transitionProperty:['height'],transitionDuration:reduced?0:220,borderRadius:9,overflow:'hidden',animationName:playing&&!reduced&&!measured?{from:{transform:[{scaleY:.3}]},to:{transform:[{scaleY:1}]}}:undefined,animationDuration:600+i*127,animationDirection:'alternate',animationIterationCount:'infinite',animationDelay:i*-170}}><LinearGradient colors={colors} style={StyleSheet.absoluteFill}/></Animated.View>)}</View>;}
+export function Waveform({playing,track,small=false,colors:palette,bands}:{playing:boolean;track:number;small?:boolean;colors?:[string,string];bands?:number[]}){
+ const values=useSharedValue([.32,.62,.9,.75,.5,.3]),measured=bands?.length===6;
+ useEffect(()=>{if(measured)values.set(bands!.map(value=>Math.max(.12,Math.min(.92,(20*Math.log10(Math.max(.0001,value))+52)/46))));},[bands]);
+ return <Spectrum values={values} playing={playing} decorative={!measured} small={small} colors={palette??tracks[track]!.colors} width={small?2:5} height={small?20:32} gap={small?2:4} label={measured?'Sampled audio spectrum':'Playback animation'} period={600} stagger={127} phase/>;
+}
 export function MusicPanel({demo,t}:{demo:Demo;t:(s:string)=>string}){const compact=useWindowDimensions().width<600;const song=tracks[demo.track]!;return <>
  <View style={{flexDirection:'row',gap:compact?14:22,alignItems:'center',marginTop:0}}><Artwork track={demo.track} size={compact?68:84}/><View style={{flex:1,gap:7}}><Text style={s.title}>{song.title}</Text><Text style={s.artist}>{song.artist}</Text><Text style={s.hint}>{song.album}</Text></View>{!compact&&<View style={{transform:[{scale:.85}]}}><Waveform track={demo.track} playing={demo.playing}/></View>}</View>
  <View style={{marginTop:16,gap:7}}><View style={s.progress}><View style={{height:4,borderRadius:2,backgroundColor:'#fff',width:`${demo.position/song.duration*100}%`}}/></View><View style={{flexDirection:'row',justifyContent:'space-between'}}><Text style={s.time}>{timeLabel(demo.position)}</Text><Text style={s.time}>−{timeLabel(song.duration-demo.position)}</Text></View></View>

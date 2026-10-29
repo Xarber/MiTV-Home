@@ -62,3 +62,18 @@ is substituted when a native request fails.
 `ready` confirms a valid initial snapshot and enables the native startup recovery
 guard. Release/update actions delegate to existing native controllers; backup and
 restore use Android document providers and preserve the existing validation rules.
+
+## Remote wallpaper / browser demo extension (2.0.2)
+
+`/api/state` may include `wallpaper: {id: string, motion: boolean, musicTint: boolean}`.
+The phone validates this optional value without rejecting older state payloads.
+The native service reads existing TV preferences and does not modify them.
+
+The explicit Node demo server implements the existing hello/pair/state/catalog,
+key/launch/media/presence/revoke protocol, with `provenance: simulated` and music
+source `demo`. Native system-pairing operations are intentionally unsupported.
+The private loopback POST `/__demo/events` streams NDJSON; `/__demo/state` accepts
+owner snapshots and returns phone presence plus the LAN URL. Both require the
+in-memory owner header and matching tab identity. `/__demo/health` reports owner
+availability without credentials. No private endpoint or authenticated response
+is cached by the PWA. See EXPO_DEMO.md for security and lifecycle constraints.

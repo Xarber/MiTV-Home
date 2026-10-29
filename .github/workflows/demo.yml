@@ -23,6 +23,8 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: Browser regression tests
         run: npm run test:e2e
+      - name: Paired browser demo remote
+        run: npm run test:demo-bridge
       - name: PWA update and offline validation
         if: ${{ !cancelled() }}
         run: node scripts/expo/verify-pwa-update.mjs

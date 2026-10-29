@@ -69,7 +69,7 @@ public final class HomeRemoteService extends Service {
     @Override public void onDestroy(){main.removeCallbacks(monitor);if(server!=null)server.stop();if(playback!=null)playback.close();if(system!=null){SystemRemoteController closing=system;new Thread(closing::close,"AureaRemoteClose").start();}server=null;if(instance==this)instance=null;super.onDestroy();}
     private JSONObject handle(String operation,JSONObject payload)throws Exception{
         main.post(()->{if(playback!=null)playback.clients(server!=null&&server.hasActiveRemote());});
-        if(operation.equals("state"))return new JSONObject().put("schema",1).put("name",DeviceName.read(this)).put("observedAt",System.currentTimeMillis()).put("homeActive",home()!=null||TVPlatform.foreground()).put("systemRemote",system.state()).put("music",playback.state());
+        if(operation.equals("state"))return new JSONObject().put("schema",1).put("name",DeviceName.read(this)).put("observedAt",System.currentTimeMillis()).put("homeActive",home()!=null||TVPlatform.foreground()).put("systemRemote",system.state()).put("music",playback.state()).put("wallpaper",wallpaper());
         if(operation.equals("catalog"))return catalog.read();
         if(operation.equals("icon"))return catalog.icon(payload.optString("id"));
         if(operation.equals("artwork")){playback.state();JSONObject art=playback.artwork();return payload.optString("id").equals(art.optString("id"))?art:SystemRemoteController.error("source_changed");}
@@ -79,7 +79,6 @@ public final class HomeRemoteService extends Service {
         if(operation.equals("launch")){
             String id=payload.optString("id");if(id.length()>512||!catalog.contains(id))return SystemRemoteController.error("unknown_target");
             if(TVPlatform.foreground())return onMain(()->catalog.launch(TVPlatform.get(this),id));
-            if(command.equals("control"))return SystemRemoteController.error("home_required");
         if(home()!=null)return onMain(()->{LegacyHomeActivity activity=home();if(activity==null)return SystemRemoteController.error("home_changed");catalog.launch(activity,id);return accepted();});
             android.content.pm.ResolveInfo defaultHome=getPackageManager().resolveActivity(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME),android.content.pm.PackageManager.MATCH_DEFAULT_ONLY);
             if(!Settings.canDrawOverlays(this)&&(defaultHome==null||defaultHome.activityInfo==null||!getPackageName().equals(defaultHome.activityInfo.packageName)))return SystemRemoteController.error("set_default_home");
@@ -88,10 +87,12 @@ public final class HomeRemoteService extends Service {
         if(operation.equals("key"))return key(payload.optString("command"));
         return SystemRemoteController.error("unsupported");
     }
+    private JSONObject wallpaper()throws Exception{android.content.SharedPreferences preferences=getSharedPreferences("it.xarber.tvhome.MainActivity",0);return new JSONObject().put("id",preferences.getString("wallpaper","classic")).put("motion",preferences.getBoolean("wallpaper-motion",false)).put("musicTint",preferences.getBoolean("music-wallpaper-tint",false));}
     private JSONObject key(String command)throws Exception{
         if(!command.matches("up|down|left|right|ok|back|home|volumeup|volumedown|playpause|next|previous|menu|control"))return SystemRemoteController.error("unsupported");
         if(TVPlatform.foreground())return TVPlatform.remoteKey(command);
         if(home()!=null)return onMain(()->{LegacyHomeActivity activity=home();if(activity==null)return SystemRemoteController.error("home_changed");activity.remoteCommand(command);return accepted();});
+        if(command.equals("control"))return SystemRemoteController.error("home_required");
         if(command.equals("home")){
             android.content.pm.ResolveInfo resolved=getPackageManager().resolveActivity(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME),android.content.pm.PackageManager.MATCH_DEFAULT_ONLY);
             boolean ownHome=resolved!=null&&resolved.activityInfo!=null&&getPackageName().equals(resolved.activityInfo.packageName);
