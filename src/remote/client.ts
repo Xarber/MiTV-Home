@@ -99,6 +99,11 @@ export class RemoteClient {
  key(command:RemoteKey){return this.action('key',{command});}
  launch(id:string){return this.action('launch',{id});}
  media(action:MediaAction,value?:number){return this.action('media',{source:this.snapshot.device?.music.source,action,...(value===undefined?{}:{value})});}
+ async systemConnect(){
+  const generation=this.generation;
+  try{await this.rpc('system_connect',{},25000);if(generation===this.generation){this.update({error:undefined});this.refresh();}}
+  catch(error){if(generation===this.generation)this.update({error:this.code(error)});}
+ }
  async systemPair(pin?:string){
   if(this.snapshot.systemBusy)return;
   const generation=this.generation;this.update({systemBusy:true});

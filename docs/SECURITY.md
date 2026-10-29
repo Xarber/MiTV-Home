@@ -65,3 +65,10 @@ RSA key wrapping. Existing HTTP initial pairing/public-key delivery still assume
 a trusted LAN and does not provide TLS identity protection against active attacks.
 Capture stops on backgrounding, TV changes and timeout; server idle expiry bounds
 cleanup after network loss. Details: [phone voice](features/PHONE_VOICE.md).
+
+The Remote v2 native TLS adapter restricts endpoints to this TV's own interfaces
+and pairing/control ports. Its random abstract Unix IPC socket additionally checks
+Android peer UID. It adds no public relay, debug permission, accessibility grant,
+ADB client or key rotation. The self-signed service-certificate exchange follows
+the existing upstream protocol trust model. See
+[system transport](features/SYSTEM_REMOTE_TRANSPORT.md) for limits and cancellation.

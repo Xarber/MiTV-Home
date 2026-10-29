@@ -2,7 +2,7 @@
 import {Platform} from 'react-native';
 import type {Transport} from './types';
 import {localAddress,RemoteError} from './validation';
-const routes:Record<string,string>={voice_start:'/api/voice/start',voice_chunk:'/api/voice/chunk',voice_end:'/api/voice/end',revoke:'/api/revoke',hello:'/hello',state:'/api/state',catalog:'/api/catalog',icon:'/api/icon',artwork:'/api/artwork',key:'/api/key',launch:'/api/launch',media:'/api/media',presence:'/api/presence',pair_start:'/pair/start',pair:'/pair',system_pair_begin:'/api/system/pair/start',system_pair_finish:'/api/system/pair/finish'};
+const routes:Record<string,string>={system_connect:'/api/system/connect',voice_start:'/api/voice/start',voice_chunk:'/api/voice/chunk',voice_end:'/api/voice/end',revoke:'/api/revoke',hello:'/hello',state:'/api/state',catalog:'/api/catalog',icon:'/api/icon',artwork:'/api/artwork',key:'/api/key',launch:'/api/launch',media:'/api/media',presence:'/api/presence',pair_start:'/pair/start',pair:'/pair',system_pair_begin:'/api/system/pair/start',system_pair_finish:'/api/system/pair/finish'};
 export class LocalTransport implements Transport {
  readonly address:string;
  constructor(address:string){this.address=localAddress(address);}

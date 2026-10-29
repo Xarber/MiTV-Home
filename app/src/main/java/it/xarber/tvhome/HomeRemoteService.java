@@ -73,6 +73,7 @@ public final class HomeRemoteService extends Service {
         if(operation.equals("catalog"))return catalog.read();
         if(operation.equals("icon"))return catalog.icon(payload.optString("id"));
         if(operation.equals("artwork")){playback.state();JSONObject art=playback.artwork();return payload.optString("id").equals(art.optString("id"))?art:SystemRemoteController.error("source_changed");}
+        if(operation.equals("system_connect"))return system.request("connect",new JSONObject());
         if(operation.equals("system_pair_begin"))return system.request("pair_begin",new JSONObject());
         if(operation.equals("system_pair_finish"))return system.request("pair_finish",new JSONObject().put("pin",payload.optString("pin")));
         if(operation.equals("voice_start")||operation.equals("voice_chunk")||operation.equals("voice_end"))return system.request(operation,payload);

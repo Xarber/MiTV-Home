@@ -16,6 +16,7 @@ import tempfile
 import threading
 import time
 from playback_diagnostics import Recorder
+from system_remote_tls import NativeTlsError
 
 KEYS={'up':'DPAD_UP','down':'DPAD_DOWN','left':'DPAD_LEFT','right':'DPAD_RIGHT',
       'ok':'DPAD_CENTER','back':'BACK','home':'HOME','volumeup':'VOLUME_UP',
@@ -24,9 +25,10 @@ KEYS={'up':'DPAD_UP','down':'DPAD_DOWN','left':'DPAD_LEFT','right':'DPAD_RIGHT',
       'stop':'MEDIA_STOP','voice':'VOICE_ASSIST','red':'PROG_RED','green':'PROG_GREEN','yellow':'PROG_YELLOW','blue':'PROG_BLUE'}
 
 class Client:
-    def __init__(self,directory,diagnostics,version,commit):
+    def __init__(self,directory,diagnostics,version,commit,native_tls=None):
         logger=logging.getLogger('androidtvremote2')
         logger.handlers=[logging.NullHandler()];logger.propagate=False;logger.setLevel(logging.CRITICAL)
+        self.native_tls=native_tls;self.protocol_loop=None
         self.voice=None;self.voice_starting=False;self.voice_timer=None;self.local_address=None;self.loop=asyncio.new_event_loop();self.remote=None;self.stage=None;self.ready=False
         self.paired=False;self.status='not_paired';self.directory=directory;self.pair_deadline=0
         self.recorder=Recorder(diagnostics,version,commit,basename='system-remote')
@@ -41,7 +43,7 @@ class Client:
             if pending:self.loop.run_until_complete(asyncio.gather(*pending,return_exceptions=True))
             self.loop.close()
     def request(self,operation,payload='{}'):
-        if operation=='state':return json.dumps({'status':self.status,'ready':self.ready,'paired':self.paired})
+        if operation=='state':return json.dumps({'status':self.status,'ready':self.ready,'paired':self.paired,'backend':getattr(self.protocol_loop,'backend','android-tls' if self.native_tls else 'python-tls')})
         names={'prepare':'system_prepare','pair_begin':'system_pair_begin','pair_finish':'system_pair_finish','key':'system_key','connect':'system_connect','voice_start':'voice_start','voice_chunk':'voice_chunk','voice_end':'voice_end','voice_cancel':'voice_end','disconnect':'system_disconnect','shutdown':'system_disconnect'}
         if operation not in names:return json.dumps({'error':'unsupported'})
         record=names[operation];self.recorder.write('start',record)
@@ -51,10 +53,16 @@ class Client:
             self.recorder.write('failure' if 'error' in result else 'success',record,error=result.get('error'))
             return json.dumps(result)
         except Exception as error:
+            native_error=None;cause=error
+            for _ in range(8):
+                if isinstance(cause,NativeTlsError):native_error=cause;break
+                cause=getattr(cause,'__cause__',None)
+                if cause is None:break
             if isinstance(error,concurrent.futures.TimeoutError):future.cancel();code='timeout'
-            elif type(error).__name__=='InvalidAuth':code='authentication_failed';self.status='not_paired';self.paired=False
+            elif type(error).__name__=='InvalidAuth' or native_error is not None and native_error.code=='authentication_failed':code='authentication_failed';self.status='not_paired';self.paired=False
+            elif native_error is not None:code='system_tls_failed';self.status='unavailable'
             else:code=('pairing_interrupted' if type(error).__name__=='ConnectionClosed' else 'system_pairing_unverified') if operation=='pair_finish' else 'connection_failed';self.status='unavailable'
-            self.ready=False;self.recorder.write('failure',record,error=code,exception=error)
+            self.ready=False;self.recorder.write('failure',record,error=code,exception=error,host_exception=native_error.failure if native_error is not None else '')
             return json.dumps({'error':code})
     async def _dispatch(self,operation,data):
         if operation=='prepare':
@@ -72,7 +80,14 @@ class Client:
             for path,value in [(cert_path,cert),(key_path,key)]:
                 descriptor=os.open(path,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600)
                 with os.fdopen(descriptor,'w') as output:output.write(value)
-            self.remote=AndroidTVRemote('Aurea Home',str(cert_path),str(key_path),'127.0.0.1',loop=self.loop,enable_ime=False,enable_voice=True)
+            protocol_loop=self.loop
+            if self.native_tls:
+                from cryptography.hazmat.primitives import serialization
+                from system_remote_tls import NativeTlsLoop
+                pkcs8=serialization.load_pem_private_key(key.encode(),password=None).private_bytes(serialization.Encoding.PEM,serialization.PrivateFormat.PKCS8,serialization.NoEncryption()).decode()
+                protocol_loop=NativeTlsLoop(self.loop,self.native_tls,cert,pkcs8)
+            self.protocol_loop=protocol_loop
+            self.remote=AndroidTVRemote('Aurea Home',str(cert_path),str(key_path),'127.0.0.1',api_port=6466,pair_port=6467,loop=protocol_loop,enable_ime=False,enable_voice=True)
             local=data.get('localAddress')
             try:self.local_address=local if isinstance(local,str) and ipaddress.ip_address(local).version==4 and ipaddress.ip_address(local).is_private and not ipaddress.ip_address(local).is_loopback else None
             except ValueError:self.local_address=None

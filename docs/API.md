@@ -91,3 +91,12 @@ phone PCM through the paired system remote. Only chunk bodies allow 16 KiB;
 ordinary JSON retains 4 KiB. Voice payloads use ephemeral RSA-OAEP/AES-GCM;
 owner binding, sequencing and deadlines are checked independently of decryption.
 See [exact voice contract and trust limitations](features/PHONE_VOICE.md).
+
+## System control reconnect and backend
+
+`POST /api/system/connect` requires remote trust and reconnects the existing
+system-control identity without initiating pairing or sending a key. The optional
+state `systemRemote.backend` is `android-tls` in the TV host or `python-tls` in host
+protocol tests. Neither backend selection nor saved pairing alone means ready.
+`system_tls_failed` denotes native transport failure; authentication rejection
+remains separate. See [system transport](features/SYSTEM_REMOTE_TRANSPORT.md).

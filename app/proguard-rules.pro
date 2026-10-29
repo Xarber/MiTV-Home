@@ -6,3 +6,6 @@
 
 # Keep NativeBridge native methods
 -keep class io.github.jqssun.airplay.bridge.NativeBridge { *; }
+
+# Chaquopy calls the native TLS adapter by method name.
+-keep class it.xarber.tvhome.SystemRemoteTls { public *; }

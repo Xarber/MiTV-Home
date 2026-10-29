@@ -11,7 +11,7 @@ import threading
 import time
 
 OPERATIONS={"voice_start","voice_chunk","voice_end","scan","pair_begin","pair_finish","connect","state","command","disconnect","cancel_pairing","shutdown","system_prepare","system_connect","system_pair_begin","system_pair_finish","system_key","system_disconnect"}
-ERRORS={"voice_busy","voice_unsupported","voice_session_expired","invalid_voice_packet","voice_sequence","system_pairing_required","connection_failed","authorization_rejected","http_error","timeout","authentication_failed","receiver_backoff","network_error","invalid_pin","pairing_failed","device_unavailable","pairing_required","disconnected","unsupported","invalid_volume","storage_failed","runtime_unavailable","pairing_expired","pairing_canceled","busy"}
+ERRORS={"system_tls_failed","voice_busy","voice_unsupported","voice_session_expired","invalid_voice_packet","voice_sequence","system_pairing_required","connection_failed","authorization_rejected","http_error","timeout","authentication_failed","receiver_backoff","network_error","invalid_pin","pairing_failed","device_unavailable","pairing_required","disconnected","unsupported","invalid_volume","storage_failed","runtime_unavailable","pairing_expired","pairing_canceled","busy"}
 PATHS={"/pair-pin-start","/pair-setup","/pair-verify"}
 IDENTIFIER=re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,63}$")
 

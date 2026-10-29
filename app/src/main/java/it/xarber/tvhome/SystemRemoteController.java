@@ -13,6 +13,7 @@ final class SystemRemoteController {
     private final Context context;
     private final PairingStore store;
     private volatile PyObject client;
+    private final SystemRemoteTls tls=new SystemRemoteTls();
     private volatile boolean paired;
     private final java.util.concurrent.ExecutorService recovery=java.util.concurrent.Executors.newSingleThreadExecutor();
     private final java.util.concurrent.atomic.AtomicBoolean recovering=new java.util.concurrent.atomic.AtomicBoolean();
@@ -29,7 +30,7 @@ final class SystemRemoteController {
             if(operation.equals("voice_end")||operation.equals("voice_cancel"))return new JSONObject().put("accepted",true);
             synchronized(Python.class){if(!Python.isStarted())Python.start(new AndroidPlatform(context));}
             java.io.File diagnostics=context.getExternalFilesDir("diagnostics");if(diagnostics==null)diagnostics=new java.io.File(context.getFilesDir(),"diagnostics");diagnostics.mkdirs();
-            client=Python.getInstance().getModule("system_remote").get("Client").call(context.getCacheDir().getAbsolutePath(),diagnostics.getAbsolutePath(),io.github.jqssun.airplay.BuildConfig.VERSION_NAME,io.github.jqssun.airplay.BuildConfig.SOURCE_COMMIT);
+            client=Python.getInstance().getModule("system_remote").get("Client").call(context.getCacheDir().getAbsolutePath(),diagnostics.getAbsolutePath(),io.github.jqssun.airplay.BuildConfig.VERSION_NAME,io.github.jqssun.airplay.BuildConfig.SOURCE_COMMIT,tls);
             JSONObject stored=store.read(),credentials=stored==null?new JSONObject():new JSONObject(stored.getString("credentials"));paired=credentials.optBoolean("paired");
             JSONObject configuration=new JSONObject(credentials.toString());
             // Compatibility fallback is this device's own interface, never a client-supplied LAN peer.
@@ -62,6 +63,6 @@ final class SystemRemoteController {
         catch(Exception failure){return error("storage_failed");}
     }
     void cancelVoice(){try{recovery.execute(()->{if(!closed&&client!=null)request("voice_cancel",new JSONObject());});}catch(java.util.concurrent.RejectedExecutionException ignored){}}
-    synchronized void close(){closed=true;recovery.shutdownNow();try{if(client!=null)client.callAttr("request","shutdown");}catch(Exception ignored){}client=null;}
+    synchronized void close(){closed=true;recovery.shutdownNow();try{if(client!=null)client.callAttr("request","shutdown");}catch(Exception ignored){}client=null;tls.shutdown();}
     static JSONObject error(String key){JSONObject value=new JSONObject();try{value.put("error",key);}catch(Exception ignored){}return value;}
 }

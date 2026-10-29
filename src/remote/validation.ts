@@ -18,6 +18,7 @@ export function parseState(raw:Record<string,unknown>):RemoteState{
  const wallpaper=raw.wallpaper as Record<string,unknown>|undefined;if(wallpaper&&text(wallpaper.id,64))raw.wallpaper={id:wallpaper.id,motion:wallpaper.motion===true,musicTint:wallpaper.musicTint===true};else delete raw.wallpaper;
  const system=raw.systemRemote as Record<string,unknown>|undefined,music=raw.music as Record<string,unknown>|undefined;
  if(!system||typeof system.paired!=='boolean'||!text(system.status,64)||!music||typeof music.active!=='boolean')throw new RemoteError('invalid_response');
+ if(system.backend!==undefined&&!['android-tls','python-tls'].includes(String(system.backend)))delete system.backend;
  if(music.activityVisible!==undefined&&typeof music.activityVisible!=='boolean')delete music.activityVisible;
  if(music.colors!==undefined&&(!Array.isArray(music.colors)||music.colors.length!==2||!music.colors.every(value=>typeof value==='string'&&/^#[0-9a-f]{6}$/i.test(value))))delete music.colors;
  if(music.bands!==undefined&&(!Array.isArray(music.bands)||music.bands.length!==6||!music.bands.every(value=>finite(value)&&Number(value)<=1)))delete music.bands;

@@ -79,3 +79,8 @@ MusicActivityClock controls presentation visibility separately from playback sta
 usePaletteTransition supplies interruptible static-layer crossfades to Wallpaper
 and PaletteGradient. MusicTint sits between wallpaper and hero artwork and retains
 its layer through preference exit fades; it never alters blur or banner pixels.
+
+The system remote transport has an Android SSLSocket adapter in SystemRemoteTls
+with same-UID private Unix IPC to the pinned Python v2 protocol. Browser commands
+still terminate at the authenticated TV HTTP service. See
+[transport/lifecycle boundaries](features/SYSTEM_REMOTE_TRANSPORT.md).
