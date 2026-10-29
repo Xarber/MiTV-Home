@@ -2,6 +2,48 @@
   "schema": 1,
   "releases": [
     {
+      "version": "2.0.4",
+      "code": 30,
+      "date": "2026-10-29",
+      "critical": false,
+      "highlights": {
+        "en": "More reliable Home controls and smoother wallpaper changes.",
+        "it": "Controlli Home più affidabili e cambi di sfondo graduali."
+      },
+      "fixes": {
+        "en": "Single Home/input ownership; paused activities hide after five minutes. Wallpaper tint stays behind banners, covers rotating edges, and is slightly dimmer only on TV. Corrects explicit launcher export declarations.",
+        "it": "Una sola Home gestisce gli input; le attività in pausa spariscono dopo cinque minuti. La tinta resta dietro i banner, copre i bordi in movimento ed è leggermente meno intensa solo sulla TV. Corrette le dichiarazioni di avvio Android."
+      },
+      "compatibility": {
+        "en": "Background Home and AirPlay use Android-supported task restoration and may require Display over other apps permission. New native behavior awaits device validation.",
+        "it": "Home e AirPlay in background usano le API Android e possono richiedere il permesso Mostra sopra altre app. Le modifiche native richiedono verifica sul dispositivo."
+      },
+      "features": [
+        {
+          "icon": "controls",
+          "label": {
+            "en": "Home and remote recovery",
+            "it": "Ripristino Home e telecomandi"
+          },
+          "detail": {
+            "en": "Retires duplicate Home roots, resets interrupted input state, and offers a background-access permission shortcut.",
+            "it": "Chiude le Home duplicate, ripristina gli input interrotti e offre un collegamento al permesso per il background."
+          }
+        },
+        {
+          "icon": "sound",
+          "label": {
+            "en": "Music and wallpaper transitions",
+            "it": "Musica e transizioni dello sfondo"
+          },
+          "detail": {
+            "en": "Activities expire after five paused minutes and return on playback; wallpapers and music tint preferences fade gradually.",
+            "it": "Le attività spariscono dopo cinque minuti di pausa e tornano alla ripresa; sfondi e tinta musicale cambiano gradualmente."
+          }
+        }
+      ]
+    },
+    {
       "version": "2.0.3",
       "code": 29,
       "date": "2026-10-29",

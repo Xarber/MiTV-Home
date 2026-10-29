@@ -41,6 +41,7 @@ import { Panels } from './src/components/Panels';
 import { SlidingDetails } from './src/components/SlidingDetails';
 import { anchorFor, Anchor } from './src/components/AnchoredPanel';
 import { BlurTargetView } from 'expo-blur';
+import {useMusicActivity} from './src/hooks/useMusicActivity';
 import {useDemoRemoteServer} from './src/hooks/useDemoRemoteServer';
 import {MusicTint} from './src/components/MusicTint';
 import { Glass, GlassTarget, BlurEnabled } from './src/components/Glass';
@@ -186,6 +187,8 @@ function LauncherView({ demo,onTarget }: { demo: Launcher;onTarget?:(id:string)=
   );
 
   const demoServer=useDemoRemoteServer(demo,launch);
+  const musicVisible=useMusicActivity(demo.music,demo.playing,demo.snapshot?.music.activityVisible);
+  useEffect(()=>{if(!musicVisible&&demo.panel==='music')demo.close();if(!musicVisible&&demo.native&&nativeFocus.current==='activity-music')focusId('header-wifi');},[musicVisible,demo.panel]);
   const menu = useCallback(
     (id: string) => {
       if (catalog.some((a) => a.id === id)) demo.setPanel(`menu:${id}`);
@@ -210,7 +213,7 @@ function LauncherView({ demo,onTarget }: { demo: Launcher;onTarget?:(id:string)=
       return;
     }
     nativeFocus.measureGroup('page-' + page, () => {
-      nativeFocus.endTransition(token);
+      if(!nativeFocus.endTransition(token))return;
       const keepHeader=nativeFocus.group==='header'&&nativeFocus.node(nativeFocus.current);
       const remembered=rememberedFocus.current['page-'+page];
       const id =keepHeader?nativeFocus.current:remembered&&nativeFocus.node(remembered)?remembered:
@@ -238,6 +241,7 @@ function LauncherView({ demo,onTarget }: { demo: Launcher;onTarget?:(id:string)=
         },
       ),
     );
+    return()=>{if(native)nativeFocus.endTransition(token);};
   }, [demo.page, canvasHeight, reduced, demo.ready]);
 
   useEffect(() => {
@@ -389,8 +393,9 @@ function LauncherView({ demo,onTarget }: { demo: Launcher;onTarget?:(id:string)=
       <View style={[s.root, { height: canvasHeight, maxHeight: canvasHeight }]}>
         <BlurTargetView ref={target} style={StyleSheet.absoluteFill}>
           <Wallpaper id={demo.prefs.wallpaper} motion={demo.prefs.motion} />
+          <MusicTint enabled={demo.prefs.musicTint===true} playing={demo.playing&&demo.music} colors={demo.native?(demo.snapshot?.music.colors??['#e6eaf0','#929aa8']):tracks[demo.track]!.colors}/>
 
-          <View
+          <View testID="launcher-hero"
             style={[
               s.hero,
               demo.native && selected.kind === 'app' && { bottom: 0 },
@@ -464,7 +469,6 @@ function LauncherView({ demo,onTarget }: { demo: Launcher;onTarget?:(id:string)=
               />
             )}
           </View>
-          <MusicTint enabled={demo.prefs.musicTint===true} playing={demo.playing&&demo.music} colors={demo.native?(demo.snapshot?.music.colors??['#e6eaf0','#929aa8']):tracks[demo.track]!.colors}/>
         </BlurTargetView>
         <View nativeID="launcher-scene" style={{ flex: 1, overflow: 'hidden' }}>
           {demo.page > 0 && (
@@ -477,7 +481,7 @@ function LauncherView({ demo,onTarget }: { demo: Launcher;onTarget?:(id:string)=
           )}
           <View style={[s.header, { paddingHorizontal: compact ? 22 : 48 }]}>
             <View style={s.activities}>
-              {demo.music && (
+              {musicVisible && (
                 <FocusButton
                   id="activity-music"
                   group="header"

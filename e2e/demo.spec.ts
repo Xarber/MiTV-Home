@@ -114,3 +114,11 @@ test('expanded paused bars are circles and song palettes crossfade',async({page}
  await focus(page,'music-1').click();await focus(page,'music-2').click();await page.waitForTimeout(260);const fade=page.getByTestId('music-wallpaper-tint').getByTestId('palette-fade');const midway=await fade.evaluate(element=>Number(getComputedStyle(element).opacity));expect(midway).toBeGreaterThan(0);expect(midway).toBeLessThan(.8);
  await focus(page,'music-2').click();await page.waitForTimeout(250);expect(await fade.evaluate(element=>Number(getComputedStyle(element).opacity))).toBeLessThan(.8);await expect(fade).toHaveCSS('opacity','1');
 });
+
+test('wallpaper selection and tint preference fade without tinting the foreground banner',async({page})=>{
+ await focus(page,'dock:music').click();await page.keyboard.press('Escape');await page.keyboard.press('c');await focus(page,'panel-Wallpapers').click();
+ await focus(page,'wallpaper-dune').click();const wall=page.getByTestId('wallpaper-fade');await page.waitForTimeout(180);const alpha=await wall.evaluate(element=>Number(getComputedStyle(element).opacity));expect(alpha).toBeGreaterThan(0);expect(alpha).toBeLessThan(1);await expect(wall).toHaveCSS('opacity','1');
+ const tint=page.getByTestId('music-wallpaper-tint');await focus(page,'panel-Music wallpaper tint').click();await page.waitForTimeout(180);const on=await tint.evaluate(element=>Number(getComputedStyle(element).opacity));expect(on).toBeGreaterThan(0);expect(on).toBeLessThan(.24);await expect(tint).toHaveCSS('opacity','0.24');
+ await focus(page,'panel-Music wallpaper tint').click();await page.waitForTimeout(180);const off=await tint.evaluate(element=>Number(getComputedStyle(element).opacity));expect(off).toBeGreaterThan(0);expect(off).toBeLessThan(.24);await expect(tint).toHaveCSS('opacity','0');
+ expect(await tint.evaluate(element=>!!(element.compareDocumentPosition(document.querySelector('[data-testid="launcher-hero"]')!)&Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
+});

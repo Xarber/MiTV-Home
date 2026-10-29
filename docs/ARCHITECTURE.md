@@ -67,3 +67,15 @@ The optional useDemoRemoteServer hook runs only when the explicit Node server
 provides a loopback owner credential. It publishes fixture snapshots and maps
 validated commands to the existing demo model. Native platform adapters and
 phone trust storage remain separate. See features/EXPO_DEMO.md.
+
+### Single Home ownership and wallpaper transitions
+
+Android may create distinct HOME/ordinary task roots despite singleTask.
+MainActivity retires its previous Home instance; the bridge also leases keyboard
+input to one mounted root. Event identities prevent replay, and lifecycle recovery
+cancels held keys and stale transition ownership. HomeForeground centralizes own-task
+restoration and canonical Home intents; background restrictions are not bypassed.
+MusicActivityClock controls presentation visibility separately from playback state.
+usePaletteTransition supplies interruptible static-layer crossfades to Wallpaper
+and PaletteGradient. MusicTint sits between wallpaper and hero artwork and retains
+its layer through preference exit fades; it never alters blur or banner pixels.

@@ -2,6 +2,14 @@
 
 Generated from `app/src/main/assets/release-history.json`. Legacy versions reflect repository history; dates describe implementation, not a verified public release.
 
+## 2.0.4 — 2026-10-29
+
+More reliable Home controls and smoother wallpaper changes.
+
+### Fixes & Improvements
+
+Single Home/input ownership; paused activities hide after five minutes. Wallpaper tint stays behind banners, covers rotating edges, and is slightly dimmer only on TV. Corrects explicit launcher export declarations.
+
 ## 2.0.3 — 2026-10-29
 
 Android launcher registration and build reliability improvements.
