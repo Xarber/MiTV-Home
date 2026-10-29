@@ -1,0 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+import {test} from 'node:test';import assert from 'node:assert/strict';
+import {fullRemote,TouchpadMotion} from '../../src/remote/remoteNavigation.ts';
+test('automatic remote follows foreground without overriding an explicit choice',()=>{assert.equal(fullRemote('auto',true),false);assert.equal(fullRemote('auto',false),true);assert.equal(fullRemote('auto',undefined),false);assert.equal(fullRemote('home',false),false);assert.equal(fullRemote('full',true),true);});
+test('touchpad emits one select for a tap and no select after a swipe',()=>{const pad=new TouchpadMotion();pad.begin();assert.equal(pad.end(),'ok');pad.begin();assert.equal(pad.move(10,2),undefined);assert.equal(pad.move(42,2),'right');assert.equal(pad.move(43,3),undefined);assert.equal(pad.end(),undefined);pad.begin();assert.equal(pad.move(0,-41),'up');pad.begin();assert.equal(pad.move(-45,0),'left');pad.begin();assert.equal(pad.move(0,42),'down');});
+test('small movement is not interpreted as a click once it leaves tap slop',()=>{const pad=new TouchpadMotion();pad.begin();pad.move(12,12);assert.equal(pad.end(),undefined);pad.begin();assert.equal(pad.move(NaN,100),undefined);assert.equal(pad.end(),'ok');});

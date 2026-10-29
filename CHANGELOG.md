@@ -2,6 +2,14 @@
 
 Generated from `app/src/main/assets/release-history.json`. Legacy versions reflect repository history; dates describe implementation, not a verified public release.
 
+## 2.0.7 — 2026-10-29
+
+A complete TV remote with automatic view switching and a touchpad.
+
+### Fixes & Improvements
+
+Use Android platform TLS for system controls, add a separate reconnect action, restore Classic wallpaper and match the connected TV in launcher preview.
+
 ## 2.0.6 — 2026-10-29
 
 Use your phone microphone for Android TV voice search.

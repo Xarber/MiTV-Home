@@ -164,3 +164,11 @@ only the assistant key. See [voice capture, encryption and compatibility](PHONE_
 Native phones request recording consent; secure browsers use AudioWorklet.
 The TV's HTTP remote page explains the browser restriction. No audio files are
 saved; sessions stop on cancellation/background/disconnect and after 30 seconds.
+
+### Automatic complete handset (2.0.7)
+
+The main Remote tab now switches to a complete handset when Home is no longer
+foreground. Auto/Home/Complete controls allow manual selection; Arrows/Touchpad
+switch the navigation surface. Complete controls are grouped as a handset rather
+than a popup grid. The system reconnect action uses existing pairing. See
+[transport, native TLS and compatibility](SYSTEM_REMOTE_TRANSPORT.md).

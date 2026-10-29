@@ -38,3 +38,5 @@ See [phone remote](features/PHONE_REMOTE.md), [PWA](features/PWA.md), and [brand
 - [System controls, build triage and TV colors](reports/2026-10-29-system-controls-colors.md)
 - [Phone microphone capture and TV voice service](features/PHONE_VOICE.md)
 - [Phone microphone implementation and validation](reports/2026-10-29-phone-voice.md)
+- [System remote TLS and adaptive handset](features/SYSTEM_REMOTE_TRANSPORT.md)
+- [Remote transport, handset and Classic restoration report](reports/2026-10-29-system-remote-handset.md)

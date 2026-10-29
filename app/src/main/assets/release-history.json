@@ -2,6 +2,48 @@
   "schema": 1,
   "releases": [
     {
+      "version": "2.0.7",
+      "code": 34,
+      "date": "2026-10-29",
+      "critical": false,
+      "highlights": {
+        "en": "A complete TV remote with automatic view switching and a touchpad.",
+        "it": "Telecomando TV completo con cambio automatico della vista e touchpad."
+      },
+      "fixes": {
+        "en": "Use Android platform TLS for system controls, add a separate reconnect action, restore Classic wallpaper and match the connected TV in launcher preview.",
+        "it": "Usa TLS nativo Android per i controlli di sistema, aggiunge la riconnessione, ripristina lo sfondo Classic e lo mantiene nell’anteprima del launcher."
+      },
+      "compatibility": {
+        "en": "System controls need the Android TV Remote Service pairing. Browser commands still pass through the trusted TV server. Native TLS interoperability needs device verification; no ADB or accessibility fallback is enabled.",
+        "it": "I controlli di sistema richiedono l’abbinamento al servizio telecomando Android TV. I comandi web passano dal server TV autorizzato. La compatibilità TLS richiede verifica sul dispositivo; nessun fallback ADB o accessibilità è attivato."
+      },
+      "features": [
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Complete remote",
+            "it": "Telecomando completo"
+          },
+          "detail": {
+            "en": "Automatically show full controls outside Home, or choose Home/Complete manually. Swipe on the touchpad or use arrow buttons.",
+            "it": "Mostra automaticamente tutti i controlli fuori da Home oppure scegli Home/Completo. Scorri sul touchpad o usa le frecce."
+          }
+        },
+        {
+          "icon": "apps",
+          "label": {
+            "en": "Original Classic colors",
+            "it": "Colori Classic originali"
+          },
+          "detail": {
+            "en": "Restore the original blue/violet artwork instead of the gray fallback, including the remote’s launcher preview.",
+            "it": "Ripristina lo sfondo originale blu/viola al posto del ripiego grigio, anche nell’anteprima del telecomando."
+          }
+        }
+      ]
+    },
+    {
       "version": "2.0.6",
       "code": 33,
       "date": "2026-10-29",

@@ -26,7 +26,7 @@ test('secure browser microphone sends encrypted ordered PCM and releases capture
  await page.goto('/?remote=1');await page.getByTestId('phone-address').fill(new URL(page.url()).host);
  await page.locator('[data-nav="phone-connect"]').click();await page.getByTestId('phone-pin').fill('123456');await page.locator('[data-nav="phone-pair"]').click();await page.locator('[data-nav="phone-paired-done"]').click();
  await page.locator('[data-nav="phone-tv-controls"]').click();
- const button=page.locator('[data-nav="phone-tv-microphone"]');await button.click();await expect(button).toContainText('Listening');
- await expect.poll(()=>chunks,{timeout:10000}).toBeGreaterThan(0);await button.click();await expect(button).toContainText('Phone microphone');await expect.poll(()=>ended).toBe(1);
+ const button=page.locator('[data-nav="phone-tv-microphone"]');await button.click();await expect(button).toHaveAttribute('aria-label','Stop microphone');
+ await expect.poll(()=>chunks,{timeout:10000}).toBeGreaterThan(0);await button.click();await expect(button).toHaveAttribute('aria-label','Use phone microphone');await expect.poll(()=>ended).toBe(1);
  expect(sizes.every(length=>length>0&&length<=8192&&length%2===0)).toBe(true);key?.fill(0);
 });

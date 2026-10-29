@@ -32,6 +32,6 @@ test('remote provides a combined playback icon, explicit menu and bounded popup'
 
 test('system TV controls expose the standard Android remote keys',async({page})=>{
  await page.goto('/?remote=1&preview=1');await page.locator('[data-nav="phone-tv-controls"]').click();
- for(const label of ['Mute','Home','Back','Use phone microphone','Channel up','Channel down','Previous','Rewind','Play / Pause','Fast forward','Next','Stop','red button','green button','yellow button','blue button'])await expect(page.locator('#demo-panel-content').getByRole('button',{name:label,exact:true})).toBeVisible();
- await page.locator('[data-nav="phone-tv-mute"]').click();await expect(page.locator('#demo-panel-content').getByText('System controls connected')).toBeVisible();
+ for(const label of ['Mute','Home','Back','Use phone microphone','Channel up','Channel down','Previous','Rewind','Play / Pause','Fast forward','Next','Stop','red button','green button','yellow button','blue button'])await expect(page.getByTestId('full-remote').getByRole('button',{name:label,exact:true})).toBeVisible();
+ await page.locator('[data-nav="phone-mute"]').click();await expect(page.getByTestId('full-remote').getByText('System controls connected')).toBeVisible();
 });
