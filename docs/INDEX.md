@@ -33,3 +33,4 @@ See [phone remote](features/PHONE_REMOTE.md), [PWA](features/PWA.md), and [brand
 - [Native remote and music follow-up](reports/2026-10-29-remote-native.md)
 
 - [Palette transitions, demo phone bridge and Android build correction](reports/2026-10-29-palette-demo.md)
+- [Android build failures and physical 2.0.2 installation](reports/2026-10-29-android-build-recovery.md)

@@ -195,7 +195,7 @@ jobs:
           PACKAGE_FORMAT: ${{ matrix.format }}
           TARGET: ${{ matrix.target }}
         run: |
-          FLAGS=()
+          FLAGS=("-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8" --max-workers=2)
           if [ "$TARGET" = remote ]; then FLAGS+=(-PmobileRemote -PhomeApplicationId=it.xarber.aurea.remote); fi
           if [ "$PACKAGE_FORMAT" = apk ]; then TASK=assembleRelease; else TASK=bundleRelease; fi
           ./gradlew :app:compileReleaseJavaWithJavac "${FLAGS[@]}" --console=plain --stacktrace
@@ -256,7 +256,7 @@ jobs:
         env:
           TARGET: ${{ matrix.target }}
         run: |
-          FLAGS=()
+          FLAGS=("-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g -Dfile.encoding=UTF-8" --max-workers=2)
           if [ "$TARGET" = remote ]; then FLAGS+=(-PmobileRemote -PhomeApplicationId=it.xarber.aurea.remote); fi
           ./gradlew :app:lintRelease "${FLAGS[@]}" --console=plain
       - name: Retain lint reports on failure

@@ -30,3 +30,8 @@ pages with in-memory pairing credentials. It does not contact physical TVs. The
 shared browser CI job runs this after regular navigation checks. Spectrum geometry
 and interruptible palette fades are checked in the regular browser suite. Native
 Java compilation runs before Android packaging in each full-build job.
+
+Launcher manifest contracts cover literal TV/phone overlays; packaged AAB checks
+also validate MAIN/HOME/LEANBACK versus phone MAIN/LAUNCHER. The expanded waveform
+circle test polls actual settled geometry instead of relying on a fixed animation
+sleep, keeping the same shape assertion under slower CI rendering.

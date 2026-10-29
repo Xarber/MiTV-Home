@@ -40,3 +40,14 @@ Validated APK jobs emit a public signer/hash/package sidecar. Publication genera
 ## Native installation sources
 
 After the validated application release is publicly published, the distribution-sources job generates stable/beta AltSources from the actual IPA sidecar and released asset, preserving native version/build number, minimum OS, byte size and all declared entitlements/privacy strings. It updates the separate mutable `sources-v1.0` metadata release together with distinct TV/phone Obtainium configurations and existing brand icon. Public metadata and download availability are checked. Testing creates no application or metadata release; source URLs become usable only after the first validated native publication. See [distribution/README.md](../distribution/README.md).
+
+### Android target manifests and CI memory
+
+TV/phone intent filters live in `app/src/tv/AndroidManifest.xml` and
+`app/src/remote/AndroidManifest.xml`, selected for every build type. Keep category
+names literal so lint can validate them. Shared permissions/services remain in the
+main manifest. The phone must not declare Leanback or HOME. AAB validation checks
+these target contracts from the actual packaged manifest. Android Actions commands
+use a 6 GiB Gradle heap and two workers to avoid universal APK zipflinger exhaustion;
+the developer-machine default remains unchanged. Never fix these failures by
+turning off lint, skipping ABIs, or publishing incomplete artifacts.

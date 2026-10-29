@@ -2,6 +2,14 @@
 
 Generated from `app/src/main/assets/release-history.json`. Legacy versions reflect repository history; dates describe implementation, not a verified public release.
 
+## 2.0.3 — 2026-10-29
+
+Android launcher registration and build reliability improvements.
+
+### Fixes & Improvements
+
+Separate TV and phone launcher declarations; additional CI packaging memory and animation-aware browser checks.
+
 ## 2.0.2 — 2026-10-29
 
 Smooth music colors and a phone-controllable web demo.

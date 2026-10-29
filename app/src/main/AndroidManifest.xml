@@ -16,7 +16,6 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
-    <uses-feature android:name="android.software.leanback" android:required="false" />
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
     <uses-feature android:name="android.hardware.faketouch" android:required="false" />
 
@@ -38,8 +37,6 @@
         android:theme="@style/Theme.AirPlayServer">
 
         <activity android:name="it.xarber.tvhome.MainActivity" android:theme="@style/AureaExpoHome" android:exported="true" android:screenOrientation="${homeOrientation}" android:launchMode="singleTask" android:configChanges="orientation|screenSize|keyboard|keyboardHidden|uiMode" android:excludeFromRecents="${homeExcludeRecents}">
-            <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="${homeCategory}"/><category android:name="android.intent.category.DEFAULT"/></intent-filter>
-            <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="${homeSecondaryCategory}"/></intent-filter>
         </activity>
         <activity android:name="it.xarber.tvhome.LegacyHomeActivity" android:theme="@style/AppTheme" android:exported="false" android:screenOrientation="landscape" android:configChanges="orientation|screenSize|keyboard|keyboardHidden|uiMode" />
         <activity

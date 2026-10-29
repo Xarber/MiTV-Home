@@ -24,6 +24,7 @@ jobs:
       - name: Browser regression tests
         run: npm run test:e2e
       - name: Paired browser demo remote
+        if: ${{ !cancelled() }}
         run: npm run test:demo-bridge
       - name: PWA update and offline validation
         if: ${{ !cancelled() }}

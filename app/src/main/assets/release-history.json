@@ -2,6 +2,37 @@
   "schema": 1,
   "releases": [
     {
+      "version": "2.0.3",
+      "code": 29,
+      "date": "2026-10-29",
+      "critical": false,
+      "highlights": {
+        "en": "Android launcher registration and build reliability improvements.",
+        "it": "Registrazione del launcher Android e build più affidabili."
+      },
+      "fixes": {
+        "en": "Separate TV and phone launcher declarations; additional CI packaging memory and animation-aware browser checks.",
+        "it": "Dichiarazioni separate per TV e telefono, più memoria di compilazione e verifiche delle animazioni più affidabili."
+      },
+      "compatibility": {
+        "en": "Retains existing package identifiers, signing keys, preferences and visual effects.",
+        "it": "Mantiene identificatori, firme, preferenze ed effetti visivi esistenti."
+      },
+      "features": [
+        {
+          "icon": "controls",
+          "label": {
+            "en": "Android entry points",
+            "it": "Avvio Android"
+          },
+          "detail": {
+            "en": "TV Home and phone launcher entries are explicit and validated independently.",
+            "it": "Gli avvii per Home TV e telecomando telefono sono espliciti e verificati separatamente."
+          }
+        }
+      ]
+    },
+    {
       "version": "2.0.2",
       "code": 28,
       "date": "2026-10-29",
