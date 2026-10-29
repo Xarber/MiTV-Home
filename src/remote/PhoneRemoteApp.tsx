@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import {RemoteHandset} from './RemoteHandset';
-import {fullRemote,type RemoteView} from './remoteNavigation';
+import {useRemotePreferences} from './useRemotePreferences';
+import {fullRemote} from './remoteNavigation';
 import appConfig from '../../app.json';
 import {useMusicActivity} from '../hooks/useMusicActivity';
 import React,{useEffect,useState,useRef} from 'react';
@@ -28,7 +29,8 @@ import type {RemoteKey,RemoteTarget} from './types';
 import type {IconName} from '../model/catalog';
 export default function PhoneRemoteApp({preview=false}:{preview?:boolean}){
  const remote=useRemote(preview),{client,state}=remote;const insets=useSafeAreaInsets();const screen=useWindowDimensions();
- const [remoteView,setRemoteView]=useState<RemoteView>('auto');
+ const {view:remoteView,setView:setRemoteView,touchpad,toggleTouchpad}=useRemotePreferences();
+ const [touchActive,setTouchActive]=useState(false),[remoteHeight,setRemoteHeight]=useState(600),[voiceError,setVoiceError]=useState<string>();
  const completeRemote=fullRemote(remoteView,state.device?.homeActive);
  const [launcherPreview,setLauncherPreview]=useState(false);const [pairSuccess,setPairSuccess]=useState(false);const wasPairing=useRef(false);
  const [dev,setDev]=useState(false);const [taps,setTaps]=useState(0);
@@ -68,13 +70,12 @@ export default function PhoneRemoteApp({preview=false}:{preview?:boolean}){
  {state.status==='pairing'?<><TextInput testID="phone-pin" value={pin} onChangeText={setPin} keyboardType="number-pad" autoComplete="one-time-code" maxLength={6} placeholder="000000" placeholderTextColor="#737e92" style={[s.input,{letterSpacing:10,textAlign:'center'}]}/><FocusButton id="phone-pair" group="phone" label="Pair television" onPress={()=>{void client.pair(pin);}} style={s.primary}><Text style={s.primaryText}>Pair television</Text></FocusButton></>:<><TextInput testID="phone-address" value={remote.address} onChangeText={remote.setAddress} autoCapitalize="none" autoCorrect={false} keyboardType="url" placeholder="TV address" placeholderTextColor="#737e92" style={s.input}/><FocusButton id="phone-connect" group="phone" label="Connect television" onPress={()=>{void remote.connect();}} style={s.primary}>{state.status==='connecting'?<ActivityIndicator color="#182131"/>:<Text style={s.primaryText}>Connect television</Text>}</FocusButton><Text style={s.caption}>Only pair on trusted home Wi-Fi.</Text><FocusButton id="phone-preview" group="phone" label="Explore preview" onPress={()=>remote.setPreview(true)} style={{marginTop:5}}><Text style={s.secondary}>Explore preview</Text></FocusButton></>}
  {remote.formError&&<Text style={s.error}>{remote.formError}</Text>}{remote.storageError&&<Text style={s.error}>Saved TVs could not be opened. Your existing pairings have been preserved.</Text>}{state.error&&<Text style={s.error}>{errorText[state.error]??'The connection is unavailable. Try again.'}</Text>}
  </ScrollView></KeyboardAvoidingView>:<>
- {tab==='remote'&&<ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{paddingBottom:20}}>
- <View style={{flexDirection:'row',gap:6,justifyContent:'center',marginBottom:12}}>{(['auto','home','full'] as const).map(mode=><FocusButton key={mode} id={'phone-view-'+mode} group="phone" label={mode==='auto'?'Automatic remote':mode==='home'?'Home remote':'Complete remote'} selected={remoteView===mode} onPress={()=>setRemoteView(mode)} style={{minHeight:36,paddingHorizontal:15,borderRadius:20,backgroundColor:remoteView===mode?'#ffffff18':'#ffffff06'}}><Text style={s.secondary}>{mode==='auto'?'Auto':mode==='home'?'Home':'Complete'}</Text></FocusButton>)}</View>
- <RemoteHandset client={client} full={completeRemote} connected={connected} paired={!!state.device?.systemRemote.paired} ready={!!state.device?.systemRemote.ready} command={command} pair={()=>openPanel('system')}/>
- {!completeRemote&&<FocusButton id="phone-tv-controls" group="phone" label="TV controls" onPress={()=>setRemoteView('full')} style={{alignSelf:'center'}}><Text style={s.secondary}>Complete remote</Text></FocusButton>}
+ {tab==='remote'&&<ScrollView testID="phone-handset-scroll" scrollEnabled={!touchActive} onLayout={e=>setRemoteHeight(e.nativeEvent.layout.height)} showsVerticalScrollIndicator={false} contentContainerStyle={{paddingBottom:20}}>
+ <RemoteHandset client={client} full={completeRemote} touch={touchpad} touchActive={setTouchActive} availableHeight={remoteHeight} voiceError={setVoiceError} connected={connected} paired={!!state.device?.systemRemote.paired} ready={!!state.device?.systemRemote.ready} command={command} pair={()=>openPanel('system')}/>
  </ScrollView>}
  {tab!=='remote'&&<ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{paddingHorizontal:20,paddingBottom:24}}><Text style={s.sectionTitle}>{tab==='apps'?'Apps':'Inputs & Live TV'}</Text>{!state.catalog?<ActivityIndicator color="#b3bcca"/>:<View style={s.grid}>{(tab==='apps'?state.catalog.apps:state.catalog.inputs).map(target=><AppCard key={target.id} target={target} icon={state.icons[target.id]} connected={connected} load={()=>client.icon(target.id)} launch={()=>{void client.launch(target.id);}}/>)}</View>}</ScrollView>}
  </>}
+ {voiceError&&<Text accessibilityLiveRegion="polite" style={[s.error,{paddingHorizontal:20,paddingBottom:8}]}>{voiceError}</Text>}
  {state.device&&state.error&&<Text style={[s.error,{paddingHorizontal:20,paddingBottom:8}]}>{errorText[state.error]??'The TV is reconnecting.'}</Text>}
  <View style={[s.tabs,{paddingBottom:Math.max(14,insets.bottom)}]}>{(['remote','apps','inputs'] as const).map(item=><FocusButton key={item} id={'phone-tab-'+item} group="phone" label={item==='remote'?'Remote':item==='apps'?'Apps':'Inputs'} selected={tab===item} onPress={()=>setTab(item)} style={{flex:1,gap:5,borderRadius:18,padding:10,backgroundColor:tab===item?'#ffffff12':'transparent'}}><Icon name={item==='remote'?'remote':item==='apps'?'apps':'inputs'} size={21}/><Text style={s.tabText}>{item==='remote'?'Remote':item==='apps'?'Apps':'Inputs'}</Text></FocusButton>)}</View>
  </View></View></BlurTargetView>
@@ -87,8 +88,13 @@ export default function PhoneRemoteApp({preview=false}:{preview?:boolean}){
  <Text style={s.groupTitle}>PAIRED TELEVISIONS</Text>
  {remote.tvs.map(tv=>row('tv-'+tv.address,tv.name,'tv',()=>{remote.select(tv);setPanel(null);},tv.address===remote.address&&connected?'Connected':'Saved'))}
  {row('phone-add-tv','Add television','tv',()=>{remote.setPreview(false);void client.disconnect();remote.setAddress('');setPanel(null);})}
+ <Text style={s.groupTitle}>REMOTE PREFERENCES</Text>
+ {row('phone-auto-remote','Automatic remote layout','remote',()=>setRemoteView(remoteView==='auto'?'home':'auto'),remoteView==='auto'?'On':'Off')}
+ {remoteView!=='auto'&&row('phone-complete-remote','Complete remote','remote',()=>setRemoteView(remoteView==='full'?'home':'full'),remoteView==='full'?'On':'Off')}
+ {row('phone-touchpad','Touchpad navigation','inputs',toggleTouchpad,touchpad?'On':'Off')}
  <Text style={s.groupTitle}>TELEVISION CONTROLS</Text>
- {state.device?.provenance!=='simulated'&&row('phone-open-system','System controls','remote',()=>setPanel('system'),state.device?.systemRemote.paired?'Paired':undefined)}
+ {state.device?.systemRemote.paired&&!state.device.systemRemote.ready&&row('phone-reconnect-system','Reconnect system controls','remote',()=>{void client.systemConnect();},'Unavailable')}
+ {state.device?.provenance!=='simulated'&&row('phone-open-system','System controls','remote',()=>setPanel('system'),state.device?.systemRemote.ready?'Ready':state.device?.systemRemote.paired?'Unavailable':undefined)}
  {row('phone-try-preview','Explore preview','apps',()=>{remote.setPreview(true);setPanel(null);})}
  {row('phone-forget-tv','Forget this television','close',()=>{void client.disconnect(true);setPanel(null);})}
  <Text style={s.groupTitle}>ABOUT AUREA REMOTE</Text>

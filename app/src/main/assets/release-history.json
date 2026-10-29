@@ -2,6 +2,37 @@
   "schema": 1,
   "releases": [
     {
+      "version": "2.0.8",
+      "code": 35,
+      "date": "2026-10-29",
+      "critical": false,
+      "highlights": {
+        "en": "Cleaner remote controls with layout and touchpad preferences in Settings.",
+        "it": "Telecomando più pulito, con preferenze di layout e touchpad nelle Impostazioni."
+      },
+      "fixes": {
+        "en": "Remove the extra selector bars, use horizontal compact volume and matched full rockers, prevent touchpad page scrolling, retain microphone capture across layout changes and correct a portable CI screenshot path.",
+        "it": "Rimuove le barre di selezione extra, rende orizzontale il volume compatto e uniforma i bilancieri, impedisce lo scorrimento dal touchpad, mantiene il microfono cambiando layout e corregge il percorso degli screenshot CI."
+      },
+      "compatibility": {
+        "en": "Global controls and microphone require a working system-service connection. Some TVs reject connections originating on the TV itself. No debugging fallback is enabled.",
+        "it": "I controlli globali e il microfono richiedono una connessione funzionante al servizio di sistema. Alcune TV rifiutano connessioni originate dalla TV stessa. Nessun fallback di debug è attivato."
+      },
+      "features": [
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Compact handset",
+            "it": "Telecomando compatto"
+          },
+          "detail": {
+            "en": "Automatic Home/Complete layout; manual and touchpad choices live in Settings.",
+            "it": "Layout Home/Completo automatico; scelte manuali e touchpad nelle Impostazioni."
+          }
+        }
+      ]
+    },
+    {
       "version": "2.0.7",
       "code": 34,
       "date": "2026-10-29",

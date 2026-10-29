@@ -33,3 +33,6 @@ test('failed audio packet is never retried and ends microphone',async()=>{
  await controller.start();capture.send();await tick();await controller.stop();assert.deepEqual(calls,['voice_start','voice_chunk','voice_end']);assert.equal(capture.stops,1);assert.equal(phases.at(-1),'idle');
 });
 test('unexpected microphone format is rejected',()=>{assert.throws(()=>parseVoiceSession({...session,sampleRate:48000}));assert.throws(()=>parseVoiceSession({...session,id:'unsafe'}));});
+
+import {remoteActivity} from '../../src/remote/lifecycle.ts';
+test('permission-dialog inactivity preserves the connection while backgrounding stops it',()=>{assert.equal(remoteActivity('inactive'),undefined);assert.equal(remoteActivity('active'),true);assert.equal(remoteActivity('background'),false);assert.equal(remoteActivity('unknown'),undefined);});

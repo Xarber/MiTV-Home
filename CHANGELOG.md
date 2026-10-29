@@ -2,6 +2,14 @@
 
 Generated from `app/src/main/assets/release-history.json`. Legacy versions reflect repository history; dates describe implementation, not a verified public release.
 
+## 2.0.8 — 2026-10-29
+
+Cleaner remote controls with layout and touchpad preferences in Settings.
+
+### Fixes & Improvements
+
+Remove the extra selector bars, use horizontal compact volume and matched full rockers, prevent touchpad page scrolling, retain microphone capture across layout changes and correct a portable CI screenshot path.
+
 ## 2.0.7 — 2026-10-29
 
 A complete TV remote with automatic view switching and a touchpad.

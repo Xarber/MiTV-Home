@@ -172,3 +172,12 @@ foreground. Auto/Home/Complete controls allow manual selection; Arrows/Touchpad
 switch the navigation surface. Complete controls are grouped as a handset rather
 than a popup grid. The system reconnect action uses existing pairing. See
 [transport, native TLS and compatibility](SYSTEM_REMOTE_TRANSPORT.md).
+
+### Cleaner remote preferences (2.0.8)
+
+Settings contains Automatic remote layout, the manual Complete remote toggle when
+Auto is off, and Touchpad navigation. These settings persist without altering saved
+TV pairings. Main controls have no layout/touchpad tab bars. Compact volume is
+horizontal; complete rockers have equal heights. Trackpad wheel and touch swipes
+inside the navigation surface do not scroll the page. See the transport document
+for the unresolved self-originating connection limit on the tested TV.
