@@ -18,6 +18,8 @@ class LauncherManifestChecks(unittest.TestCase):
     def test_both_literal_target_contracts(self):
         for target in ['tv','remote']:
             root=self.manifest(target);self.assertTrue(module.validate(root,'2.0.3','29',root.get('package')))
+    def test_tv_overlay_declares_banner_and_optional_touch(self):
+        root=ET.parse(ROOT/'app/src/tv/AndroidManifest.xml').getroot();self.assertEqual(root.find('application').get(A+'banner'),'@drawable/banner');self.assertTrue(any(row.get(A+'name')=='android.hardware.touchscreen' and row.get(A+'required')=='false' for row in root.findall('uses-feature')))
     def test_missing_tv_entry_is_rejected(self):
         root=self.manifest('tv')
         for category in root.iter('category'):

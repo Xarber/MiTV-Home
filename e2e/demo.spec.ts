@@ -116,9 +116,10 @@ test('expanded paused bars are circles and song palettes crossfade',async({page}
 });
 
 test('wallpaper selection and tint preference fade without tinting the foreground banner',async({page})=>{
- await focus(page,'dock:music').click();await page.keyboard.press('Escape');await page.keyboard.press('c');await focus(page,'panel-Wallpapers').click();
- await focus(page,'wallpaper-dune').click();const wall=page.getByTestId('wallpaper-fade');await page.waitForTimeout(180);const alpha=await wall.evaluate(element=>Number(getComputedStyle(element).opacity));expect(alpha).toBeGreaterThan(0);expect(alpha).toBeLessThan(1);await expect(wall).toHaveCSS('opacity','1');
- const tint=page.getByTestId('music-wallpaper-tint');await focus(page,'panel-Music wallpaper tint').click();await page.waitForTimeout(180);const on=await tint.evaluate(element=>Number(getComputedStyle(element).opacity));expect(on).toBeGreaterThan(0);expect(on).toBeLessThan(.24);await expect(tint).toHaveCSS('opacity','0.24');
- await focus(page,'panel-Music wallpaper tint').click();await page.waitForTimeout(180);const off=await tint.evaluate(element=>Number(getComputedStyle(element).opacity));expect(off).toBeGreaterThan(0);expect(off).toBeLessThan(.24);await expect(tint).toHaveCSS('opacity','0');
+ const intermediate=async(layer:import('@playwright/test').Locator,maximum:number)=>expect.poll(async()=>{const value=await layer.evaluate(element=>Number(getComputedStyle(element).opacity));return value>0&&value<maximum;},{message:'observe an intermediate rendered fade frame',intervals:[16,32,50]}).toBe(true);
+ await focus(page,'dock:music').click();await expect(focus(page,'music-1')).toHaveAttribute('aria-label','Pause');await page.keyboard.press('Escape');await page.keyboard.press('c');await focus(page,'panel-Wallpapers').click();
+ await focus(page,'wallpaper-dune').click();const wall=page.getByTestId('wallpaper-fade');await intermediate(wall,1);await expect(wall).toHaveCSS('opacity','1');
+ const tint=page.getByTestId('music-wallpaper-tint');await focus(page,'panel-Music wallpaper tint').click();await expect.poll(()=>page.evaluate(()=>JSON.parse(localStorage.getItem('aurea.demo.preferences.v1')!).musicTint)).toBe(true);await intermediate(tint,.24);await expect(tint).toHaveCSS('opacity','0.24');
+ await focus(page,'panel-Music wallpaper tint').click();await intermediate(tint,.24);await expect(tint).toHaveCSS('opacity','0');
  expect(await tint.evaluate(element=>!!(element.compareDocumentPosition(document.querySelector('[data-testid="launcher-hero"]')!)&Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
 });

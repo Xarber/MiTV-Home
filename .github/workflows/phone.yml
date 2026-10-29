@@ -6,7 +6,8 @@ permissions:
 jobs:
   ios:
     name: Phone iOS ${{ matrix.target }}
-    runs-on: macos-26
+    # Device ARM64 can cross-compile on standard Intel; keep the simulator on Apple Silicon.
+    runs-on: ${{ matrix.target == 'unsigned' && 'macos-26-intel' || 'macos-26' }}
     timeout-minutes: 45
     strategy:
       fail-fast: false

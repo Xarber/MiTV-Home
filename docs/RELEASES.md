@@ -51,3 +51,10 @@ these target contracts from the actual packaged manifest. Android Actions comman
 use a 6 GiB Gradle heap and two workers to avoid universal APK zipflinger exhaustion;
 the developer-machine default remains unchanged. Never fix these failures by
 turning off lint, skipping ABIs, or publishing incomplete artifacts.
+
+The unsigned iOS device job cross-compiles ARM64 on standard macos-26-intel after
+observed Apple Silicon runner provisioning cancellations. Simulator builds retain
+macos-26 ARM64. Both remain parallel, independently retryable matrix jobs; neither
+uses a larger paid runner. TV overlays explicitly declare banner and optional
+touchscreen as well as exported entry points so source-level lint sees the full
+contract, even where shared-manifest inheritance is not considered by a detector.
