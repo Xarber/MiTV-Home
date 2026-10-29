@@ -9,7 +9,7 @@ A=module.A
 class LauncherManifestChecks(unittest.TestCase):
     def manifest(self,target):
         # Exercise shared source plus the selected literal overlay with packaged attributes.
-        root=ET.parse(ROOT/'app/src/main/AndroidManifest.xml').getroot();overlay=ET.parse(ROOT/f'app/src/{target}/AndroidManifest.xml').getroot()
+        root=ET.parse(ROOT/'app/src/main/AndroidManifest.xml').getroot();overlay=ET.parse(ROOT/f'app/src/{target}/AndroidManifest.xml').getroot();self.assertEqual(overlay.find('application').find('activity').get(A+'exported'),'true')
         for feature in overlay.findall('uses-feature'):root.append(feature)
         activity=root.find('application').find("activity[@"+A+"name='it.xarber.tvhome.MainActivity']")
         for entry in overlay.find('application').find('activity').findall('intent-filter'):activity.append(entry)
