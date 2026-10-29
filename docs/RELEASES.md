@@ -58,3 +58,14 @@ macos-26 ARM64. Both remain parallel, independently retryable matrix jobs; neith
 uses a larger paid runner. TV overlays explicitly declare banner and optional
 touchscreen as well as exported entry points so source-level lint sees the full
 contract, even where shared-manifest inheritance is not considered by a detector.
+
+### Retry an iOS package independently
+
+The **iOS companion builds** workflow also supports manual runs on the chosen
+branch with `target` set to `unsigned`, `simulator`, or `all`. The reusable full
+build still requests both packages. Both jobs use the standard Apple Silicon
+`macos-26` runner with a 60-minute cap. The prior Intel unsigned job in run
+40920170452 timed out at 45 minutes while compiling Reanimated, after eight
+minutes of Expo/CocoaPods preparation; no signing operation was involved.
+Manual single-platform retries provide diagnostic artifacts only and do not
+publish a release or bypass the complete-release validation gate.

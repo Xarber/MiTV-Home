@@ -50,3 +50,16 @@ Development stays on testing; no branch promotion or temporary worktree cleanup 
 needed. Previously approved command-scoped unsigned commits preserve global signing
 configuration. Existing installed TV remains a rollback boundary until a native
 candidate is built and explicitly installed. No preferences or trust were cleared.
+
+## Device-build timeout follow-up
+
+Run 40920170452: Android TV/remote APK/AAB, web validation, host checks and iOS
+simulator succeeded. iOS unsigned exceeded 45 minutes: preparation took about
+8 minutes, native compilation about 35 minutes before cancellation, with
+Reanimated C++ files still compiling. GitHub's annotation explicitly reports the
+job time limit. This was not a signing delay; the package is unsigned.
+
+The iOS workflow now uses standard Apple Silicon for both targets, allows up to
+60 minutes and supports a manual single-target retry without rebuilding Android.
+Actionlint passed. No release validation gate was relaxed; a retry submission
+is not proof of a finished IPA. No framework, signing identity or OS baseline changed.

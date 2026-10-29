@@ -1,18 +1,25 @@
-name: Internal — iOS companion builds
+name: iOS companion builds
 on:
   workflow_call:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: iOS package to build
+        type: choice
+        options: [all, unsigned, simulator]
+        default: all
 permissions:
   contents: read
 jobs:
   ios:
     name: Phone iOS ${{ matrix.target }}
-    # Device ARM64 can cross-compile on standard Intel; keep the simulator on Apple Silicon.
-    runs-on: ${{ matrix.target == 'unsigned' && 'macos-26-intel' || 'macos-26' }}
-    timeout-minutes: 45
+    # Both packages target ARM64; avoid slow cross-compilation on the Intel runner.
+    runs-on: macos-26
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        target: [unsigned, simulator]
+        target: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.target == 'unsigned' && '["unsigned"]' || github.event_name == 'workflow_dispatch' && inputs.target == 'simulator' && '["simulator"]' || '["unsigned","simulator"]') }}
     env:
       EXPO_PUBLIC_SOURCE_COMMIT: ${{ github.sha }}
       AUREA_TARGET: remote
