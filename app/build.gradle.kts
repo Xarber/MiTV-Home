@@ -66,13 +66,14 @@ android {
         applicationId = providers.gradleProperty("homeApplicationId").getOrElse("it.xarber.mitvhome")
         minSdk = 26
         targetSdk = 34
+        manifestPlaceholders["homeSecondaryCategory"] = if (mobileRemote) "android.intent.category.DEFAULT" else "android.intent.category.LEANBACK_LAUNCHER"
         manifestPlaceholders["homeCategory"] = if (mobileRemote) "android.intent.category.LAUNCHER" else "android.intent.category.HOME"
         manifestPlaceholders["homeOrientation"] = if (mobileRemote) "unspecified" else "landscape"
         manifestPlaceholders["homeLabel"] = if (mobileRemote) "Aurea Remote" else "Aurea Home"
         manifestPlaceholders["homeExcludeRecents"] = if (mobileRemote) "false" else "true"
         buildConfigField("boolean", "MOBILE_REMOTE", mobileRemote.toString())
-        versionCode = 26
-        versionName = "2.0.0"
+        versionCode = 27
+        versionName = "2.0.1"
         buildConfigField("String", "SOURCE_COMMIT", buildString(sourceCommit))
         buildConfigField("String", "BUILD_CHANNEL", buildString(buildChannel))
         buildConfigField("String", "BUILD_DATE", buildString(buildDate))
@@ -145,7 +146,7 @@ val generateHomeBuildInfo = tasks.register("generateHomeBuildInfo") {
     outputs.files(file("src/main/assets/build-metadata.json"), file("src/main/assets/developer-changelog.txt"))
     doLast {
         file("src/main/assets/build-metadata.json").writeText("""
-            {"version":"2.0.0","code":26,"commit":${buildString(sourceCommit)},"channel":${buildString(buildChannel)},"variant":"github-extended","date":${buildString(buildDate)}}
+            {"version":"2.0.1","code":27,"commit":${buildString(sourceCommit)},"channel":${buildString(buildChannel)},"variant":"github-extended","date":${buildString(buildDate)}}
         """.trimIndent()+"\n")
         val history = gitValue("log", "--reverse", "--format=%H %ad %s%n%b", "--date=short", "98cbd64^..HEAD")
         val historyFile = file("src/main/assets/developer-changelog.txt")

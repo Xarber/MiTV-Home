@@ -2,7 +2,7 @@
   "expo": {
     "name": "Aurea Home",
     "slug": "aurea-home",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "platforms": [
       "android",
       "web"
@@ -12,12 +12,12 @@
     "web": {
       "bundler": "metro",
       "output": "single",
-      "name": "Aurea Home \u00b7 Interactive demo",
+      "name": "Aurea Home · Interactive demo",
       "favicon": "./public/branding/icon-192.png"
     },
     "android": {
       "package": "it.xarber.mitvhome",
-      "versionCode": 26
+      "versionCode": 27
     },
     "plugins": [
       "expo-secure-store",
@@ -27,6 +27,12 @@
           "android": {
             "usesCleartextTraffic": true
           }
+        }
+      ],
+      [
+        "expo-screen-orientation",
+        {
+          "initialOrientation": "DEFAULT"
         }
       ]
     ],
@@ -40,7 +46,7 @@
           "NSAllowsLocalNetworking": true
         }
       },
-      "buildNumber": "26"
+      "buildNumber": "27"
     },
     "icon": "./public/branding/icon-1024.png"
   }

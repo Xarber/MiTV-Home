@@ -7,7 +7,7 @@ results=json.loads(os.environ['BUILD_RESULTS'])
 required={'checks','web-remote','web-validation'}
 if os.environ['GITHUB_EVENT_NAME']!='pull_request':
     required.update({'apple-tv-runtime','apple-tv-pure','android','ios','source'})
-    if os.environ['GITHUB_REF_NAME'] in {'main','beta'}:required.add('publish')
+    if os.environ['GITHUB_REF_NAME'] in {'main','beta'}:required.update({'publish','distribution-sources'})
 failed=sorted(name for name in required if results.get(name,{}).get('result')!='success')
 url=f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}"
 lines=['# Aurea build results','',f"Commit: `{os.environ['GITHUB_SHA']}`",'','| Stage | Result |','| --- | --- |']

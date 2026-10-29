@@ -2,6 +2,7 @@
 import { NativeModules, NativeEventEmitter, Platform } from 'react-native';
 export { nativeSnapshot } from '../../launcher/snapshot';
 interface TVModule {
+  mobileRemote?:boolean;
   execute(operation: string, payload: string): Promise<string>;
   pairedRequest(operation: string, payload: string): Promise<string>;
   ready(): void;
@@ -9,6 +10,7 @@ interface TVModule {
   removeListeners(count: number): void;
 }
 const module = NativeModules.AureaTV as TVModule | undefined;
+export const mobileRemoteBuild=module?.mobileRemote===true;
 export const nativeTVAvailable = Platform.OS === 'android' && !!module;
 export interface TVEvent {
   type: string;

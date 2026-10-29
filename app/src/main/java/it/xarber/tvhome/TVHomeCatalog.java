@@ -87,8 +87,10 @@ final class TVHomeCatalog {
         }
         if(info!=null&&kind.equals("banner")){try{drawable=info.activityInfo.loadBanner(pm);}catch(Exception ignored){}if(drawable==null)try{drawable=pm.getApplicationBanner(id);}catch(Exception ignored){}}
         else if(info!=null)drawable=info.loadIcon(pm);
-        if(drawable==null)return new JSONObject();int width=kind.equals("banner")?640:128,height=kind.equals("banner")?360:128;
-        Bitmap bitmap=Bitmap.createBitmap(width,height,Bitmap.Config.ARGB_8888);drawable.setBounds(0,0,width,height);drawable.draw(new Canvas(bitmap));ByteArrayOutputStream bytes=new ByteArrayOutputStream();bitmap.compress(Bitmap.CompressFormat.PNG,100,bytes);bitmap.recycle();
+        if(drawable==null)return new JSONObject();int width=kind.equals("banner")?640:kind.equals("hero-icon")?256:128,height=kind.equals("banner")?360:kind.equals("hero-icon")?256:128;
+        Bitmap bitmap=Bitmap.createBitmap(width,height,Bitmap.Config.ARGB_8888);if(kind.equals("hero-icon")&&drawable.getIntrinsicWidth()>0&&drawable.getIntrinsicHeight()>0){float fit=Math.min(width/(float)drawable.getIntrinsicWidth(),height/(float)drawable.getIntrinsicHeight());int w=Math.round(drawable.getIntrinsicWidth()*fit),h=Math.round(drawable.getIntrinsicHeight()*fit);drawable.setBounds((width-w)/2,(height-h)/2,(width+w)/2,(height+h)/2);}else drawable.setBounds(0,0,width,height);drawable.draw(new Canvas(bitmap));
+        if(kind.equals("hero-icon")){int[] pixels=new int[width*height];bitmap.getPixels(pixels,0,width,0,0,width,height);int left=width,top=height,right=-1,bottom=-1;for(int y=0;y<height;y++)for(int x=0;x<width;x++)if((pixels[y*width+x]>>>24)>24){left=Math.min(left,x);right=Math.max(right,x);top=Math.min(top,y);bottom=Math.max(bottom,y);}if(right>=left&&bottom>=top){Bitmap cropped=Bitmap.createBitmap(bitmap,left,top,right-left+1,bottom-top+1);if(cropped!=bitmap)bitmap.recycle();bitmap=cropped;}}
+        ByteArrayOutputStream bytes=new ByteArrayOutputStream();bitmap.compress(Bitmap.CompressFormat.PNG,100,bytes);bitmap.recycle();
         if(bytes.size()>600000)throw new IllegalArgumentException("artwork_too_large");return new JSONObject().put("image","data:image/png;base64,"+Base64.encodeToString(bytes.toByteArray(),Base64.NO_WRAP));
     }
     synchronized void launch(String id)throws Exception{

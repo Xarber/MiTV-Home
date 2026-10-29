@@ -23,6 +23,7 @@ public final class AureaTVModule extends ReactContextBaseJavaModule {
     private volatile boolean valid=true;
     private final Runnable waveform=new Runnable(){public void run(){if(!valid)return;if(listeners>0&&TVPlatform.foreground()){float[] values=TVPlatform.get(getReactApplicationContext()).waveform();if(values!=null){JSONArray samples=new JSONArray();for(float value:values)samples.put((Object)(Float.isFinite(value)?value:0));emit("AureaTVWaveform",samples.toString());}}main.postDelayed(this,100);}};
     AureaTVModule(ReactApplicationContext context){super(context);instance=new WeakReference<>(this);main.post(waveform);}
+    @Override public java.util.Map<String,Object> getConstants(){return java.util.Collections.<String,Object>singletonMap("mobileRemote",io.github.jqssun.airplay.BuildConfig.MOBILE_REMOTE);}
     @Override public String getName(){return "AureaTV";}
     @ReactMethod public void addListener(String name){listeners++;}
     @ReactMethod public void removeListeners(double count){listeners=Math.max(0,listeners-(int)count);}

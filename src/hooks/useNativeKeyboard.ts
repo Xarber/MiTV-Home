@@ -79,6 +79,7 @@ export function useNativeKeyboard(options: Options) {
       if(phase==='up'){if(typeof key==='string')directionsDown.delete(key);return;}
       if (phase !== 'down') return;
       if(typeof key==='string'&&['up','down','left','right'].includes(key)){const now=Date.now(),previous=directionsDown.get(key);if(previous!==undefined&&now-previous<(repeat===0?60:160))return;directionsDown.set(key,now);}
+      if(key==='menu'){if(!current.panel&&nativeFocus.group?.startsWith('page-'))current.menu(nativeFocus.current.split(':').slice(1).join(':'));else current.control();return;}
       if (key === 'control') {
         current.control();
         return;

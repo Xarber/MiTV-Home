@@ -350,7 +350,7 @@ jobs:
   summary:
     name: Build results
     if: always()
-    needs: [checks, web-remote, web-validation, apple-tv-runtime, apple-tv-pure, android, ios, source, publish]
+    needs: [checks, web-remote, web-validation, apple-tv-runtime, apple-tv-pure, android, ios, source, publish, distribution-sources]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
@@ -358,3 +358,39 @@ jobs:
         env:
           BUILD_RESULTS: ${{ toJSON(needs) }}
         run: python3 scripts/ci/summary.py
+
+  distribution-sources:
+    name: Update AltSource and Obtainium sources
+    needs: publish
+    if: github.event_name != 'pull_request' && (github.ref_name == 'main' || github.ref_name == 'beta')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v6
+        with:
+          pattern: Aurea-Remote-${{ github.ref_name }}-ios-unsigned-${{ github.sha }}
+          path: source-artifact/
+          merge-multiple: true
+      - name: Generate and publish actual release sources
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="$(python3 -c 'import json; print(json.load(open("app.json"))["expo"]["version"])')"
+          CODE="$(python3 -c 'import json; print(json.load(open("app.json"))["expo"]["ios"]["buildNumber"])')"
+          TAG="v${VERSION}"
+          if [ "$GITHUB_REF_NAME" = beta ]; then TAG="${TAG}-beta.${CODE}.${GITHUB_SHA:0:7}"; fi
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" > "$RUNNER_TEMP/actual-release.json"
+          mkdir -p source-history distribution-generated
+          if gh release view sources-v1.0 > /dev/null 2>&1; then
+            gh release download sources-v1.0 --pattern 'altsource*.json' --dir source-history --clobber
+          fi
+          python3 scripts/distribution/sources.py --release "$RUNNER_TEMP/actual-release.json" --sidecar source-artifact/*.ipa.json --previous source-history --out distribution-generated
+          cp distribution/obtainium*.json distribution-generated/
+          cp public/branding/icon-512.png distribution-generated/
+          if ! gh release view sources-v1.0 > /dev/null 2>&1; then
+            gh release create sources-v1.0 --latest=false --title 'Aurea distribution sources' --notes 'Mutable installation metadata only. Application versions are separate releases.'
+          fi
+          gh release upload sources-v1.0 distribution-generated/* --clobber
+          python3 scripts/distribution/verify_public.py

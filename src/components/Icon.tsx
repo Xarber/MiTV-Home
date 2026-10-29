@@ -12,6 +12,8 @@ export function Icon({
   color?: string;
 }) {
   const paths: Partial<Record<IconName, string>> = {
+    playpause:'M3 4l10 8-10 8z M16 4v16 M21 4v16',
+    menu:'M4 6h16 M4 12h16 M4 18h16',
     back: 'M14 5l-7 7 7 7',
     code: 'M8 6l-6 6 6 6 M16 6l6 6-6 6 M14 3l-4 18',
     info: 'M12 11v7 M12 7h.01 M22 12a10 10 0 11-20 0 10 10 0 0120 0',

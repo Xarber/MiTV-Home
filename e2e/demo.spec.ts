@@ -34,7 +34,7 @@ test('wallpapers persist, language and tab blur remain stable',async({page})=>{
 test('input shortcut can be pinned and removed; remote and music coexist',async({page})=>{
  await page.keyboard.press('m');await focus(page,'panel-Pin to dock').click();await page.locator('[data-group="modal"]').filter({hasText:'6 · All apps'}).click();
  await expect(focus(page,'dock:inputs')).toBeVisible();
- await page.keyboard.press('c');await focus(page,'panel-Remote').click();await focus(page,'panel-Connect remote').click();await page.keyboard.press('Escape');
+ await page.keyboard.press('c');await focus(page,'panel-Remote').click();await focus(page,'panel-Connect remote').click();await page.keyboard.press('Escape');await expect(focus(page,'panel-Network')).toBeVisible();await page.keyboard.press('Escape');await expect(page.locator('#demo-dialog')).toHaveCount(0);
  await focus(page,'dock:music').click();await page.keyboard.press('Escape');await expect(focus(page,'activity-remote')).toBeVisible();await expect(focus(page,'activity-music')).toBeVisible();
  await focus(page,'activity-remote').click();await page.keyboard.press('Escape');await expect(focus(page,'activity-music')).toBeVisible();
 });
@@ -102,3 +102,5 @@ test('mobile source scrolling stays within its navigation stop',async({page})=>{
  await page.locator('#inputs-scroll').dispatchEvent('wheel',{deltaY:150,bubbles:true});
  await expect(page.locator('#launcher-page-1')).toHaveAttribute('aria-hidden','false');await expect(page.locator('#launcher-page-2')).toHaveAttribute('aria-hidden','true');
 });
+
+test('Back returns to the previous settings panel and paused waves settle at their baseline',async({page})=>{await page.locator('[data-nav="header-settings"]').click();await page.locator('[data-nav="panel-Network"]').click();await page.keyboard.press('Escape');await expect(page.locator('[data-nav="panel-Network"]')).toBeVisible();await page.keyboard.press('Escape');await page.locator('[data-nav="dock:music"]').click();await expect(page.locator('[data-nav="music-1"]')).toBeFocused();await page.locator('[data-nav="music-1"]').click();await page.waitForTimeout(350);const bars=page.locator('[data-nav="activity-music"] [aria-label="Playback animation"] > div');await expect(bars).toHaveCount(6);const heights=await bars.evaluateAll(elements=>elements.map(element=>element.getBoundingClientRect().height));expect(heights.every(height=>height<=2.1)).toBe(true);});

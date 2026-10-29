@@ -111,3 +111,15 @@ TV integration now runs behind the Expo Home surface. The production package own
 the existing remote/receiver services; isolated preview packages deliberately do
 not advertise duplicate receivers or listen on the TV remote port. Test pairing
 and activities with the production-package candidate, not the isolated UI preview.
+
+## 2.0.1 native phone corrections
+
+Popups measure native triggers relative to the same root used for their material and content. Safe-area/keyboard bounds prevent clipping; phone-only materials use native iOS Liquid Glass when both Expo availability checks pass, native iOS blur otherwise, and the existing live Android blur target on Android. TV blur parameters are unchanged. Back traverses the visited submenu stack; outside dismissal still closes the whole popup.
+
+Remote buttons include combined Play/Pause, Menu and Control Center. Holding OK opens an item menu; holding Back opens Control Center. Menu works through authenticated launcher commands or the paired Android TV Remote Service; Control Center requests require Home. App grids use fixed row gaps and independent column spacing. Physical input IDs are stable while TV customization or a CEC child name supplies the display label and logos.
+
+System pairing distinguishes accepted trust from control-channel readiness. If the pairing socket closes, success requires authenticating the control channel with the same certificate. Explicit pairing acknowledgements remain saved if the control channel is temporarily reconnecting. HTTP requests use bounded parallel workers so the pairing exchange cannot block normal state refreshes.
+
+The Android phone build never renders Native TV Home merely because it was installed on a television and does not register a Leanback launcher entry. It remains a different package from TV production. Package identity cannot migrate automatically across historical prototypes.
+
+Developer Preview launcher requests landscape and restores the previous orientation policy on exit. Resizable iOS 27 windows and browsers can refuse orientation locks; the layout continues to adapt to the actual window. These changes require a native binary; they are not an OTA update.

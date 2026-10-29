@@ -31,7 +31,7 @@ export function parseState(raw:Record<string,unknown>):RemoteState{
 export function parseCatalog(raw:Record<string,unknown>):RemoteCatalog{
  const parse=(value:unknown,max:number):RemoteTarget[]=>{
   if(!Array.isArray(value)||value.length>max)throw new RemoteError('invalid_response');
-  return value.map(item=>{if(!item||!text(item.id,512)||!text(item.name,100)||!['app','input','live'].includes(item.kind))throw new RemoteError('invalid_response');return item as RemoteTarget;});
+  return value.map(item=>{if(!item||!text(item.id,512)||!text(item.name,100)||!['app','input','live'].includes(item.kind))throw new RemoteError('invalid_response');if(item.profile!==undefined&&!text(item.profile,64))throw new RemoteError('invalid_response');if(item.subtitle!==undefined&&!text(item.subtitle,128))throw new RemoteError('invalid_response');return item as RemoteTarget;});
  };
  return {apps:parse(raw.apps,256),inputs:parse(raw.inputs,65)};
 }

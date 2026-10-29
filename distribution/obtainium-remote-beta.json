@@ -1,0 +1,7 @@
+{
+  "id": "it.xarber.aurea.remote",
+  "url": "https://github.com/Xarber/MiTV-Home",
+  "author": "Xarber",
+  "name": "Aurea Remote",
+  "additionalSettings": "{\"includePrereleases\":true,\"apkFilterRegEx\":\"^Aurea-Remote-.*-android-phone-universal\\\\.apk$\",\"filterReleaseTitlesByRegEx\":\"^(Aurea|MiTV) Home [0-9]\"}"
+}

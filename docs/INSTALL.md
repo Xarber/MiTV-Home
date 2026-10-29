@@ -28,3 +28,7 @@ Choose the original launcher in system default-app settings, then press Home. Ke
 ## Updates
 
 Install an APK signed with the same key as the installed app. Public releases use a dedicated project key; local debug builds use Android's debug key. Android rejects mismatched signatures.
+
+## One TV production installation
+
+Use the TV universal APK from the full build/release: its package is always `it.xarber.mitvhome`. Updates retain this ID, the managed signing key and increasing version codes; version 2.0.1 is code 27. A normal in-place installation keeps data. Android phone APKs are `it.xarber.aurea.remote`; old `it.xarber.tvhome` prototypes and `.preview` packages are separate apps and cannot be replaced by an APK with another ID. Do not uninstall or clear data to resolve this distinction. The retained developer Recovery Home renderer is part of the production package.

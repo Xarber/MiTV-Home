@@ -34,6 +34,8 @@ final class HomeRemoteServer implements Runnable {
     private int failedPairAttempts;
     private long pairWindowStart;
     private long lastPairNoticeAt;
+    private final java.util.Set<Socket> connections=java.util.concurrent.ConcurrentHashMap.newKeySet();
+    private final java.util.concurrent.ThreadPoolExecutor workers=new java.util.concurrent.ThreadPoolExecutor(3,3,0,java.util.concurrent.TimeUnit.SECONDS,new java.util.concurrent.ArrayBlockingQueue<>(12),task->{Thread worker=new Thread(task,"AureaRemoteHTTP");worker.setDaemon(true);return worker;});
     private ServerSocket socket;
     private Thread thread;
     private int port = 80;
@@ -89,17 +91,18 @@ final class HomeRemoteServer implements Runnable {
     private org.json.JSONArray trustEntries() throws Exception {org.json.JSONArray entries=new org.json.JSONArray();for(java.util.Map.Entry<String,String> entry:tokens.entrySet())entries.put(new JSONObject().put("token",entry.getKey()).put("origin",entry.getValue()));return entries;}
     void stop() {
         running = false;
+        for(Socket client:connections)try{client.close();}catch(Exception ignored){}
+        workers.shutdownNow();
         synchronized(this){activeRemotes.clear();}
         try { if (socket != null) socket.close(); } catch (Exception ignored) {}
     }
 
     @Override public void run() {
-        while (running) {
-            try (Socket client = socket.accept()) {
-                client.setSoTimeout(3000);
-                try{handle(client);}finally{responseOrigin.remove();}
-            } catch (Exception ignored) { if (!running) return; }
-        }
+        while(running)try{
+            Socket client=socket.accept();client.setSoTimeout(3000);connections.add(client);
+            try{workers.execute(()->{try(Socket active=client){handle(active);}catch(Exception ignored){}finally{connections.remove(client);responseOrigin.remove();}});}
+            catch(java.util.concurrent.RejectedExecutionException busy){connections.remove(client);client.close();}
+        }catch(Exception ignored){if(!running)return;}
     }
 
     private void handle(Socket client) throws Exception {
@@ -184,7 +187,7 @@ final class HomeRemoteServer implements Runnable {
                 respond(client,200,"application/json","{\"ok\":true}");return;
             }
             if (path.equals("/api/presence")) { respond(client,200,"application/json","{\"ok\":true}"); return; }
-            if(path.equals("/api/key")&&!payload.optString("command").matches("up|down|left|right|ok|back|home|volumeup|volumedown|playpause|next|previous")){respond(client,400,"application/json","{\"error\":\"unsupported\"}");return;}
+            if(path.equals("/api/key")&&!payload.optString("command").matches("up|down|left|right|ok|back|home|volumeup|volumedown|playpause|next|previous|menu|control")){respond(client,400,"application/json","{\"error\":\"unsupported\"}");return;}
             java.util.Map<String,String> routes=new java.util.HashMap<>();
             routes.put("/api/key","key");routes.put("/api/state","state");routes.put("/api/catalog","catalog");routes.put("/api/icon","icon");routes.put("/api/artwork","artwork");routes.put("/api/launch","launch");routes.put("/api/media","media");routes.put("/api/system/pair/start","system_pair_begin");routes.put("/api/system/pair/finish","system_pair_finish");
             String operation=routes.get(path);if(operation==null){respond(client,404,"application/json","{\"error\":\"not_found\"}");return;}

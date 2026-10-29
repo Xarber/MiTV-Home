@@ -36,3 +36,7 @@ Original launcher sources remain AGPL-3.0-only, with upstream licenses preserved
 ## In-app discovery
 
 Validated APK jobs emit a public signer/hash/package sidecar. Publication generates update-manifest.json from exact bytes and structured release notes, stages a complete draft release, publishes only after assets are present, then verifies public manifest and APK URLs. Existing public GitHub stable/beta channel authorization applies; no new distribution destination is added. See features/UPDATES.md.
+
+## Native installation sources
+
+After the validated application release is publicly published, the distribution-sources job generates stable/beta AltSources from the actual IPA sidecar and released asset, preserving native version/build number, minimum OS, byte size and all declared entitlements/privacy strings. It updates the separate mutable `sources-v1.0` metadata release together with distinct TV/phone Obtainium configurations and existing brand icon. Public metadata and download availability are checked. Testing creates no application or metadata release; source URLs become usable only after the first validated native publication. See [distribution/README.md](../distribution/README.md).

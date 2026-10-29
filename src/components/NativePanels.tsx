@@ -159,10 +159,10 @@ export function NativePanels({
           <FocusButton
             id="panel-close"
             group="modal"
-            label={t('Close')}
-            onPress={demo.close}
+            label={t(demo.canGoBack?'Back':'Close')}
+            onPress={demo.canGoBack?demo.back:demo.close}
           >
-            <Icon name="close" size={20} />
+            <Icon name={demo.canGoBack?"back":"close"} size={20} />
           </FocusButton>
         </View>
       )}
@@ -377,6 +377,7 @@ export function NativePanels({
                 </View>
               ))}
             </View>
+            {row('Music wallpaper tint','music',()=>demo.change({musicTint:!demo.prefs.musicTint}),demo.prefs.musicTint?'On':'Off')}
             {row(
               'Animated wallpapers',
               'wallpaper',

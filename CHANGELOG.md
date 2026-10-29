@@ -2,6 +2,14 @@
 
 Generated from `app/src/main/assets/release-history.json`. Legacy versions reflect repository history; dates describe implementation, not a verified public release.
 
+## 2.0.1 — 2026-10-29
+
+Refined native remote, pairing recovery and music-themed wallpapers.
+
+### Fixes & Improvements
+
+Safe-area-aware anchored popups, submenu Back navigation, menu and combined playback buttons, customized input names/icons and silent paused waves.
+
 ## 2.0.0 — 2026-10-28
 
 Expo becomes the shared Home, phone and web application base.

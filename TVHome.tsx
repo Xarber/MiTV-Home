@@ -41,6 +41,7 @@ import { Panels } from './src/components/Panels';
 import { SlidingDetails } from './src/components/SlidingDetails';
 import { anchorFor, Anchor } from './src/components/AnchoredPanel';
 import { BlurTargetView } from 'expo-blur';
+import {MusicTint} from './src/components/MusicTint';
 import { Glass, GlassTarget, BlurEnabled } from './src/components/Glass';
 import { scheduleOnRN } from 'react-native-worklets';
 import { TVCanvas, useCanvasDimensions } from './src/components/TVCanvas';
@@ -191,7 +192,7 @@ function LauncherView({ demo,onTarget }: { demo: Launcher;onTarget?:(id:string)=
   );
   useKeyboard({
     panel: demo.panel,
-    close: demo.close,
+    close: demo.back,
     control,
     page: demo.page,
     changePage,
@@ -263,7 +264,7 @@ function LauncherView({ demo,onTarget }: { demo: Launcher;onTarget?:(id:string)=
   useEffect(() => {
     if (demo.ready) {
       const timer = setTimeout(
-        () => focusId(`dock:${demo.prefs.dock[0]}`),
+        () => {if(!latest.current.panel)focusId(`dock:${demo.prefs.dock[0]}`);},
         220,
       );
       return () => clearTimeout(timer);
@@ -461,6 +462,7 @@ function LauncherView({ demo,onTarget }: { demo: Launcher;onTarget?:(id:string)=
               />
             )}
           </View>
+          <MusicTint enabled={demo.prefs.musicTint===true} playing={demo.playing&&demo.music} colors={demo.native?(demo.snapshot?.music.colors??['#e6eaf0','#929aa8']):tracks[demo.track]!.colors}/>
         </BlurTargetView>
         <View nativeID="launcher-scene" style={{ flex: 1, overflow: 'hidden' }}>
           {demo.page > 0 && (

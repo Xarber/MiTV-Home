@@ -104,7 +104,7 @@ function Band({
   const style = useAnimatedStyle(() => ({
     transform: [
       {
-        scaleY: withTiming(playing ? (bands.get()[index] ?? 0.12) : 0.12, {
+        scaleY: withTiming(playing ? (bands.get()[index] ?? 0.12) : 0.06, {
           duration: reduced ? 0 : 100,
         }),
       },
@@ -130,7 +130,7 @@ function Band({
               }
             : undefined),
         },
-        !animated && style,
+        (!animated || !playing) && style,
       ]}
     >
       <LinearGradient

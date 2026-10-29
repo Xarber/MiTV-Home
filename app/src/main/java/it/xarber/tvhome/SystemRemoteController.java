@@ -12,8 +12,8 @@ import org.json.JSONObject;
 final class SystemRemoteController {
     private final Context context;
     private final PairingStore store;
-    private PyObject client;
-    private boolean paired;
+    private volatile PyObject client;
+    private volatile boolean paired;
     SystemRemoteController(Context context){this.context=context.getApplicationContext();store=new PairingStore(context,"system-tv-remote");}
     private JSONObject call(String operation,JSONObject payload) throws Exception {
         if(client==null){
@@ -31,7 +31,7 @@ final class SystemRemoteController {
     synchronized JSONObject request(String operation,JSONObject payload){
         try{
             JSONObject result=call(operation,payload);
-            if(operation.equals("pair_finish")&&result.optBoolean("ready")){
+            if(operation.equals("pair_finish")&&(result.optBoolean("paired")||result.optBoolean("ready"))){
                 JSONObject saved=store.read();if(saved==null)return error("storage_failed");
                 JSONObject credentials=new JSONObject(saved.getString("credentials")).put("paired",true);save(credentials);paired=true;
             }
@@ -39,8 +39,8 @@ final class SystemRemoteController {
             return result;
         }catch(Exception failure){try{if(client!=null)client.callAttr("host_failure",operation.startsWith("pair")?"system_"+operation:"system_key",failure.getClass().getSimpleName());}catch(Exception ignored){}return error("runtime_unavailable");}
     }
-    synchronized JSONObject state(){
-        try {JSONObject state=client==null?new JSONObject():new JSONObject(client.callAttr("request","state").toString());if(client==null){JSONObject saved=store.read();paired=saved!=null&&new JSONObject(saved.getString("credentials")).optBoolean("paired");}state.put("paired",paired);if(!state.has("status"))state.put("status",paired?"paired":"not_paired");return state;}
+    JSONObject state(){
+        try {JSONObject state=client==null?new JSONObject():new JSONObject(client.callAttr("request","state").toString());if(client==null){JSONObject saved=store.read();paired=saved!=null&&new JSONObject(saved.getString("credentials")).optBoolean("paired");}state.put("paired",state.optBoolean("paired",paired));if(!state.has("status"))state.put("status",paired?"paired":"not_paired");return state;}
         catch(Exception failure){return error("storage_failed");}
     }
     synchronized void close(){try{if(client!=null)client.callAttr("request","shutdown");}catch(Exception ignored){}client=null;}

@@ -60,7 +60,7 @@ public final class TVPlatform {
     static void remoteEvent(String event,HomeRemoteServer server){if(!foreground())return;JSONObject value=new JSONObject();try{if(event.equals("pair-request"))value.put("pin",server.pin()).put("origin",server.requestingOrigin());}catch(Exception ignored){}AureaTVModule.event(event,value);}
     JSONObject snapshot(boolean refresh)throws Exception{
         main.post(this::notifyUpdate);JSONObject result=new JSONObject().put("schema",1).put("catalog",catalog.read(refresh));
-        JSONObject preferences=new JSONObject().put("dock",catalog.dock()).put("wallpaper",prefs.getString("wallpaper","classic")).put("motion",prefs.getBoolean("wallpaper-motion",false)).put("glass",prefs.getBoolean("activity-background",true)).put("blur",prefs.getBoolean("blur-enabled",true)).put("language",AppLanguage.code(context));
+        JSONObject preferences=new JSONObject().put("dock",catalog.dock()).put("wallpaper",prefs.getString("wallpaper","classic")).put("motion",prefs.getBoolean("wallpaper-motion",false)).put("glass",prefs.getBoolean("activity-background",true)).put("blur",prefs.getBoolean("blur-enabled",true)).put("musicTint",prefs.getBoolean("music-wallpaper-tint",false)).put("language",AppLanguage.code(context));
         AudioManager audio=context.getSystemService(AudioManager.class);int maximum=audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC);int volume=Math.round(100f*audio.getStreamVolume(AudioManager.STREAM_MUSIC)/Math.max(1,maximum));
         JSONObject music=receiverPlayback().state();Bitmap cover=receiverPlayback().cover();if(cover!=paletteArtwork){paletteArtwork=cover;palette=new JSONArray();for(int color:WavePalette.from(cover))palette.put(String.format(java.util.Locale.US,"#%06x",color&0xffffff));}music.put("colors",palette);HomeRemoteServer remote=HomeRemoteService.server();
         result.put("preferences",preferences).put("music",music).put("network",network()).put("volume",volume).put("remoteConnected",remote!=null&&remote.hasActiveRemote()).put("paired",pairedState()).put("updates",updateState())
@@ -120,6 +120,7 @@ public final class TVPlatform {
         SharedPreferences.Editor edit=prefs.edit();if(data.has("dock"))catalog.writeDock(data.getJSONArray("dock"),edit);
         String language=data.has("language")?data.getString("language"):null;if(language!=null&&!language.equals("it")&&!language.equals("en"))throw new IllegalArgumentException("invalid_language");
         if(data.has("wallpaper")){String value=data.getString("wallpaper");if(!WallpaperArt.valid(value))throw new IllegalArgumentException("invalid_wallpaper");edit.putString("wallpaper",value);}
+        if(data.has("musicTint"))edit.putBoolean("music-wallpaper-tint",data.getBoolean("musicTint"));
         if(data.has("blur"))edit.putBoolean("blur-enabled",data.getBoolean("blur"));
         if(data.has("motion"))edit.putBoolean("wallpaper-motion",data.getBoolean("motion"));if(data.has("glass"))edit.putBoolean("activity-background",data.getBoolean("glass"));if(!edit.commit())throw new IllegalStateException("storage_failed");
         if(language!=null)AppLanguage.set(context,language);

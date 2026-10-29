@@ -116,7 +116,7 @@ def main():
         (ROOT/'app/src/main/assets/build-metadata.json').write_text(json.dumps(data, indent=2)+'\n')
         print(json.dumps(data))
     elif args.action == 'notes':
-        print(f'## MiTV Home {current["version"]}\n\n{current["highlights"]["en"]}\n\n### Fixes & Improvements\n\n{current["fixes"]["en"]}\n\nAndroid TV 8+; signed universal APK for sideloading, AAB for store tooling. iOS is not supported.\n\nMac Music playback remains unresolved; iPad radio/local-library playback was reported working. Port 80 falls back to 8765 when Android restricts privileged ports.\n\nSee CHANGELOG.md and docs/INSTALL.md. Signing differs from local debug builds.')
+        print(f'## MiTV Home {current["version"]}\n\n{current["highlights"]["en"]}\n\n### Fixes & Improvements\n\n{current["fixes"]["en"]}\n\nAndroid TV and Android phone APK/AAB, iOS unsigned IPA (external signing required), iOS simulator and web/PWA artifacts.\n\nMac Music playback remains unresolved; iPad radio/local-library playback was reported working. Port 80 falls back to 8765 when Android restricts privileged ports.\n\nSee CHANGELOG.md and docs/INSTALL.md. Signing differs from local debug builds.')
         print('\n### Developer changes\n')
         # Previous project release, if any; keep upstream history out of initial notes.
         tags = subprocess.check_output(['git','tag','--merged','HEAD','--sort=-version:refname','--list','v*'],cwd=ROOT,text=True).splitlines()

@@ -29,3 +29,5 @@ See [phone remote](features/PHONE_REMOTE.md), [PWA](features/PWA.md), and [brand
 
 - [One complete build entry point](decisions/0004-one-build-entry-point.md)
 - [Workflow simplification and validation report](reports/2026-10-29-workflows.md)
+
+- [Native remote and music follow-up](reports/2026-10-29-remote-native.md)

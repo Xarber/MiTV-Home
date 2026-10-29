@@ -79,7 +79,8 @@ public final class HomeRemoteService extends Service {
         if(operation.equals("launch")){
             String id=payload.optString("id");if(id.length()>512||!catalog.contains(id))return SystemRemoteController.error("unknown_target");
             if(TVPlatform.foreground())return onMain(()->catalog.launch(TVPlatform.get(this),id));
-            if(home()!=null)return onMain(()->{LegacyHomeActivity activity=home();if(activity==null)return SystemRemoteController.error("home_changed");catalog.launch(activity,id);return accepted();});
+            if(command.equals("control"))return SystemRemoteController.error("home_required");
+        if(home()!=null)return onMain(()->{LegacyHomeActivity activity=home();if(activity==null)return SystemRemoteController.error("home_changed");catalog.launch(activity,id);return accepted();});
             android.content.pm.ResolveInfo defaultHome=getPackageManager().resolveActivity(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME),android.content.pm.PackageManager.MATCH_DEFAULT_ONLY);
             if(!Settings.canDrawOverlays(this)&&(defaultHome==null||defaultHome.activityInfo==null||!getPackageName().equals(defaultHome.activityInfo.packageName)))return SystemRemoteController.error("set_default_home");
             pendingLaunch=id;launchDeadline=SystemClock.elapsedRealtime()+12000;JSONObject result=key("home");if(result.has("error"))pendingLaunch=null;return result;
@@ -88,7 +89,7 @@ public final class HomeRemoteService extends Service {
         return SystemRemoteController.error("unsupported");
     }
     private JSONObject key(String command)throws Exception{
-        if(!command.matches("up|down|left|right|ok|back|home|volumeup|volumedown|playpause|next|previous"))return SystemRemoteController.error("unsupported");
+        if(!command.matches("up|down|left|right|ok|back|home|volumeup|volumedown|playpause|next|previous|menu|control"))return SystemRemoteController.error("unsupported");
         if(TVPlatform.foreground())return TVPlatform.remoteKey(command);
         if(home()!=null)return onMain(()->{LegacyHomeActivity activity=home();if(activity==null)return SystemRemoteController.error("home_changed");activity.remoteCommand(command);return accepted();});
         if(command.equals("home")){

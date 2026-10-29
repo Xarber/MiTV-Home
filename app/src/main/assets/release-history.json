@@ -2,6 +2,48 @@
   "schema": 1,
   "releases": [
     {
+      "version": "2.0.1",
+      "code": 27,
+      "date": "2026-10-29",
+      "critical": false,
+      "highlights": {
+        "en": "Refined native remote, pairing recovery and music-themed wallpapers.",
+        "it": "Telecomando nativo migliorato, recupero abbinamento e sfondi musicali."
+      },
+      "fixes": {
+        "en": "Safe-area-aware anchored popups, submenu Back navigation, menu and combined playback buttons, customized input names/icons and silent paused waves.",
+        "it": "Popup ancorati rispettosi delle aree sicure, ritorno nei sottomenu, pulsanti menu e riproduzione, ingressi personalizzati e onde in pausa al minimo."
+      },
+      "compatibility": {
+        "en": "Preserves the production Android TV package and signing key. iOS glass and preview rotation depend on OS support. Native fixes require device verification.",
+        "it": "Mantiene pacchetto e firma Android TV. Vetro iOS e rotazione anteprima dipendono dal sistema. Le correzioni native richiedono verifica sul dispositivo."
+      },
+      "features": [
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Native phone controls",
+            "it": "Controlli nativi sul telefono"
+          },
+          "detail": {
+            "en": "Anchored native materials, safe areas, explicit menu controls and verified system pairing.",
+            "it": "Materiali nativi ancorati, aree sicure, menu espliciti e abbinamento verificato."
+          }
+        },
+        {
+          "icon": "sound",
+          "label": {
+            "en": "Music wallpaper tint",
+            "it": "Sfumatura musicale dello sfondo"
+          },
+          "detail": {
+            "en": "An optional animated artwork gradient works with every wallpaper. Input hero marks use normalized visible bounds.",
+            "it": "Un gradiente animato opzionale della copertina funziona con ogni sfondo. I loghi degli ingressi usano dimensioni visibili uniformi."
+          }
+        }
+      ]
+    },
+    {
       "version": "2.0.0",
       "code": 26,
       "date": "2026-10-28",

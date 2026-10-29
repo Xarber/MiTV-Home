@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-import React from 'react';
+import React,{useState} from 'react';
+import {heroMarkSize} from '../model/heroMark';
 import { Image, View, Text } from 'react-native';
 import { useNativeImage } from './NativeAppImage';
 import { Icon } from './Icon';
@@ -13,14 +14,16 @@ function Mark({
   name: string;
   hero: boolean;
 }) {
-  const image = useNativeImage('brand:' + brand, 'icon');
+  const [heroSize,setHeroSize]=useState({width:112,height:90});
+  const image = useNativeImage('brand:' + brand, hero?'hero-icon':'icon');
   return (
-    <View style={{ alignItems: 'center', gap: 8, width: hero ? 95 : 65 }}>
+    <View style={{ alignItems: 'center', gap: 8, width: hero ? 160 : 65, height:hero?108:undefined,justifyContent:'center' }}>
       {image ? (
         <Image
           source={{ uri: image }}
           resizeMode="contain"
-          style={{ width: hero ? 78 : 52, height: hero ? 66 : 44 }}
+          onLoad={hero?event=>{const source=event.nativeEvent.source;if(source.width&&source.height)setHeroSize(heroMarkSize(source.width,source.height));}:undefined}
+          style={hero?heroSize:{width:52,height:44}}
         />
       ) : (
         <Icon name="game" size={36} />
@@ -71,7 +74,7 @@ export function InputMarks({
               ],
             ]
           : [];
-  const systemImage = useNativeImage(app.id, 'icon', brands.length === 0);
+  const systemImage = useNativeImage(app.id, hero?'hero-icon':'icon', brands.length === 0);
   return (
     <View
       style={{
@@ -82,7 +85,7 @@ export function InputMarks({
         paddingVertical: hero ? 24 : 9,
       }}
     >
-      {brands.length ? (
+      {hero&&app.kind==='live'?<Icon name="tv" size={100}/>:brands.length ? (
         brands.map(([brand, name]) => (
           <Mark key={brand} brand={brand!} name={name!} hero={hero} />
         ))
@@ -90,10 +93,10 @@ export function InputMarks({
         <Image
           source={{ uri: systemImage }}
           resizeMode="contain"
-          style={{ width: hero ? 80 : 50, height: hero ? 80 : 50 }}
+          style={{ width: hero ? 100 : 50, height: hero ? 100 : 50 }}
         />
       ) : (
-        <Icon name={app.icon} size={hero ? 80 : 44} />
+        <Icon name={app.icon} size={hero ? 100 : 44} />
       )}
     </View>
   );

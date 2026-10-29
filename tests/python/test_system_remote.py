@@ -45,3 +45,32 @@ class SystemRemoteChecks(unittest.TestCase):
         with patch.dict(sys.modules,{'androidtvremote2':module,'androidtvremote2.certificate_generator':generator}):
             self.prepare();self.client.pair_deadline=time.monotonic()-1
             self.assertEqual(self.request('pair_finish',pin='ABC123')['error'],'pairing_expired')
+
+class PairingRecoveryChecks(unittest.TestCase):
+    setUp=SystemRemoteChecks.setUp
+    tearDown=SystemRemoteChecks.tearDown
+    request=SystemRemoteChecks.request
+    prepare=SystemRemoteChecks.prepare
+    def adapter(self,remote):
+        module=types.ModuleType('androidtvremote2');module.AndroidTVRemote=remote
+        generator=types.ModuleType('androidtvremote2.certificate_generator');generator.generate_selfsigned_cert=lambda _:None
+        return patch.dict(sys.modules,{'androidtvremote2':module,'androidtvremote2.certificate_generator':generator})
+    def test_closed_pairing_socket_requires_authenticated_control_connection(self):
+        class CloseAfterPair(FakeRemote):
+            async def async_finish_pairing(self,pin):raise type('ConnectionClosed',(Exception,),{})()
+        with self.adapter(CloseAfterPair):
+            self.prepare();self.request('pair_begin');result=self.request('pair_finish',pin='ABC123')
+            self.assertTrue(result['paired']);self.assertTrue(result['ready'])
+    def test_closed_pairing_socket_cannot_hide_invalid_authentication(self):
+        class Untrusted(FakeRemote):
+            async def async_finish_pairing(self,pin):raise type('ConnectionClosed',(Exception,),{})()
+            async def async_connect(self):raise type('InvalidAuth',(Exception,),{})()
+        with self.adapter(Untrusted):
+            self.prepare();self.request('pair_begin');result=self.request('pair_finish',pin='ABC123')
+            self.assertEqual(result['error'],'authentication_failed');self.assertFalse(self.client.paired)
+    def test_acknowledged_pair_survives_temporary_control_unavailability(self):
+        class DelayedControl(FakeRemote):
+            async def async_connect(self):raise type('CannotConnect',(Exception,),{})()
+        with self.adapter(DelayedControl):
+            self.prepare();self.request('pair_begin');result=self.request('pair_finish',pin='ABC123')
+            self.assertTrue(result['paired']);self.assertFalse(result['ready']);self.assertEqual(result['status'],'reconnecting')

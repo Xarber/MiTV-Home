@@ -2,6 +2,6 @@
   "id": "it.xarber.mitvhome",
   "url": "https://github.com/Xarber/MiTV-Home",
   "author": "Xarber",
-  "name": "MiTV Home",
-  "additionalSettings": "{\"includePrereleases\":false,\"apkFilterRegEx\":\"android-universal.*\\\\.apk$\"}"
+  "name": "Aurea Home",
+  "additionalSettings": "{\"includePrereleases\":false,\"apkFilterRegEx\":\"^MiTV-Home-.*-android-universal-.*\\\\.apk$\",\"filterReleaseTitlesByRegEx\":\"^(Aurea|MiTV) Home [0-9]\"}"
 }

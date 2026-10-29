@@ -31,4 +31,8 @@ else:
         payload=out/'Payload';payload.mkdir();shutil.copytree(app,payload/app.name);subprocess.run(['ditto','-c','-k','--keepParent',str(payload),str(target)],check=True);shutil.rmtree(payload)
     else:subprocess.run(['ditto','-c','-k','--keepParent',str(app),str(target)],check=True)
 manifest={'name':'Aurea Remote','package':'it.xarber.aurea.remote','version':version,'commit':commit,'channel':channel,'platform':platform,'variant':kind,'size':target.stat().st_size,'sha256':hashlib.sha256(target.read_bytes()).hexdigest(),'signing':'unsigned-requires-external-signing' if kind=='unsigned' else 'release-key' if platform=='android' else 'simulator-only'}
+if platform=='ios':
+    entitlement_file=Path('.phone-native/ios/AureaRemote/AureaRemote.entitlements');entitlements=plistlib.loads(entitlement_file.read_bytes()) if entitlement_file.exists() else {}
+    manifest.update(buildNumber=str(info['CFBundleVersion']),minimumOS=info.get('MinimumOSVersion'),appPermissions={'entitlements':sorted(entitlements),'privacy':{key:value for key,value in info.items() if key.endswith('UsageDescription') and isinstance(value,str)}})
+else:manifest.update(buildNumber=str(config['android']['versionCode']),minimumSdk=26)
 target.with_suffix(target.suffix+'.json').write_text(json.dumps(manifest,indent=2)+'\n');target.with_suffix(target.suffix+'.sha256').write_text(manifest['sha256']+'  '+target.name+'\n')

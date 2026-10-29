@@ -3,6 +3,7 @@ import React from 'react';
 import { Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import TVHomeDemo, { NativeTVHome } from './TVHome';
+import {mobileRemoteBuild} from './src/platform/native/tv';
 import PhoneRemoteApp from './src/remote/PhoneRemoteApp';
 export default function App() {
   const web = Platform.OS === 'web';
@@ -12,7 +13,7 @@ export default function App() {
   const preview = web && !tvHosted && params?.get('preview') === '1';
   return (
     <SafeAreaProvider>
-      {Platform.isTV ? (
+      {Platform.isTV&&!mobileRemoteBuild ? (
         <NativeTVHome />
       ) : phone ? (
         <PhoneRemoteApp preview={preview} />

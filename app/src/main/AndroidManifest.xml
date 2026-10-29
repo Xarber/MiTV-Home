@@ -39,7 +39,7 @@
 
         <activity android:name="it.xarber.tvhome.MainActivity" android:theme="@style/AureaExpoHome" android:exported="true" android:screenOrientation="${homeOrientation}" android:launchMode="singleTask" android:configChanges="orientation|screenSize|keyboard|keyboardHidden|uiMode" android:excludeFromRecents="${homeExcludeRecents}">
             <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="${homeCategory}"/><category android:name="android.intent.category.DEFAULT"/></intent-filter>
-            <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LEANBACK_LAUNCHER"/></intent-filter>
+            <intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="${homeSecondaryCategory}"/></intent-filter>
         </activity>
         <activity android:name="it.xarber.tvhome.LegacyHomeActivity" android:theme="@style/AppTheme" android:exported="false" android:screenOrientation="landscape" android:configChanges="orientation|screenSize|keyboard|keyboardHidden|uiMode" />
         <activity

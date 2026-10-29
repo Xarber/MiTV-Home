@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { catalog, entry, defaultDock, type AppEntry } from '../model/catalog';
+import {usePanelNavigation} from '../hooks/usePanelNavigation';
 import { useDemo } from '../hooks/useDemo';
 import { nativeFocus } from '../platform/native/focus';
 import { tv, nativeSnapshot, type TVEvent } from '../platform/native/tv';
@@ -22,11 +23,11 @@ export function usePreviewLauncher(): Launcher {
 export function useNativeLauncher(): Launcher {
   const [snapshot, setSnapshot] = useState<NativeSnapshot>();
   const [error, setError] = useState<string>();
+  const {panel,setPanel,back,close,canGoBack}=usePanelNavigation();
   const current = useRef(snapshot);
   const viewHash = useRef('');
   const [page, setPage] = useState(0),
     [selected, setSelected] = useState(''),
-    [panel, setPanel] = useState<string | null>(null),
     [notice, setNotice] = useState(''),
     [filter, setFilter] = useState('all'),
     [artwork, setArtwork] = useState<string>();
@@ -283,7 +284,7 @@ export function useNativeLauncher(): Launcher {
     start: () => {},
     toggle: () => media('play_pause'),
     next: (delta = 1) => media(delta < 0 ? 'previous' : 'next'),
-    close: () => setPanel(null),
+    close,back,canGoBack,
     pin,
     remove,
     reset: () => {

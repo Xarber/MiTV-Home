@@ -35,7 +35,7 @@ function pump() {
 }
 export function useNativeImage(
   id: string,
-  kind: 'icon' | 'banner',
+  kind: 'icon' | 'banner' | 'hero-icon',
   enabled = true,
 ) {
   const [image, setImage] = useState<string>();
