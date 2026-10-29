@@ -24,7 +24,7 @@ TV and phone have distinct stable/beta Obtainium profiles. Metadata releases are
 
 ## Validation
 
-TypeScript and workflow validation passed. Host/model tests passed, including authenticated recovery/rejection, delayed readiness, source-channel/asset validation and hero sizing. Browser tests passed for 19 cases, including submenu Back, paused six-bar baseline, explicit controls and bounded phone popup. PWA update/offline checks passed. Final batch counts: 21 model tests passed; 44 host Python cases ran with two protocol-environment-dependent skips; 19 headless Chrome browser tests passed. Workflow validation and Git whitespace checks passed.
+TypeScript and workflow validation passed. Host/model tests passed, including authenticated recovery/rejection, delayed readiness, source-channel/asset validation and hero sizing. Browser tests passed for 20 cases, including submenu Back, paused six-bar baseline, explicit controls, bounded phone popup and an animated music tint over a selected wallpaper. PWA update/offline checks passed. Final batch counts: 21 model tests passed; 44 host Python cases ran with two protocol-environment-dependent skips; 20 headless Chrome browser tests passed. Workflow validation and Git whitespace checks passed.
 
 Existing TV diagnostics and installed package metadata were read from the physical TV; new native behavior was not installed or exercised there. iOS glass/safe areas/rotation, Android pairing and HTTP concurrency, native icon rendering and sources inside real AltStore/Obtainium require device testing and the native build. Headless Chrome checks do not establish iPhone/iPad behavior. Public source URLs are not claimed live before publication.
 
