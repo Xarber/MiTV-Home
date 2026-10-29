@@ -5,6 +5,7 @@ import { BlurView } from 'expo-blur';
 export const GlassTarget = createContext<
   RefObject<React.ComponentRef<typeof View> | null> | undefined
 >(undefined);
+export const BlurEnabled = createContext(true);
 /** A live background target, never a cached screenshot. Blur intensity stays constant. */
 export function Glass({
   strong = false,
@@ -14,7 +15,9 @@ export function Glass({
   shade?: number;
 }) {
   const target = useContext(GlassTarget);
+  const enabled = useContext(BlurEnabled);
   if (Platform.OS === 'web' || !target) return null;
+  if (!enabled) return <View pointerEvents="none" style={[StyleSheet.absoluteFill,{backgroundColor:`rgba(0,0,0,${shade})`}]} />;
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
       <BlurView

@@ -22,12 +22,12 @@ export class RemoteClient {
  private cancel(){clearTimeout(this.timer);for(const controller of this.requests)controller.abort();this.requests.clear();this.polling=false;this.generation++;this.iconQueue=[];this.iconsLoading.clear();this.lastArt=undefined;}
  connect(transport:Transport,session:Session,fixture=false){
   this.cancel();this.transport?.close?.();this.transport=transport;this.session=session;this.fixture=fixture;this.active=true;this.attempts=0;
-  this.update({status:'connecting',device:undefined,catalog:undefined,artwork:undefined,icons:{},error:undefined,systemPairing:false,lastReceived:undefined});
+  this.update({status:'connecting',device:undefined,catalog:undefined,artwork:undefined,icons:{},error:undefined,systemPairing:false,pairingSuccess:undefined,lastReceived:undefined});
   void this.poll();
  }
  async beginPair(transport:Transport,address:string){
   this.cancel();this.transport?.close?.();this.transport=transport;this.session={address,token:''};this.fixture=false;this.active=true;
-  this.update({status:'connecting',device:undefined,catalog:undefined,icons:{},error:undefined,systemPairing:false});
+  this.update({status:'connecting',device:undefined,catalog:undefined,icons:{},error:undefined,systemPairing:false,pairingSuccess:undefined});
   const generation=this.generation;
   try{await this.verifyIdentity();if(generation!==this.generation)return;await this.rpc('pair_start',{});if(generation===this.generation)this.update({status:'pairing'});}catch(error){if(generation===this.generation)this.update({status:'disconnected',error:this.code(error)});}
  }
@@ -39,7 +39,7 @@ export class RemoteClient {
    if(typeof result.token!=='string'||! /^[A-Za-z0-9_-]{32}$/.test(result.token))throw new RemoteError('invalid_response');
    if(!this.fixture&&result.id!==this.session?.id)throw new RemoteError('device_changed');
    this.session={...this.session!,token:result.token};await this.trust.save(this.session);
-   if(generation!==this.generation)return;this.update({status:'connecting',error:undefined});void this.poll();
+   if(generation!==this.generation)return;this.update({status:'connecting',error:undefined,pairingSuccess:'launcher'});void this.poll();
   }catch(error){if(generation===this.generation)this.update({status:'pairing',error:this.code(error)});}
  }
  private async rpc(operation:string,payload:Record<string,unknown>,timeout=8000){
@@ -87,9 +87,10 @@ export class RemoteClient {
  media(action:MediaAction,value?:number){return this.action('media',{source:this.snapshot.device?.music.source,action,...(value===undefined?{}:{value})});}
  async systemPair(pin?:string){
   const generation=this.generation;
-  try{if(pin!==undefined&&!/^[A-Fa-f0-9]{6}$/.test(pin))throw new RemoteError('invalid_pin');await this.rpc(pin===undefined?'system_pair_begin':'system_pair_finish',pin===undefined?{}:{pin},20000);if(generation===this.generation){this.update({systemPairing:pin===undefined,error:undefined});this.refresh();}}
+  try{if(pin!==undefined&&!/^[A-Fa-f0-9]{6}$/.test(pin))throw new RemoteError('invalid_pin');const result=await this.rpc(pin===undefined?'system_pair_begin':'system_pair_finish',pin===undefined?{}:{pin},20000);if(pin!==undefined&&result.ready!==true)throw new RemoteError('system_pairing_required');if(generation===this.generation){this.update({systemPairing:pin===undefined,error:undefined,pairingSuccess:pin===undefined?undefined:'system'});this.refresh();}}
   catch(error){if(generation===this.generation)this.update({error:this.code(error)});}
  }
+ dismissPairingSuccess(){this.update({pairingSuccess:undefined});}
  private iconQueue:string[]=[];
  private iconsLoading=new Set<string>();
  private iconWorkers=0;
@@ -98,7 +99,7 @@ export class RemoteClient {
  setActive(active:boolean){if(this.active===active)return;this.active=active;if(!active){clearTimeout(this.timer);for(const controller of this.requests)controller.abort();this.requests.clear();this.polling=false;this.generation++;if(this.session?.token)void this.rpc('presence',{disconnect:true},1500).catch(()=>{});}else if(this.session?.token){this.update({status:'connecting'});this.refresh();}}
  async disconnect(forget=false){
   const session=this.session,transport=this.transport;this.cancel();const generation=this.generation;this.active=false;this.transport=undefined;this.session=undefined;
-  this.update({status:'disconnected',device:undefined,catalog:undefined,artwork:undefined,icons:{},error:undefined,systemPairing:false});
+  this.update({status:'disconnected',device:undefined,catalog:undefined,artwork:undefined,icons:{},error:undefined,systemPairing:false,pairingSuccess:undefined});
   if(forget&&session&&!this.fixture){
    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),1500);
    try{await transport?.rpc('revoke',{},session.token,controller.signal);}catch{/* Local forgetting remains possible while a TV is offline. */}finally{clearTimeout(timer);}

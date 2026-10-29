@@ -34,6 +34,7 @@ export function useNativeLauncher(): Launcher {
     generation = useRef(0),
     artworkId = useRef<string | undefined>(undefined);
   const first = useRef(true);
+  const resumePairing=useRef(true);
   const accept = useCallback((value: Record<string, unknown>) => {
     const next = nativeSnapshot(value);
     current.current = next;
@@ -52,9 +53,10 @@ export function useNativeLauncher(): Launcher {
         : next.preferences.dock[0]!,
     );
     setError(undefined);
+    if(resumePairing.current){resumePairing.current=false;if(next.paired.pending)setPanel('pair');}
     if (first.current) {
       setSelected(next.preferences.dock[0]!);
-      if (next.releasePending) setPanel('whatsnew');
+      if (next.releasePending&&!next.paired.pending) setPanel('whatsnew');
       tv.ready();
       first.current = false;
     }
@@ -104,7 +106,7 @@ export function useNativeLauncher(): Launcher {
     const subscription = AppState.addEventListener('change', (state) => {
       clearInterval(timer);
       generation.current++;
-      if (state === 'active') active();
+      if (state === 'active') {resumePairing.current=true;active();}
     });
     return () => {
       clearInterval(timer);
@@ -120,21 +122,16 @@ export function useNativeLauncher(): Launcher {
   useEffect(
     () =>
       tv.subscribe((event: TVEvent) => {
+        if(event.type==='playback')refresh();
+        if(event.type==='home-resumed'){resumePairing.current=true;refresh();}
         if (event.type === 'home') {
-          if (current.current?.paired.pending) setPanel('pair');
-          else {
-            setPage(0);
-            setPanel(null);
-            setSelected(current.current?.preferences.dock[0] ?? '');
-            setTimeout(
-              () =>
-                nativeFocus.focus(
-                  'dock:' + current.current?.preferences.dock[0],
-                ),
-              350,
-            );
-          }
-          refresh();
+          resumePairing.current=true;
+          void tv.execute('snapshot').then(value=>{
+            const next=accept(value);
+            if(next.paired.pending){setPanel('pair');return;}
+            setPage(0);setPanel(null);setSelected(next.preferences.dock[0]??'');
+            setTimeout(()=>nativeFocus.focus('dock:'+next.preferences.dock[0]),350);
+          }).catch(refresh);
         }
         if (event.type === 'paired') {
           setPanel((value) => (value === 'remote' ? null : value));
@@ -156,7 +153,7 @@ export function useNativeLauncher(): Launcher {
             return value;
           });
       }),
-    [refresh],
+    [accept,refresh],
   );
   const execute = useCallback(
     async (operation: string, payload: Record<string, unknown> = {}) => {

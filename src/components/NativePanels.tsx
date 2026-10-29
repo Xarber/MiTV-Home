@@ -93,10 +93,10 @@ export function NativePanels({
       group="modal"
       label={t(label)}
       onPress={click}
-      style={s.row}
+      style={[s.row,panel==='control'&&{minHeight:60,padding:15}]}
     >
-      <Icon name={icon} size={21} />
-      <Text style={s.label}>{t(label)}</Text>
+      <Icon name={icon} size={panel==='control'?24:21} />
+      <Text style={[s.label,panel==='control'&&{fontSize:17}]}>{t(label)}</Text>
       {value !== undefined && <Text style={s.value}>{t(value)}</Text>}
     </FocusButton>
   );
@@ -151,6 +151,7 @@ export function NativePanels({
       anchor={panel === 'music' ? musicAnchor : settingsAnchor}
       visible={!!demo.panel}
       close={demo.close}
+      preferredWidth={panel==='control'?470:undefined}
     >
       {panel !== 'music' && (
         <View style={s.header}>
@@ -168,7 +169,6 @@ export function NativePanels({
       <FadedScroll key={panel}>
         {panel === 'music' && (
           <PhonePlayer
-            focusSummary
             t={t}
             music={music}
             artwork={demo.artwork}
@@ -228,6 +228,7 @@ export function NativePanels({
               demo.remote ? 'Connected' : undefined,
             )}
             {row('Wallpapers', 'wallpaper', () => demo.setPanel('wallpapers'))}
+            {row('Disable blur','sun',()=>demo.change({blur:demo.prefs.blur===false}),demo.prefs.blur===false?'On':'Off')}
             {row(
               'Activity background',
               'apps',

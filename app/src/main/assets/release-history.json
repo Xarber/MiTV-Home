@@ -11,8 +11,8 @@
         "it": "Expo diventa la base condivisa delle app Home, telefono e web."
       },
       "fixes": {
-        "en": "Native TV state and services are exposed through a typed platform adapter; browser examples remain isolated.",
-        "it": "Stato e servizi reali della TV sono collegati tramite un adattatore di piattaforma tipizzato; gli esempi web restano separati."
+        "en": "Improves TV focus and pairing restoration, shares AirPlay music activities with the phone remote, adds pairing confirmation and an optional blur switch, and corrects native build packaging.",
+        "it": "Migliora focus TV e ripristino abbinamento, condivide le attività musicali AirPlay con il telecomando, aggiunge conferma abbinamento e sfocatura opzionale e corregge il confezionamento nativo."
       },
       "compatibility": {
         "en": "Preserves Android TV package, signing identity and preferences. This framework migration requires physical TV validation before stable promotion. Mac Music interoperability remains unresolved.",

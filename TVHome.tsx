@@ -41,7 +41,7 @@ import { Panels } from './src/components/Panels';
 import { SlidingDetails } from './src/components/SlidingDetails';
 import { anchorFor, Anchor } from './src/components/AnchoredPanel';
 import { BlurTargetView } from 'expo-blur';
-import { Glass, GlassTarget } from './src/components/Glass';
+import { Glass, GlassTarget, BlurEnabled } from './src/components/Glass';
 import { scheduleOnRN } from 'react-native-worklets';
 import { TVCanvas, useCanvasDimensions } from './src/components/TVCanvas';
 import './src/platform/bootstrap';
@@ -86,6 +86,8 @@ function LauncherView({ demo,onTarget }: { demo: Launcher;onTarget?:(id:string)=
   const pageY = useSharedValue(0);
   const restore = useRef<string | null>(null);
   const modalWasOpen = useRef(false);
+  const rememberedFocus=useRef<Record<string,string>>({});
+  useEffect(()=>nativeFocus.onFocus(id=>{const group=nativeFocus.node(id)?.group;if(group?.startsWith("page-"))rememberedFocus.current[group]=id;}),[]);
   const wheelLock = useRef(0);
   const changePage = useCallback(
     (page: number) => {
@@ -206,7 +208,9 @@ function LauncherView({ demo,onTarget }: { demo: Launcher;onTarget?:(id:string)=
     }
     nativeFocus.measureGroup('page-' + page, () => {
       nativeFocus.endTransition(token);
-      const id =
+      const keepHeader=nativeFocus.group==='header'&&nativeFocus.node(nativeFocus.current);
+      const remembered=rememberedFocus.current['page-'+page];
+      const id =keepHeader?nativeFocus.current:remembered&&nativeFocus.node(remembered)?remembered:
         page === 0
           ? `dock:${current.prefs.dock.includes(current.selected) ? current.selected : current.prefs.dock[0]}`
           : page === 1
@@ -274,8 +278,8 @@ function LauncherView({ demo,onTarget }: { demo: Launcher;onTarget?:(id:string)=
       }
       previousPanel.current = demo.panel;
       const timer = setTimeout(
-        () => focusId(demo.panel === 'music' ? 'music-summary' : 'panel-close'),
-        100,
+        () => nativeFocus.measureGroup('modal',()=>focusId(demo.panel === 'music' ? 'music-play_pause' : 'panel-close')),
+        300,
       );
       return () => clearTimeout(timer);
     }
@@ -378,7 +382,7 @@ function LauncherView({ demo,onTarget }: { demo: Launcher;onTarget?:(id:string)=
       </View>
     );
   return (
-    <GlassTarget.Provider value={target}>
+    <BlurEnabled.Provider value={demo.prefs.blur!==false}><GlassTarget.Provider value={target}>
       <View style={[s.root, { height: canvasHeight, maxHeight: canvasHeight }]}>
         <BlurTargetView ref={target} style={StyleSheet.absoluteFill}>
           <Wallpaper id={demo.prefs.wallpaper} motion={demo.prefs.motion} />
@@ -461,7 +465,7 @@ function LauncherView({ demo,onTarget }: { demo: Launcher;onTarget?:(id:string)=
         <View nativeID="launcher-scene" style={{ flex: 1, overflow: 'hidden' }}>
           {demo.page > 0 && (
             <View
-              style={[StyleSheet.absoluteFill, s.libraryBlur]}
+              style={[StyleSheet.absoluteFill, s.libraryBlur,demo.prefs.blur===false&&({backdropFilter:"none"} as object)]}
               pointerEvents="none"
             >
               <Glass strong />
@@ -479,6 +483,7 @@ function LauncherView({ demo,onTarget }: { demo: Launcher;onTarget?:(id:string)=
                   onDeselect={() => setMusicHover(false)}
                   style={[
                     s.activity,
+                    demo.prefs.blur===false&&({backdropFilter:"none"} as object),
                     {
                       backgroundColor: demo.prefs.glass
                         ? 'rgba(0,0,0,.90)'
@@ -539,6 +544,7 @@ function LauncherView({ demo,onTarget }: { demo: Launcher;onTarget?:(id:string)=
                   onDeselect={() => setRemoteHover(false)}
                   style={[
                     s.activity,
+                    demo.prefs.blur===false&&({backdropFilter:"none"} as object),
                     {
                       backgroundColor: demo.prefs.glass
                         ? 'rgba(0,0,0,.90)'
@@ -571,13 +577,13 @@ function LauncherView({ demo,onTarget }: { demo: Launcher;onTarget?:(id:string)=
                 onSelect={() => setWifi(true)}
                 onDeselect={() => setWifi(false)}
                 onPress={() => demo.setPanel('network')}
-                style={s.pill}
+                style={[s.pill,demo.prefs.blur===false&&({backdropFilter:"none"} as object)]}
               >
                 <View
                   style={[s.activityInner, { gap: 0 }]}
                   onPointerLeave={() => setWifi(false)}
                 >
-                  <Icon name="wifi" size={20} />
+                  <Icon name="wifi" size={Platform.OS==='web'?20:23} />
                   <SlidingDetails expanded={wifi && !compact} width={demo.native?Math.min(220,Math.max(90,(demo.snapshot?.network.title?.length??12)*6.5)):90}>
                     <Text numberOfLines={1} style={s.wifi}>
                       {demo.native
@@ -599,11 +605,11 @@ function LauncherView({ demo,onTarget }: { demo: Launcher;onTarget?:(id:string)=
                 group="header"
                 label={t('Control Center')}
                 onPress={control}
-                style={[s.pill, { paddingHorizontal: compact ? 12 : 17 }]}
+                style={[s.pill,demo.prefs.blur===false&&({backdropFilter:"none"} as object), { paddingHorizontal: compact ? 12 : 17 }]}
               >
                 <Text style={s.time}>{time}</Text>
                 {!compact && <Text style={s.date}>{date}</Text>}
-                <Icon name="settings" size={19} />
+                <Icon name="settings" size={Platform.OS==='web'?19:22} />
               </FocusButton>
             </View>
           </View>
@@ -654,6 +660,7 @@ function LauncherView({ demo,onTarget }: { demo: Launcher;onTarget?:(id:string)=
               <View
                 style={[
                   s.dock,
+                  demo.prefs.blur===false&&({backdropFilter:"none"} as object),
                   {
                     gap: compact ? 8 : 17,
                     padding: demo.native ? 12 : compact ? 10 : 18,
@@ -912,7 +919,7 @@ function LauncherView({ demo,onTarget }: { demo: Launcher;onTarget?:(id:string)=
           />
         )}
       </View>
-    </GlassTarget.Provider>
+    </GlassTarget.Provider></BlurEnabled.Provider>
   );
 }
 const s = StyleSheet.create({
@@ -971,8 +978,8 @@ const s = StyleSheet.create({
   activity: {
     ...Platform.select({ web: { backdropFilter: 'blur(24px)' } as object }),
     borderRadius: 50,
-    minHeight: 50,
-    minWidth: 50,
+    minHeight: Platform.OS==='web'?50:56,
+    minWidth: Platform.OS==='web'?50:56,
     paddingHorizontal: 12,
   },
   activityInner: { flexDirection: 'row', alignItems: 'center', gap: 11 },
@@ -993,21 +1000,22 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
     borderRadius: 50,
-    backgroundColor: '#ffffff14',
-    minHeight: 48,
+    backgroundColor: Platform.OS==='web'?'#ffffff14':'rgba(8,10,16,.78)',
+    minHeight: Platform.OS==='web'?48:54,
+    minWidth: Platform.OS==='web'?44:54,
     paddingHorizontal: 12,
     ...Platform.select({ web: { backdropFilter: 'blur(20px)' } as object }),
   },
-  wifi: { fontSize: 12, color: '#eef1f7' },
+  wifi: { fontSize: Platform.OS==='web'?12:14, color: '#eef1f7' },
   time: {
     color: '#fff',
-    fontSize: 13,
+    fontSize: Platform.OS==='web'?13:15,
     fontWeight: '600',
     fontVariant: ['tabular-nums'],
   },
   date: {
     color: '#b7c0d1',
-    fontSize: 13,
+    fontSize: Platform.OS==='web'?13:15,
     fontWeight: '400',
     fontVariant: ['tabular-nums'],
   },
@@ -1064,13 +1072,13 @@ const s = StyleSheet.create({
   inputGrid: { flexDirection: 'row', gap: 24 },
   tabs: { flexDirection: 'row', gap: 8, marginTop: 30, marginBottom: 26 },
   tab: {
-    paddingHorizontal: 24,
-    paddingVertical: 10,
+    paddingHorizontal: Platform.OS==='web'?24:27,
+    paddingVertical: Platform.OS==='web'?10:12,
     borderRadius: 30,
     backgroundColor: '#ffffff08',
   },
   activeTab: { backgroundColor: '#ffffff20' },
-  tabLabel: { color: '#fff', fontSize: 14, fontWeight: '500' },
+  tabLabel: { color: '#fff', fontSize: Platform.OS==='web'?14:16, fontWeight: '500' },
   appsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: '2%' },
   appCaption: {
     fontSize: 12,

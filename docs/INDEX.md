@@ -23,3 +23,6 @@ See [phone remote](features/PHONE_REMOTE.md), [PWA](features/PWA.md), and [brand
 
 - [Phone remote and launcher preview](features/phone-remote.md)
 - [Expo remote batch and untested boundaries](reports/2026-10-28-expo-remote-batch.md)
+
+- [TV blur performance preference](features/TV_BLUR.md)
+- [TV follow-up and build diagnosis](reports/2026-10-29-tv-follow-up.md)

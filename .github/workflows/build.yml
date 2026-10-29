@@ -108,7 +108,20 @@ jobs:
   phone-companion:
     name: Phone companion formats
     if: github.event_name != 'pull_request' && !inputs.expo_preview && !inputs.apple_tv_preflight
+    needs: [apple-tv-runtime, apple-tv-pure]
     uses: ./.github/workflows/phone.yml
+    with:
+      dependency_run: ${{ github.run_id }}
+      platform: android
+    secrets: inherit
+
+  phone-ios:
+    name: Phone iOS formats
+    if: github.event_name != 'pull_request' && !inputs.expo_preview && !inputs.apple_tv_preflight
+    uses: ./.github/workflows/phone.yml
+    with:
+      dependency_run: ${{ github.run_id }}
+      platform: ios
     secrets: inherit
 
   web-remote:
@@ -152,7 +165,7 @@ jobs:
         id: native-wheels
         with:
           path: wheels/
-          key: apple-tv-cp311-${{ matrix.abi }}-${{ hashFiles('scripts/apple_tv/build_wheels.py') }}
+          key: apple-tv-provenance-v2-cp311-${{ matrix.abi }}-${{ hashFiles('scripts/apple_tv/build_wheels.py') }}
       - name: Reuse previously compiled pinned dependencies
         if: inputs.apple_tv_dependency_run != ''
         uses: actions/download-artifact@v6
@@ -363,7 +376,7 @@ jobs:
   publish:
     name: Publish validated channel
     if: github.event_name != 'pull_request' && !inputs.expo_preview && !inputs.apple_tv_preflight && (github.ref_name == 'main' || github.ref_name == 'beta')
-    needs: [checks, android, source, phone-companion]
+    needs: [checks, android, source, phone-companion, phone-ios]
     runs-on: ubuntu-24.04
     permissions:
       contents: write

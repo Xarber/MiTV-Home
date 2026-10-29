@@ -30,7 +30,7 @@ public final class HomeRemoteService extends Service {
     private HomeRemoteServer server;
     private SystemRemoteController system;
     private RemoteCatalog catalog;
-    private RemotePlayback playback;
+    private volatile RemotePlayback playback;
     private volatile String pendingLaunch;
     private volatile long launchDeadline;
     private final Runnable monitor=new Runnable(){public void run(){if(playback!=null)playback.clients(server!=null&&server.hasActiveRemote());main.postDelayed(this,5000);}};
@@ -39,6 +39,7 @@ public final class HomeRemoteService extends Service {
     static synchronized void attachExpo(MainActivity home){HomeRemoteService service=instance;if(service!=null&&service.pendingLaunch!=null&&SystemClock.elapsedRealtime()<service.launchDeadline){String target=service.pendingLaunch;service.pendingLaunch=null;service.main.post(()->service.catalog.launch(home,target));}}
     static synchronized void detach(LegacyHomeActivity home){if(visibleHome.get()==home)visibleHome.clear();}
     private static synchronized LegacyHomeActivity home(){LegacyHomeActivity activity=visibleHome.get();return activity!=null&&activity.resumed?activity:null;}
+    static RemotePlayback sharedPlayback(){HomeRemoteService service=instance;return service==null?null:service.playback;}
     static HomeRemoteServer server(){HomeRemoteService value=instance;return value==null?null:value.server;}
     static boolean enabled(Context context){return context.getSharedPreferences("phone_remote",MODE_PRIVATE).getBoolean("enabled",true);}
     static void ensure(Context context){if(!enabled(context))return;try{context.startForegroundService(new Intent(context,HomeRemoteService.class));}catch(Exception failure){android.util.Log.w("MiTVPairing","remote_service_start_failed "+failure.getClass().getSimpleName());}}
@@ -90,6 +91,11 @@ public final class HomeRemoteService extends Service {
         if(!command.matches("up|down|left|right|ok|back|home|volumeup|volumedown|playpause|next|previous"))return SystemRemoteController.error("unsupported");
         if(TVPlatform.foreground())return TVPlatform.remoteKey(command);
         if(home()!=null)return onMain(()->{LegacyHomeActivity activity=home();if(activity==null)return SystemRemoteController.error("home_changed");activity.remoteCommand(command);return accepted();});
+        if(command.equals("home")){
+            android.content.pm.ResolveInfo resolved=getPackageManager().resolveActivity(new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME),android.content.pm.PackageManager.MATCH_DEFAULT_ONLY);
+            boolean ownHome=resolved!=null&&resolved.activityInfo!=null&&getPackageName().equals(resolved.activityInfo.packageName);
+            if(ownHome||Settings.canDrawOverlays(this))return onMain(()->{startActivity(new Intent(this,MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_REORDER_TO_FRONT));return accepted();});
+        }
         JSONObject result=system.state().optBoolean("paired")?system.request("key",new JSONObject().put("command",command)):SystemRemoteController.error("system_pairing_required");
         if(!result.has("error"))return result;
         // Capability-based fallback, never replay global navigation into another app.

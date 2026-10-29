@@ -1,14 +1,30 @@
 name: Aurea Remote companion
 on:
   workflow_call:
+    inputs:
+      platform:
+        type: string
+        default: all
+      dependency_run:
+        type: string
+        required: true
   workflow_dispatch:
+    inputs:
+      platform:
+        type: string
+        default: all
+      dependency_run:
+        description: Successful full build run containing verified Python wheel artifacts
+        required: true
+        type: string
 permissions:
   contents: read
 concurrency:
-  group: aurea-phone-${{ github.ref }}
+  group: aurea-phone-${{ github.ref }}-${{ inputs.platform }}
   cancel-in-progress: false
 jobs:
   android:
+    if: inputs.platform != 'ios'
     name: Phone Android ${{ matrix.format }}
     runs-on: ubuntu-24.04
     timeout-minutes: 90
@@ -42,7 +58,7 @@ jobs:
         uses: actions/download-artifact@v6
         with:
           pattern: apple-tv-wheels-*
-          run-id: 40701926505
+          run-id: ${{ inputs.dependency_run }}
           github-token: ${{ github.token }}
           path: build/apple-tv-wheels
           merge-multiple: true
@@ -86,6 +102,7 @@ jobs:
       - if: always()
         run: rm -f "$RUNNER_TEMP/aurea-release.jks"
   ios:
+    if: inputs.platform != 'android'
     name: Phone iOS ${{ matrix.target }}
     runs-on: macos-26
     timeout-minutes: 45

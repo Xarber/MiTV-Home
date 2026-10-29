@@ -38,6 +38,8 @@ val allAbis = if (project.hasProperty("useBundledNative")) providers.gradlePrope
 
 android {
     namespace = "io.github.jqssun.airplay"
+    // Full source builds must not also package historical prebuilt media binaries.
+    sourceSets.getByName("main").jniLibs.setSrcDirs(emptyList<String>())
     sourceSets.getByName("main").java.srcDir(layout.buildDirectory.dir("generated/autolinking/src/main/java").get().asFile)
     compileSdk = 37
     ndkVersion = "27.0.12077973"

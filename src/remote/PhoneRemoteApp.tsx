@@ -34,6 +34,7 @@ export default function PhoneRemoteApp({preview=false}:{preview?:boolean}){
  useEffect(()=>{if(!dev)return;const timer=setTimeout(()=>setDev(false),30000);return()=>clearTimeout(timer);},[dev]);
  useEffect(()=>{if(wasPairing.current&&!state.systemPairing&&!state.error&&state.status==='connected'){setPairSuccess(true);setSystemPin('');}wasPairing.current=state.systemPairing;},[state.systemPairing,state.error,state.status]);
  useEffect(()=>{tv.ready();},[]);
+ useEffect(()=>{if(state.pairingSuccess){setSystemPin('');setPin('');setPanel('paired');}},[state.pairingSuccess]);
  const displayed=panel??retained;
  const button=(id:string,label:string,icon:IconName,action:()=>void,disabled=false)=><FocusButton key={id} id={id} group="phone" label={label} onPress={action} disabled={disabled} style={s.roundButton}><Icon name={icon} size={23}/></FocusButton>;
  const command=(key:RemoteKey)=>{void client.key(key);};
@@ -66,7 +67,7 @@ export default function PhoneRemoteApp({preview=false}:{preview?:boolean}){
  <View style={[s.tabs,{paddingBottom:Math.max(14,insets.bottom)}]}>{(['remote','apps','inputs'] as const).map(item=><FocusButton key={item} id={'phone-tab-'+item} group="phone" label={item==='remote'?'Remote':item==='apps'?'Apps':'Inputs'} selected={tab===item} onPress={()=>setTab(item)} style={{flex:1,gap:5,borderRadius:18,padding:10,backgroundColor:tab===item?'#ffffff12':'transparent'}}><Icon name={item==='remote'?'remote':item==='apps'?'apps':'inputs'} size={21}/><Text style={s.tabText}>{item==='remote'?'Remote':item==='apps'?'Apps':'Inputs'}</Text></FocusButton>)}</View>
  </View>
  {displayed&&<AnchoredPanel key={displayed==='music'?'music':'settings'} kind={displayed==='music'?'music':'settings'} anchor={anchor} bounds={bounds} visible={!!panel} close={()=>setPanel(null)}>
- {displayed!=='music'&&<View style={s.panelHeader}><Text style={[s.sectionTitle,{flex:1,marginVertical:0}]}>{displayed==='system'?'System controls':'Your televisions'}</Text><FocusButton id="phone-panel-close" group="phone-modal" label="Close" onPress={()=>setPanel(null)} style={s.roundButton}><Icon name="close" size={20}/></FocusButton></View>}
+ {displayed!=='music'&&<View style={s.panelHeader}><Text style={[s.sectionTitle,{flex:1,marginVertical:0}]}>{displayed==='system'?'System controls':displayed==='paired'?'Connected':'Your televisions'}</Text><FocusButton id="phone-panel-close" group="phone-modal" label="Close" onPress={()=>setPanel(null)} style={s.roundButton}><Icon name="close" size={20}/></FocusButton></View>}
  <FadedScroll>
  {displayed==='music'&&music&&<PhonePlayer music={music} artwork={state.artwork} connected={connected} action={(action,value)=>{void client.media(action,value);}}/>}
  {displayed==='settings'&&<>
@@ -85,6 +86,7 @@ export default function PhoneRemoteApp({preview=false}:{preview?:boolean}){
  {nativeTVAvailable&&row('phone-local-airplay','Start AirPlay on this Android device','airplay',()=>{void tv.execute('startReceiver');})}
  {dev&&<Text selectable style={s.caption}>Developer information{`\n`}Build: {process.env.EXPO_PUBLIC_SOURCE_COMMIT??'local working tree'}{`\n`}Platform: {Platform.OS}{`\n`}Connection: {state.status}{`\n`}Preview: {String(remote.preview)}{`\n`}System service: {state.device?.systemRemote.status??'unknown'}{`\n`}Error: {state.error??'none'}</Text>}
  </>}
+ {displayed==='paired'&&<View style={{alignItems:'center',gap:18,paddingVertical:24}}><Icon name="check" size={48}/><Text accessibilityRole="alert" style={s.bigTitle}>{state.pairingSuccess==='system'?'System remote paired':'Television paired'}</Text><Text style={s.description}>{state.pairingSuccess==='system'?'Home and navigation controls are ready.':'Your television is saved. You can now use the remote.'}</Text>{row('phone-paired-done','Done','check',()=>{client.dismissPairingSuccess();setPanel(null);})}</View>}
  {displayed==='changelog'&&<View><Text style={s.description}>1.8.0 · Multiple paired TVs, apps and inputs, in-app music controls, offline PWA loading and safer reconnecting.</Text><Text style={s.caption}>System-wide remote controls require a separate Android TV Remote Service pairing. Physical phone and TV validation is pending.</Text></View>}
  {displayed==='system'&&<>{pairSuccess&&<Text accessibilityRole="alert" style={[s.description,{color:'#a6d6b4'}]}>System remote paired successfully. Home and navigation are ready.</Text>}<Text style={s.description}>Pair with Android TV Remote Service to use Home and navigation while other apps are open.</Text>{state.systemPairing?<><TextInput testID="phone-system-pin" value={systemPin} onChangeText={setSystemPin} autoCapitalize="characters" autoCorrect={false} maxLength={6} placeholder="TV code" placeholderTextColor="#737e92" style={s.input}/>{row('phone-finish-system','Confirm code','check',()=>{void client.systemPair(systemPin);})}</>:row('phone-start-system','Show code on TV','remote',()=>{setPairSuccess(false);void client.systemPair();})}</>}
  </FadedScroll>

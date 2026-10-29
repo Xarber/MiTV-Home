@@ -20,7 +20,7 @@ function Mark({
         <Image
           source={{ uri: image }}
           resizeMode="contain"
-          style={{ width: hero ? 78 : 48, height: hero ? 66 : 40 }}
+          style={{ width: hero ? 78 : 52, height: hero ? 66 : 44 }}
         />
       ) : (
         <Icon name="game" size={36} />
@@ -90,10 +90,10 @@ export function InputMarks({
         <Image
           source={{ uri: systemImage }}
           resizeMode="contain"
-          style={{ width: hero ? 80 : 46, height: hero ? 80 : 46 }}
+          style={{ width: hero ? 80 : 50, height: hero ? 80 : 50 }}
         />
       ) : (
-        <Icon name={app.icon} size={hero ? 80 : 40} />
+        <Icon name={app.icon} size={hero ? 80 : 44} />
       )}
     </View>
   );

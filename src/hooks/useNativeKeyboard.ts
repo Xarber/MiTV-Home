@@ -57,8 +57,10 @@ export function useNativeKeyboard(options: Options) {
           clearTimeout(handle as ReturnType<typeof setTimeout>),
       },
     );
+    const directionsDown=new Map<string,number>();
     const unsubscribe = tv.subscribe((event) => {
       const current = latest.current;
+      if(event.type==='home-resumed'){directionsDown.clear();return;}
       if (event.type === 'back') {
         back();
         return;
@@ -74,7 +76,9 @@ export function useNativeKeyboard(options: Options) {
         if (phase === 'up') press.up(key);
         return;
       }
+      if(phase==='up'){if(typeof key==='string')directionsDown.delete(key);return;}
       if (phase !== 'down') return;
+      if(typeof key==='string'&&['up','down','left','right'].includes(key)){const now=Date.now(),previous=directionsDown.get(key);if(previous!==undefined&&now-previous<(repeat===0?60:160))return;directionsDown.set(key,now);}
       if (key === 'control') {
         current.control();
         return;

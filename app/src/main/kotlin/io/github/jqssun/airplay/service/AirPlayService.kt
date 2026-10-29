@@ -931,6 +931,7 @@ class AirPlayService : LifecycleService(), RaopCallbackHandler, LogListener {
     private fun _setAudioOnly(audioOnly: Boolean) {
         val prev = _audioOnly.value
         _audioOnly.value = audioOnly
+        if (prev != audioOnly) it.xarber.tvhome.AureaTVModule.event("playback", org.json.JSONObject())
         _refreshDacpPlayer()
         if (audioOnly && !prev) {
             mediaSession?.isActive = true

@@ -20,6 +20,16 @@ Mobile builds do not automatically start the TV remote server, install the TV im
 
 ## Build limitations
 
-All formats use the same source commit. Android companion jobs reuse pinned Python wheel artifacts from run 40701926505 and compile current Android native source for all four ABIs. iOS device and simulator jobs package separately; unsigned IPA installation requires external signing. The corrected `lipo` invocation supplies the binary before the architecture verification options.
+All formats use the same source commit. Android companion jobs use verified Python wheel artifacts from the same parent workflow run and compile current Android native source for all four ABIs. Independent iOS jobs start alongside Android dependency preparation. iOS device and simulator jobs package separately; unsigned IPA installation requires external signing. The corrected `lipo` invocation supplies the binary before the architecture verification options.
 
 This batch was deliberately not tested locally at the user's request. See the batch report for validation boundaries.
+
+## TV follow-up corrections
+
+The TV Home reads music state, artwork, controls and spectrum through the same persistent playback adapter used by the authenticated HTTP remote when available. A local binding remains the fallback if that remote service is disabled. Receiver mode changes notify the Home immediately; regular foreground snapshots recover missed events. Receiver service binding is posted to Android’s main thread.
+
+Home return refreshes actual pending Apple TV pairing state before choosing the pairing panel or dock. Page snaps preserve an already focused header button and remember the prior item in each page. Music opens with playback controls focused; artwork/title are informational. Directional repeat events are bounded without blocking later presses if a key-up is lost during an application switch.
+
+Phone pairing has an explicit confirmation panel for launcher pairing and successful Android TV Remote Service pairing. Home can bring this launcher forward without system remote pairing when it is the default Home or has Android’s overlay/background-launch capability. Other applications’ global navigation still requires system pairing. Android’s background-activity restrictions are respected.
+
+The existing HTTP server still prefers port 80 and retains its supported port 8765 fallback if Android refuses port 80. The QR menu waits briefly for service startup and advertises the actual bound URL. Physical Mac-to-TV HTTP access remains unverified while the TV is off.

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { useCanvasDimensions } from './TVCanvas';
-import { Glass } from './Glass';
+import { Glass, BlurEnabled } from './Glass';
 import { nativeFocus } from '../platform/native/focus';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import {
   View,
   Platform,
@@ -55,6 +55,7 @@ export function AnchoredPanel({
   close,
   children,
   bounds,
+  preferredWidth,
 }: {
   kind: 'music' | 'settings';
   anchor: Anchor;
@@ -62,7 +63,9 @@ export function AnchoredPanel({
   close: () => void;
   children: React.ReactNode;
   bounds?: { width: number; height: number };
+  preferredWidth?: number;
 }) {
+  const blurEnabled=useContext(BlurEnabled);
   const viewport = useCanvasDimensions();
   const { width, height } = bounds ?? viewport;
   const reduced = useReducedMotion();
@@ -70,7 +73,7 @@ export function AnchoredPanel({
   const [measured, setMeasured] = useState(0);
   const [origin, setOrigin] = useState(anchor);
   const music = kind === 'music';
-  const targetWidth = Math.min(music ? 470 : 430, width - 40);
+  const targetWidth = Math.min(music ? 470 : preferredWidth??430, width - 40);
   const left = music
     ? Math.min(anchor.left, width - targetWidth - 20)
     : width - targetWidth - 20;
@@ -161,7 +164,7 @@ export function AnchoredPanel({
                 StyleSheet.absoluteFill,
                 Platform.OS === 'web'
                   ? {
-                      backdropFilter: `blur(${blur}px)`,
+                      backdropFilter: blurEnabled?`blur(${blur}px)`:'none',
                       maskImage: `linear-gradient(to right, transparent ${35 + index * 15}%, black 100%)`,
                     }
                   : ({ backgroundColor: 'rgba(0,3,10,.03)' } as object),
@@ -177,6 +180,7 @@ export function AnchoredPanel({
           s.material,
           { backgroundColor: music ? 'rgba(0,0,0,.90)' : 'rgba(15,19,28,.84)' },
           material,
+          !blurEnabled&&Platform.OS==='web'&&({backdropFilter:'none'} as object),
         ]}
       >
         <Glass strong={!music} shade={music ? 0.85 : 0.58} />

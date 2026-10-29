@@ -8,7 +8,7 @@ Expo becomes the shared Home, phone and web application base.
 
 ### Fixes & Improvements
 
-Native TV state and services are exposed through a typed platform adapter; browser examples remain isolated.
+Improves TV focus and pairing restoration, shares AirPlay music activities with the phone remote, adds pairing confirmation and an optional blur switch, and corrects native build packaging.
 
 ## 1.8.1 — 2026-10-28
 

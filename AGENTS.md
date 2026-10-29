@@ -56,3 +56,5 @@ requires a secure browser context. See docs/features/PHONE_REMOTE.md and PWA.md.
 Music stays a top-left focus-driven activity; settings grow from the clock bubble.
 Preserve sliding details, black activity material and nonfocusable navigation hints.
 Temporary branch cleanup must preserve active Dependabot PRs and other worktrees.
+
+- Preserve the existing live blur implementation and its default intensity/materials. `blur-enabled` is a separate optional performance switch; do not conflate it with transparent activity backgrounds. Keep LegacyHomeActivity and its developer Recovery Home entry permanently unless the user explicitly reverses this requirement.
