@@ -63,3 +63,19 @@ The iOS workflow now uses standard Apple Silicon for both targets, allows up to
 60 minutes and supports a manual single-target retry without rebuilding Android.
 Actionlint passed. No release validation gate was relaxed; a retry submission
 is not proof of a finished IPA. No framework, signing identity or OS baseline changed.
+
+## Physical TV installation
+
+Installed the successful TV APK from run 40920170452 over the canonical package
+using supported ADB update installation. SHA-256 matches the artifact sidecar;
+its signature matches the existing release identity. The embedded metadata is
+2.0.6/code 33, source 38cc0697c858a6e6ff13cdb71202eff82a84c55e, testing channel.
+ADB reported Success; the physical package manager confirms 2.0.6/code 33 and
+MainActivity is resumed. A fresh private device screenshot confirms the Home UI
+and Remote settings render. No credentials/screenshots were added to Git.
+The old 2.0.4 APK was retained privately as rollback; no app data was cleared.
+This does not establish native phone microphone or all remote-key interoperability.
+
+The iOS-only retry was submitted as run 40927817640 from workflow commit f96bd30,
+with target unsigned. Its initial observed status was queued. No completed IPA
+or release is claimed. Existing Android artifacts remain available independently.
