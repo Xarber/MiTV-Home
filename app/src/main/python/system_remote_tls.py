@@ -11,7 +11,7 @@ import json
 import ssl
 
 class NativeTlsError(OSError):
-    def __init__(self,code,failure):self.code=code;self.failure=failure;super().__init__(code)
+    def __init__(self,code,failure,details=None):self.code=code;self.failure=failure;self.details=details or {};super().__init__(code)
 
 class Peer:
     def __init__(self,certificate):self.certificate=certificate
@@ -47,7 +47,7 @@ class NativeTlsLoop:
         try:
             result=json.loads(str(await asyncio.shield(pending)))
             if result.get('error'):
-                error=NativeTlsError(result['error'],result.get('failureClass','IOException'))
+                error=NativeTlsError(result['error'],result.get('failureClass','IOException'),result)
                 if error.code=='authentication_failed':raise ssl.SSLError('native_peer_rejected') from error
                 raise error
             peer=Peer(base64.b64decode(result['certificate'],validate=True));protocol=factory()

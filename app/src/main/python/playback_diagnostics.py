@@ -48,6 +48,9 @@ class Recorder:
         for key in ["http_status","phase","elapsed_ms"]:
             number=fields.get(key)
             if type(number) is int and (100<=number<=599 if key=="http_status" else 0<=number<=6 if key=="phase" else 0<=number<=300000):value[key]=number
+        tls=fields.get('tls_details',{})
+        if isinstance(tls,dict):
+            if tls.get('tlsAlert') in {'unknown','certificate_unknown','unknown_ca','bad_certificate','certificate_expired','certificate_required','handshake_failure','protocol_version','unsupported_certificate','no_shared_cipher','connection_reset'}:value['tls_alert']=tls['tlsAlert']
         host_type=fields.get("host_exception","")
         if isinstance(host_type,str) and IDENTIFIER.fullmatch(host_type):value["host_exception"]=host_type
         if fields.get("path") in PATHS:value["path"]=fields["path"]

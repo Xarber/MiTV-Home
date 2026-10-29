@@ -62,7 +62,7 @@ class Client:
             elif type(error).__name__=='InvalidAuth' or native_error is not None and native_error.code=='authentication_failed':code='authentication_failed';self.status='not_paired';self.paired=False
             elif native_error is not None:code='system_tls_failed';self.status='unavailable'
             else:code=('pairing_interrupted' if type(error).__name__=='ConnectionClosed' else 'system_pairing_unverified') if operation=='pair_finish' else 'connection_failed';self.status='unavailable'
-            self.ready=False;self.recorder.write('failure',record,error=code,exception=error,host_exception=native_error.failure if native_error is not None else '')
+            self.ready=False;self.recorder.write('failure',record,error=code,exception=error,host_exception=native_error.failure if native_error is not None else '',tls_details=native_error.details if native_error is not None else {})
             return json.dumps({'error':code})
     async def _dispatch(self,operation,data):
         if operation=='prepare':

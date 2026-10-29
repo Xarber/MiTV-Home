@@ -45,3 +45,12 @@ class RecorderChecks(unittest.IsolatedAsyncioTestCase):
             self.assertLessEqual(recorder.previous.stat().st_size,800)
             Recorder(directory,"1.7.4","b"*40).write("start","pair_begin")
             self.assertIn('"pair_begin"',recorder.path.read_text())
+
+class NativeTlsReasonChecks(unittest.TestCase):
+    def test_native_tls_reason_is_allowlisted_without_passing_payloads(self):
+        with tempfile.TemporaryDirectory() as directory:
+            recorder=Recorder(directory,'test','a'*40)
+            recorder.write('failure','system_connect',tls_details={'tlsAlert':'handshake_failure','privateKey':'DO_NOT_LOG','certificate':'DO_NOT_LOG'})
+            recorder.write('failure','system_connect',tls_details={'tlsAlert':'DO_NOT_LOG'})
+            rows=[json.loads(line) for line in recorder.path.read_text().splitlines()]
+            self.assertEqual(rows[0]['tls_alert'],'handshake_failure');self.assertNotIn('tls_alert',rows[1]);self.assertNotIn('DO_NOT_LOG',recorder.path.read_text())

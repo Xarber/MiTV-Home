@@ -48,9 +48,12 @@ public final class SystemRemoteTls {
             workers.execute(()->relay(name,channel));
             return new JSONObject().put("socket",name).put("certificate",Base64.encodeToString(remote.getSession().getPeerCertificates()[0].getEncoded(),Base64.NO_WRAP)).put("protocol",remote.getSession().getProtocol()).toString();
         }catch(Exception error){try{remote.close();}catch(IOException ignored){}if(server!=null)try{server.close();}catch(IOException ignored){}
-            String message=error.getMessage()==null?"":error.getMessage().toUpperCase(Locale.ROOT);
+            StringBuilder details=new StringBuilder();Throwable cause=error;for(int depth=0;depth<8&&cause!=null;depth++,cause=cause.getCause())if(cause.getMessage()!=null)details.append(cause.getMessage()).append(' ');
+            String message=details.toString().toUpperCase(Locale.ROOT);
+            String alert="unknown";
+            for(String candidate:new String[]{"CERTIFICATE_UNKNOWN","UNKNOWN_CA","BAD_CERTIFICATE","CERTIFICATE_EXPIRED","CERTIFICATE_REQUIRED","HANDSHAKE_FAILURE","PROTOCOL_VERSION","UNSUPPORTED_CERTIFICATE","NO_SHARED_CIPHER","CONNECTION RESET"})if(message.contains(candidate)){alert=candidate.toLowerCase(Locale.ROOT).replace(' ','_');break;}
             boolean untrusted=message.contains("CERTIFICATE_UNKNOWN")||message.contains("CERTIFICATE UNKNOWN")||message.contains("BAD_CERTIFICATE");
-            return new JSONObject().put("error",untrusted?"authentication_failed":"system_tls_failed").put("failureClass",error.getClass().getSimpleName()).toString();}
+            return new JSONObject().put("error",untrusted?"authentication_failed":"system_tls_failed").put("failureClass",error.getClass().getSimpleName()).put("tlsAlert",alert).toString();}
     }
     private void relay(String name,Channel channel){
         try{
