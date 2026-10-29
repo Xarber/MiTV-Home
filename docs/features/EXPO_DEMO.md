@@ -67,3 +67,12 @@ music source. Do not expose this development bridge to the public Internet.
 
 `npm run test:demo-bridge` checks separate launcher/phone browser pages, PIN pairing,
 app launch, music activity, navigation, wallpaper synchronization and owner reload.
+
+### Classic wallpaper compatibility
+
+The native canonical `classic` preference is explicitly registered in Expo. It
+renders the existing original blue/violet artwork, now shared under
+`assets/wallpapers/classic.jpg`, instead of falling back to gray Silk. The remote's
+Preview launcher inherits the connected TV's wallpaper/motion/tint preferences.
+Classic artwork crossfades with the procedural wallpapers using the existing
+transition timing; blur implementation and app-banner tint boundaries are unchanged.

@@ -25,6 +25,7 @@ export const tracks=[
  {title:'Golden hour',artist:'Aurea Sessions',album:'Soft focus',duration:243,colors:['#e8bb74','#cd7d59'] as const},
 ];
 export const wallpapers=[
+ {id:'classic',name:'Classic',detail:'Deep blue and violet light.',colors:['#0b1645','#444bc4','#152965'] as const},
  {id:'silk',name:'Silk',detail:'Soft light. Quiet depth.',colors:['#111b2c','#778ba1','#23344e'] as const},
  {id:'dune',name:'Dune',detail:'A warmer kind of calm.',colors:['#2c2022','#b09278','#483e48'] as const},
  {id:'tide',name:'Tide',detail:'A little room to breathe.',colors:['#0b222b','#668d91','#183d47'] as const},

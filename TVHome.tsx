@@ -57,12 +57,13 @@ export function NativeTVHome() {
     </TVCanvas>
   );
 }
-export default function PreviewTVHome({targets,onTarget}:{targets?:import('./src/remote/types').RemoteCatalog;onTarget?:(id:string)=>void}={}) {
+export default function PreviewTVHome({targets,onTarget,wallpaper}:{wallpaper?:{id:string;motion:boolean;musicTint?:boolean};targets?:import('./src/remote/types').RemoteCatalog;onTarget?:(id:string)=>void}={}) {
   const launcher = usePreviewLauncher();
   const extra = targets ? [...targets.inputs,...targets.apps].map(item=>({id:item.id,name:item.name,icon:(item.kind==='app'?'apps':item.kind==='live'?'tv':'inputs') as import('./src/model/catalog').IconName,color:'#596377',category:(item.kind==='app'?'apps':'inputs') as 'apps'|'inputs',kind:item.kind})) : [];
   const entries=targets?[launcher.entry('inputs'),launcher.entry('all'),...extra]:launcher.catalog;
   const model:Launcher=targets?{...launcher,catalog:entries,entry:id=>entries.find(item=>item.id===id)??entries[0]!,prefs:{...launcher.prefs,dock:['inputs',...extra.filter(item=>item.category==='apps').slice(0,4).map(item=>item.id),'all']}}:launcher;
-  return <LauncherView demo={model} onTarget={onTarget} />;
+  const withWallpaper=wallpaper?{...model,prefs:{...model.prefs,wallpaper:wallpaper.id,motion:wallpaper.motion,musicTint:wallpaper.musicTint}}:model;
+  return <LauncherView demo={withWallpaper} onTarget={onTarget} />;
 }
 function LauncherView({ demo,onTarget }: { demo: Launcher;onTarget?:(id:string)=>void }) {
   const inputsScroll = useRef<React.ComponentRef<typeof ScrollView>>(null),

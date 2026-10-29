@@ -11,7 +11,9 @@ export function Wallpaper({id,motion=false,mini=false}:{id:string;motion?:boolea
  const [active,setActive]=useState(AppState.currentState!=='background'&&AppState.currentState!=='inactive');
  useEffect(()=>{const subscription=AppState.addEventListener('change',state=>setActive(state==='active'));return()=>subscription.remove();},[]);
  const wallpaper=wallpapers.find(w=>w.id===id)??wallpapers[0]!;const reduced=useReducedMotion();
- const drift=useSharedValue(0);
+ const drift=useSharedValue(0),classic=useSharedValue(id==='classic'?1:0);
+ useEffect(()=>{classic.set(withTiming(id==='classic'?1:0,{duration:reduced||mini?0:1800}));},[id,reduced,mini]);
+ const classicFade=useAnimatedStyle(()=>({opacity:classic.get()}));
  useEffect(()=>{cancelAnimation(drift);drift.set(0);if(motion&&!reduced&&!mini&&active)drift.set(withRepeat(withTiming(1,{duration:10000,easing:Easing.inOut(Easing.sin)}),-1,true));return()=>cancelAnimation(drift);},[motion,reduced,mini,active]);
  const palette=wallpaper.colors.map(color=>Platform.isTV?tvColor(color):color) as [string,string,string];
  const {layers,fade}=usePaletteTransition(palette,mini);
@@ -19,6 +21,7 @@ export function Wallpaper({id,motion=false,mini=false}:{id:string;motion?:boolea
  return <View testID={mini?undefined:'wallpaper-background'} style={[StyleSheet.absoluteFill,{overflow:'hidden',backgroundColor:palette[0]}]} pointerEvents="none">
  <WallpaperScene colors={(mini?palette:layers.from) as [string,string,string]} style={style} motionId={mini?undefined:'wallpaper-motion'}/>
  {!mini&&<Animated.View testID="wallpaper-fade" style={[StyleSheet.absoluteFill,fade]}><WallpaperScene colors={layers.to as [string,string,string]} style={style}/></Animated.View>}
+ <Animated.View testID={mini?undefined:'classic-wallpaper'} style={[StyleSheet.absoluteFill,classicFade]}><Animated.Image source={require('../../assets/wallpapers/classic.jpg')} resizeMode="cover" style={[StyleSheet.absoluteFill,style]}/></Animated.View>
  </View>;
 }
 function WallpaperScene({colors,style,motionId}:{colors:[string,string,string];style:object;motionId?:string}){
