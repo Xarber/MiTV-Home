@@ -47,17 +47,10 @@ validation. Ordinary CI source builds are unchanged and retain all four ABIs.
 Local bundled builds retain their existing ARM32/ARM64 scope. Sign with the
 existing release identity and record the actual source commit before deployment.
 
-## Expo phone companion and embedded remote
+## Complete application builds
 
-Use Node 24 and `npm --prefix demo ci`. `npm --prefix demo run build` produces the
-complete standalone PWA export. Native TV CI first validates that exact-commit
-export and embeds it under app/src/main/assets/remoteapp; local native builds can
-copy dist there, or retain the legacy remote fallback if absent.
+Use Node 24 and `npm ci` at the repository root. `npm run build` exports the standalone web/PWA to `dist`. The full native host embeds that exact-commit export under `app/src/main/assets/remoteapp`.
 
-`phone.yml` generates native projects on CI and runs four independent jobs:
-Android universal APK/AAB using the existing managed release key, iOS unsigned
-device IPA and ARM64 simulator app.zip on macos-26. It uploads CI artifacts only.
-No new local SDK/toolchain is installed. Unsigned IPA files require external
-signing. Phone artifacts are not substituted into the TV update manifest.
+Run `gh workflow run build.yml --ref testing` for every supported format; no input fields or dependency run IDs are needed. Android TV and phone use the same native source host and build matrix, preserving their separate identifiers and managed signing key. Internal phone.yml builds only iOS device/simulator formats. Internal demo.yml validates the already exported browser/PWA artifact. Both are called by build.yml.
 
-The established build workflow invokes phone.yml as a reusable workflow, so beta-only workflow files do not need to be added to stable main just to dispatch them. All four companion jobs run in parallel with the TV pipeline; publication waits for the mandatory jobs. Standalone new-workflow dispatch may remain unavailable until the files reach the default branch.
+All six native formats, web/PWA and source are collected in the same run. See [RELEASES.md](RELEASES.md) for the job graph, artifacts, publication gates and installation restrictions. Full source builds are the authoritative native verification path; older isolated ARM workflow switches have been retired.

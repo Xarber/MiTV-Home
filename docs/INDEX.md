@@ -26,3 +26,6 @@ See [phone remote](features/PHONE_REMOTE.md), [PWA](features/PWA.md), and [brand
 
 - [TV blur performance preference](features/TV_BLUR.md)
 - [TV follow-up and build diagnosis](reports/2026-10-29-tv-follow-up.md)
+
+- [One complete build entry point](decisions/0004-one-build-entry-point.md)
+- [Workflow simplification and validation report](reports/2026-10-29-workflows.md)

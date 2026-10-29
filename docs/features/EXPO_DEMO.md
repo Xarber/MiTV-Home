@@ -34,12 +34,7 @@ See ARCHITECTURE.md and decisions/0003-expo-home-base.md for migration boundarie
 
 ## Native verification builds
 
-Manual build.yml `expo_preview` produces both a separate preview and a
-production-package ARM candidate. The separate preview disables receiver/remote
-listeners so it cannot claim or interfere with the installed receiver. The candidate
-retains it.xarber.mitvhome and enables the real native integrations. Verify the
-candidate signature, package, source/version and rollback before updating the TV.
-These ARM artifacts do not replace four-ABI source builds or publish a release.
+Use `gh workflow run build.yml --ref testing` for complete native verification. All TV and phone formats build from source with the exact web export; older isolated ARM preview workflow switches have been retired. Validate signatures, package identifiers, source/version and rollback before installation. No release is published from testing.
 
 SSID names can be redacted by Android when location access is missing. Network
 settings exposes the official permission/settings flow and never grants it silently.

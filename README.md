@@ -83,3 +83,7 @@ MiTV Home is a modified distribution of [jqssun/android-airplay-server](https://
 The receiver includes [UxPlay](https://github.com/FDH2/UxPlay), [FFmpeg](https://ffmpeg.org/), [libplist](https://github.com/libimobiledevice/libplist), [OpenSSL](https://www.openssl.org/), and [Oboe](https://github.com/google/oboe). QR codes use [ZXing](https://github.com/zxing/zxing). See [third-party notices](docs/THIRD_PARTY.md) and the [licensing decision](docs/decisions/0001-licensing-and-platform-scope.md). Original launcher modules use [AGPL-3.0](LICENSE); upstream [GPL-3.0](LICENSES/GPL-3.0.txt) and component notices remain.
 
 Apple, AirPlay, Apple TV, Xbox, PlayStation, Nintendo Switch, Wii U, and other names/logos belong to their owners and identify devices or installed apps. This is an independent project.
+
+## Run a complete build
+
+Open [Build Aurea — all platforms](https://github.com/Xarber/MiTV-Home/actions/workflows/build.yml), select `testing`, and click **Run workflow**. No extra inputs are needed. The run builds TV and phone APK/AAB packages, iOS unsigned IPA, iOS simulator, web/PWA and source, with a final results summary. See [build and release details](docs/RELEASES.md).

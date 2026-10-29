@@ -91,17 +91,12 @@ TV-hosted same-origin page in that case. Do not disable browser security.
 
 The native TV pipeline embeds the exact-commit Expo web export in
 `app/src/main/assets/remoteapp/`. The old bundled remote remains a fallback if those
-assets are absent in a local compile. Run `npm --prefix demo run build` and copy
-`demo/dist` there before building locally when testing the complete new web UI.
+assets are absent in a local compile. Run `npm run build` and copy
+`dist` there before building locally when testing the complete new web UI.
 
-`phone.yml` prepares four independent artifact-only jobs: signed universal APK,
-signed AAB, unsigned physical iOS IPA and ARM64 simulator app.zip. An unsigned IPA
-requires external signing before ordinary device installation; a simulator bundle
-cannot install on a phone. These are companion packages (`it.xarber.aurea.remote`),
-never TV launcher updates (`it.xarber.mitvhome`). No store, phone update feed or
-new website deployment is activated. Existing native-TV update feeds stay intact.
-See [PWA behavior](PWA.md), [branding](../BRANDING.md) and the
-[validation report](../reports/AUREA_PHONE_PWA.md).
+The single `build.yml` workflow produces Android phone APK/AAB through the shared root native host, alongside TV APK/AAB. Internal `phone.yml` builds iOS unsigned device IPA and ARM64 simulator app.zip. Internal `demo.yml` validates the exact web export. Run only `gh workflow run build.yml --ref testing`; no dependency-run selection or separate workflow is required.
+
+The entire application is bundled; mobile opens the remote by default. Phone packages remain separate from the TV updater. See [RELEASES.md](../RELEASES.md) for artifacts, complete release gates and installation restrictions.
 
 ### Android asset packaging
 

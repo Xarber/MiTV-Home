@@ -4,7 +4,7 @@ import sys
 import xml.etree.ElementTree as ET
 root = ET.parse(sys.argv[1]).getroot()
 a = '{http://schemas.android.com/apk/res/android}'
-assert root.get('package') == 'it.xarber.mitvhome'
+assert root.get('package') == (sys.argv[4] if len(sys.argv)>4 else 'it.xarber.mitvhome')
 assert root.get(a+'versionName') == sys.argv[2]
 assert root.get(a+'versionCode') == sys.argv[3]
 assert root.find('application').get(a+'debuggable', 'false') == 'false'

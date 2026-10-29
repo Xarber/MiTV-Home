@@ -49,3 +49,5 @@ node_modules/
 /test-results/
 /.phone-native/
 /phone-dist/
+
+/playwright-report/

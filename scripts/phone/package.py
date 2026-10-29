@@ -7,7 +7,7 @@ platform,kind=sys.argv[1:];config=json.loads(Path('app.json').read_text())['expo
 out=Path('phone-dist');out.mkdir(exist_ok=True);stem=f'Aurea-Remote-v{version}-{channel}-{commit[:7]}'
 if platform=='android':
     candidates=list(Path(os.environ.get('AUREA_ANDROID_OUTPUTS','.phone-native/android/app/build/outputs')).rglob('app-release.'+kind));assert len(candidates)==1
-    target=out/f'{stem}-android-{("universal" if kind=="apk" else "bundle")}.{kind}';shutil.copy2(candidates[0],target)
+    target=out/f'{stem}-android-phone-{("universal" if kind=="apk" else "bundle")}.{kind}';shutil.copy2(candidates[0],target)
     with zipfile.ZipFile(target) as z:
         assert z.testzip() is None
         prefix='' if kind=='apk' else 'base/'
@@ -16,8 +16,10 @@ if platform=='android':
         assert prefix+'assets/index.android.bundle' in z.namelist(),'Missing production JavaScript'
     if kind=='apk':
         tools=sorted(Path(os.environ['ANDROID_HOME'],'build-tools').glob('*/apksigner'))[-1]
+        badging=subprocess.check_output([str(tools.with_name('aapt2')),'dump','badging',str(target)],text=True);assert "name='it.xarber.aurea.remote'" in badging and f"versionName='{version}'" in badging and f"versionCode='{config['android']['versionCode']}'" in badging and 'application-debuggable' not in badging
         report=subprocess.check_output([str(tools),'verify','--print-certs',str(target)],text=True);assert 'a57dfea6154bf320e051cdfd304b1aa7976559f7239fdbde6fcea265a9f93724' in report
-    else: subprocess.run(['jarsigner','-verify',str(target)],check=True)
+    else:
+        report=subprocess.check_output(['jarsigner','-verify',str(target)],text=True);assert 'jar verified' in report
 else:
     sdk='iphonesimulator' if kind=='simulator' else 'iphoneos'
     app=Path(os.environ['RUNNER_TEMP'])/f'aurea-ios/Build/Products/Release-{sdk}/AureaRemote.app';assert app.is_dir()

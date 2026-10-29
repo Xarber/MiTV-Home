@@ -17,8 +17,10 @@ At the root, run `npm run typecheck`, `npm test`, `npm run build`,
 to verify stale-page correction, separate fixed/scrolling geometry and hold/release
 ownership. They are regression checks, not evidence of native rendering.
 
-Manual `build.yml` with `expo_preview=true` validates the unchanged media source
-before using a previously verified signed media binary for ARM UI candidates.
-It produces an isolated preview plus an in-place production-package candidate.
-These do not replace full four-ABI source builds. Always inspect fresh screenshots
-and native state on the intended physical TV before declaring the migration deployed.
+Use the single `build.yml` full workflow for native verification. It always compiles all supported native formats; the earlier isolated-preview switches are retired. Test outcomes and build artifacts are reported separately and all checks remain release gates.
+
+For browser checks without interrupting an existing local preview, use `DEMO_PORT=8877 npm run test:e2e`. Pairing tests acknowledge the real completion dialog and verify encrypted storage, reloading, multiple TVs, selection and forgetting. Failure traces and the HTML report are uploaded by CI. `npm run test:pwa` exercises update/reload/offline behavior on its own temporary server.
+
+`tests/python/test_ci_collection.py` uses synthetic files to verify incomplete, wrong-commit and tampered artifact rejection plus partial-run reporting. Those fixtures are not evidence of native package compilation.
+
+Always validate the real TV before claiming installation, HDMI, receiver or remote-control success. See [RELEASES.md](RELEASES.md) for the complete build entry point.
