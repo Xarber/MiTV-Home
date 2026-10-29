@@ -26,6 +26,7 @@ final class SystemRemoteController {
     SystemRemoteController(Context context){this.context=context.getApplicationContext();store=new PairingStore(context,"system-tv-remote");}
     private JSONObject call(String operation,JSONObject payload) throws Exception {
         if(client==null){
+            if(operation.equals("voice_end")||operation.equals("voice_cancel"))return new JSONObject().put("accepted",true);
             synchronized(Python.class){if(!Python.isStarted())Python.start(new AndroidPlatform(context));}
             java.io.File diagnostics=context.getExternalFilesDir("diagnostics");if(diagnostics==null)diagnostics=new java.io.File(context.getFilesDir(),"diagnostics");diagnostics.mkdirs();
             client=Python.getInstance().getModule("system_remote").get("Client").call(context.getCacheDir().getAbsolutePath(),diagnostics.getAbsolutePath(),io.github.jqssun.airplay.BuildConfig.VERSION_NAME,io.github.jqssun.airplay.BuildConfig.SOURCE_COMMIT);
@@ -60,6 +61,7 @@ final class SystemRemoteController {
         try {JSONObject state=client==null?new JSONObject():new JSONObject(client.callAttr("request","state").toString());if(client==null){JSONObject saved=store.read();paired=saved!=null&&new JSONObject(saved.getString("credentials")).optBoolean("paired");}state.put("paired",state.optBoolean("paired",paired));if(!state.has("status"))state.put("status",paired?"paired":"not_paired");return state;}
         catch(Exception failure){return error("storage_failed");}
     }
+    void cancelVoice(){try{recovery.execute(()->{if(!closed&&client!=null)request("voice_cancel",new JSONObject());});}catch(java.util.concurrent.RejectedExecutionException ignored){}}
     synchronized void close(){closed=true;recovery.shutdownNow();try{if(client!=null)client.callAttr("request","shutdown");}catch(Exception ignored){}client=null;}
     static JSONObject error(String key){JSONObject value=new JSONObject();try{value.put("error",key);}catch(Exception ignored){}return value;}
 }

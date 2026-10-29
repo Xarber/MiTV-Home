@@ -2,6 +2,14 @@
 
 Generated from `app/src/main/assets/release-history.json`. Legacy versions reflect repository history; dates describe implementation, not a verified public release.
 
+## 2.0.6 — 2026-10-29
+
+Use your phone microphone for Android TV voice search.
+
+### Fixes & Improvements
+
+Encrypted in-memory voice packets, bounded recording sessions and cleanup on disconnect, app backgrounding and TV switching.
+
 ## 2.0.5 — 2026-10-29
 
 More TV controls and deeper TV wallpaper colors.

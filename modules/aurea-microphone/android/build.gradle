@@ -1,0 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+group = 'it.xarber.microphone'
+version = '1.0.0'
+android {
+  namespace 'it.xarber.microphone'
+  defaultConfig { versionCode 1; versionName '1.0.0' }
+}

@@ -55,3 +55,13 @@ Wi-Fi SSID access follows Android's permission and location-service restrictions
 The settings action requests the OS permission interactively; neither build scripts
 nor the application silently grant it. UI navigation logs record only fixed
 movement/group names, not app labels, pairing codes, SSIDs or media metadata.
+
+## Phone microphone
+
+Recording requires explicit phone OS consent and a visible Listening indicator.
+No audio files or payload logs; voice session keys remain in memory. AES-GCM audio
+packets bind the authenticated token owner, session and sequence, with ephemeral
+RSA key wrapping. Existing HTTP initial pairing/public-key delivery still assumes
+a trusted LAN and does not provide TLS identity protection against active attacks.
+Capture stops on backgrounding, TV changes and timeout; server idle expiry bounds
+cleanup after network loss. Details: [phone voice](features/PHONE_VOICE.md).

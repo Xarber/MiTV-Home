@@ -49,7 +49,7 @@ final class RemoteRequest {
         if (headers.containsKey("transfer-encoding")) throw new Invalid(400);
         String lengthText = headers.getOrDefault("content-length", "0");
         if (!lengthText.matches("[0-9]{1,9}")) throw new Invalid(400);
-        int length = Integer.parseInt(lengthText); if (length > 4096) throw new Invalid(413);
+        int length = Integer.parseInt(lengthText); if (length > (first[1].equals("/api/voice/chunk")?16384:4096)) throw new Invalid(413);
         if (first[0].equals("POST") && length > 0 && !headers.getOrDefault("content-type", "").split(";", 2)[0].trim().equalsIgnoreCase("application/json")) throw new Invalid(415);
         byte[] body = new byte[length]; int offset = 0;
         while (offset < length) { int count = input.read(body, offset, length - offset); if (count < 0) throw new Invalid(400); offset += count; }

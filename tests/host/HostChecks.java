@@ -19,6 +19,10 @@ public final class HostChecks {
         access.tapVersion(); now += 4001; access.tapVersion(); check(!access.isUnlocked(), "tap gap resets"); access.tapVersion(); check(access.tapVersion(), "new triple"); access.lock(); check(!access.isUnlocked(), "tab/background lock");
         String head = "POST /api/key HTTP/1.1\r\nHost: 192.168.1.101:8765\r\n";
         check(parse(head+"Content-Type: application/json\r\nContent-Length: 2\r\n\r\n{}").body.equals("{}"), "valid JSON transport");
+        String voiceHead = head.replace("/api/key","/api/voice/chunk");
+        String packet = "x".repeat(12000);
+        check(parse(voiceHead+"Content-Type: application/json\r\nContent-Length: 12000\r\n\r\n"+packet).body.length()==12000,"bounded encrypted voice packet");
+        reject(voiceHead+"Content-Length: 17000\r\n\r\n",413);
         reject(head+"Content-Length: -1\r\n\r\n",400);
         reject(head+"Content-Length: 5000\r\n\r\n",413);
         reject(head+"Content-Length: 2\r\nContent-Length: 2\r\n\r\n{}",400);

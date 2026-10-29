@@ -56,7 +56,7 @@ public final class HomeRemoteService extends Service {
         catalog=new RemoteCatalog(this);system=new SystemRemoteController(this);playback=new RemotePlayback(this);playback.start();
         try{
             server=new HomeRemoteServer(this,new HomeRemoteServer.Commands(){
-                @Override public void run(String event){main.post(()->{if(event.equals("paired"))playback.clients(true);if(TVPlatform.foreground()){TVPlatform.remoteEvent(event,server);return;}LegacyHomeActivity activity=home();if(activity==null)return;if(event.equals("pair-request"))activity.showRemoteCode();else if(event.equals("paired"))activity.remotePaired();});}
+                @Override public void run(String event){main.post(()->{if(event.equals("voice-cancel")){if(system!=null)system.cancelVoice();return;}if(event.equals("paired"))playback.clients(true);if(TVPlatform.foreground()){TVPlatform.remoteEvent(event,server);return;}LegacyHomeActivity activity=home();if(activity==null)return;if(event.equals("pair-request"))activity.showRemoteCode();else if(event.equals("paired"))activity.remotePaired();});}
                 @Override public JSONObject request(String operation,JSONObject payload)throws Exception{return handle(operation,payload);}
             });server.start();main.post(monitor);
         }catch(Exception failure){android.util.Log.w("MiTVPairing","remote_service_unavailable "+failure.getClass().getSimpleName());server=null;stopSelf();}
@@ -75,6 +75,7 @@ public final class HomeRemoteService extends Service {
         if(operation.equals("artwork")){playback.state();JSONObject art=playback.artwork();return payload.optString("id").equals(art.optString("id"))?art:SystemRemoteController.error("source_changed");}
         if(operation.equals("system_pair_begin"))return system.request("pair_begin",new JSONObject());
         if(operation.equals("system_pair_finish"))return system.request("pair_finish",new JSONObject().put("pin",payload.optString("pin")));
+        if(operation.equals("voice_start")||operation.equals("voice_chunk")||operation.equals("voice_end"))return system.request(operation,payload);
         if(operation.equals("media"))return onMain(()->playback.command(payload));
         if(operation.equals("launch")){
             String id=payload.optString("id");if(id.length()>512||!catalog.contains(id))return SystemRemoteController.error("unknown_target");

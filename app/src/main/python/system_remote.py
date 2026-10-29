@@ -27,7 +27,7 @@ class Client:
     def __init__(self,directory,diagnostics,version,commit):
         logger=logging.getLogger('androidtvremote2')
         logger.handlers=[logging.NullHandler()];logger.propagate=False;logger.setLevel(logging.CRITICAL)
-        self.local_address=None;self.loop=asyncio.new_event_loop();self.remote=None;self.stage=None;self.ready=False
+        self.voice=None;self.voice_starting=False;self.voice_timer=None;self.local_address=None;self.loop=asyncio.new_event_loop();self.remote=None;self.stage=None;self.ready=False
         self.paired=False;self.status='not_paired';self.directory=directory;self.pair_deadline=0
         self.recorder=Recorder(diagnostics,version,commit,basename='system-remote')
         self.thread=threading.Thread(target=self._run,name='SystemTVRemote',daemon=True);self.thread.start()
@@ -42,12 +42,12 @@ class Client:
             self.loop.close()
     def request(self,operation,payload='{}'):
         if operation=='state':return json.dumps({'status':self.status,'ready':self.ready,'paired':self.paired})
-        names={'prepare':'system_prepare','pair_begin':'system_pair_begin','pair_finish':'system_pair_finish','key':'system_key','connect':'system_connect','disconnect':'system_disconnect','shutdown':'system_disconnect'}
+        names={'prepare':'system_prepare','pair_begin':'system_pair_begin','pair_finish':'system_pair_finish','key':'system_key','connect':'system_connect','voice_start':'voice_start','voice_chunk':'voice_chunk','voice_end':'voice_end','voice_cancel':'voice_end','disconnect':'system_disconnect','shutdown':'system_disconnect'}
         if operation not in names:return json.dumps({'error':'unsupported'})
         record=names[operation];self.recorder.write('start',record)
         future=asyncio.run_coroutine_threadsafe(self._dispatch(operation,json.loads(payload)),self.loop)
         try:
-            result=future.result(timeout=28 if operation=='pair_finish' else 18)
+            result=future.result(timeout=28 if operation=='pair_finish' else 24 if operation=='voice_start' else 18)
             self.recorder.write('failure' if 'error' in result else 'success',record,error=result.get('error'))
             return json.dumps(result)
         except Exception as error:
@@ -72,7 +72,7 @@ class Client:
             for path,value in [(cert_path,cert),(key_path,key)]:
                 descriptor=os.open(path,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600)
                 with os.fdopen(descriptor,'w') as output:output.write(value)
-            self.remote=AndroidTVRemote('Aurea Home',str(cert_path),str(key_path),'127.0.0.1',loop=self.loop,enable_ime=False,enable_voice=False)
+            self.remote=AndroidTVRemote('Aurea Home',str(cert_path),str(key_path),'127.0.0.1',loop=self.loop,enable_ime=False,enable_voice=True)
             local=data.get('localAddress')
             try:self.local_address=local if isinstance(local,str) and ipaddress.ip_address(local).version==4 and ipaddress.ip_address(local).is_private and not ipaddress.ip_address(local).is_loopback else None
             except ValueError:self.local_address=None
@@ -86,6 +86,7 @@ class Client:
             return {'status':'disconnected'}
         if self.remote is None:return {'error':'runtime_unavailable'}
         if operation=='pair_begin':
+            self._end_voice()
             self.ready=False
             await asyncio.wait_for(self.remote.async_start_pairing(),12)
             self._remove_private_staging();self.status='pin_required';self.pair_deadline=time.monotonic()+180
@@ -114,6 +115,37 @@ class Client:
             if not self.paired:return {'error':'system_pairing_required'}
             if not self.ready:await self._connect()
             return {'status':'ready','ready':True,'paired':True}
+        if operation=='voice_cancel':
+            self._end_voice();return {'accepted':True}
+        if operation=='voice_start':
+            if not self.paired:return {'error':'system_pairing_required'}
+            if self.voice_starting or self.voice and not self.voice.expired():return {'error':'voice_busy'}
+            self._end_voice()
+            self.voice_starting=True
+            candidate=None
+            try:
+                if not self.ready:await self._connect()
+                if getattr(self.remote,'is_voice_enabled',True) is False:return {'error':'voice_unsupported'}
+                from voice_session import VoiceSession
+                candidate=await asyncio.to_thread(VoiceSession,data.get('owner'))
+                candidate.stream=await self.remote.start_voice(timeout=3)
+                self.voice=candidate;self._watch_voice();return candidate.public()
+            except BaseException:
+                if candidate:candidate.close()
+                raise
+            finally:self.voice_starting=False
+        if operation=='voice_chunk':
+            if not self.voice:return {'error':'voice_session_expired'}
+            if not self.voice.authorized(data):return {'error':'voice_session_expired'}
+            try:
+                audio=self.voice.accept(data)
+                if not self.voice.stream.send_chunk(audio):raise ValueError('voice_session_expired')
+                self._watch_voice();return {'accepted':True}
+            except Exception:
+                self._end_voice();return {'error':'invalid_voice_packet'}
+        if operation=='voice_end':
+            if self.voice and data.get('owner')==self.voice.owner and (not data.get('id') or data.get('id')==self.voice.id):self._end_voice()
+            return {'accepted':True}
         if operation=='key':
             command=data.get('command')
             if command not in KEYS:return {'error':'unsupported'}
@@ -134,9 +166,18 @@ class Client:
             await asyncio.wait_for(self.remote.async_connect(),7)
         self._remove_private_staging();self.ready=True;self.status='ready'
         self.remote.keep_reconnecting(self._invalid_auth)
+    def _watch_voice(self):
+        if self.voice_timer:self.voice_timer.cancel()
+        remaining=max(0,35-(self.voice.clock()-self.voice.started)) if self.voice else 0
+        self.voice_timer=self.loop.call_later(min(6,remaining),self._end_voice)
+    def _end_voice(self):
+        if self.voice_timer:self.voice_timer.cancel();self.voice_timer=None
+        if self.voice:self.voice.close();self.voice=None
     def _availability(self,available):
+        if not available:self._end_voice()
         self.ready=available;self.status='ready' if available else 'reconnecting'
     def _invalid_auth(self):
+        self._end_voice()
         self.paired=False;self.ready=False;self.status='not_paired'
     def host_failure(self,operation,exception_type):
         self.recorder.write('failure',operation,error='runtime_unavailable',host_exception=exception_type)
@@ -146,6 +187,7 @@ class Client:
             try:path.unlink(missing_ok=True)
             except OSError:pass
     def _disconnect(self):
+        self._end_voice()
         if self.remote:self.remote.disconnect()
         if self.stage:self.stage.cleanup()
         self.remote=None;self.stage=None;self.ready=False;self.status='disconnected'

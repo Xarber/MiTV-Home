@@ -100,3 +100,30 @@ class ExtendedRemoteChecks(unittest.TestCase):
         with self.adapter(LostAfterSend):
             self.prepare();self.request('pair_begin');self.request('pair_finish',pin='ABC123');remote=FakeRemote.instances[-1]
             self.assertIn('error',self.request('key',command='next'));self.assertEqual(remote.keys,['MEDIA_NEXT'])
+
+class VoiceDispatchChecks(unittest.TestCase):
+    setUp=SystemRemoteChecks.setUp
+    tearDown=SystemRemoteChecks.tearDown
+    request=SystemRemoteChecks.request
+    prepare=SystemRemoteChecks.prepare
+    adapter=PairingRecoveryChecks.adapter
+    def test_voice_owner_binding_and_disconnect_cleanup(self):
+        try:import voice_session
+        except ImportError:self.skipTest('cryptography not installed in host Python')
+        class Stream:
+            closed=False
+            def send_chunk(self,data):return True
+            def end(self):self.closed=True
+        class VoiceRemote(FakeRemote):
+            async def start_voice(self,timeout):self.stream=Stream();return self.stream
+        with self.adapter(VoiceRemote):
+            self.prepare();self.request('pair_begin');self.request('pair_finish',pin='ABC123')
+            owner='a'*64;started=self.request('voice_start',owner=owner);self.assertIn('publicKey',started)
+            self.assertEqual(self.request('voice_start',owner='b'*64)['error'],'voice_busy')
+            self.assertEqual(self.request('voice_chunk',owner='b'*64,id=started['id'])['error'],'voice_session_expired')
+            self.request('voice_end',owner='b'*64,id=started['id']);self.assertIsNotNone(self.client.voice)
+            self.request('voice_end',owner=owner,id=started['id']);self.assertIsNone(self.client.voice)
+            self.assertTrue(FakeRemote.instances[-1].stream.closed)
+            self.request('voice_start',owner=owner);self.request('disconnect');self.assertIsNone(self.client.voice)
+            logs=''.join(p.read_text() for p in Path(self.root.name).glob('*.jsonl'))
+            self.assertNotIn(started['publicKey'],logs);self.assertNotIn(owner,logs)

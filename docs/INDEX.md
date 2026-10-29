@@ -36,3 +36,5 @@ See [phone remote](features/PHONE_REMOTE.md), [PWA](features/PWA.md), and [brand
 - [Android build failures and physical 2.0.2 installation](reports/2026-10-29-android-build-recovery.md)
 - [Input ownership, background permission and wallpaper transitions](reports/2026-10-29-input-foreground-recovery.md)
 - [System controls, build triage and TV colors](reports/2026-10-29-system-controls-colors.md)
+- [Phone microphone capture and TV voice service](features/PHONE_VOICE.md)
+- [Phone microphone implementation and validation](reports/2026-10-29-phone-voice.md)

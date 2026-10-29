@@ -85,11 +85,12 @@ final class HomeRemoteServer implements Runnable {
         thread.start();
     }
 
-    synchronized void revokeAll() { tokens.clear(); activeRemotes.clear(); trust.clear(); rotatePairing(); }
+    synchronized void revokeAll() { commands.run("voice-cancel"); tokens.clear(); activeRemotes.clear(); trust.clear(); rotatePairing(); }
     private void persistTrust() throws Exception {trust.save(new JSONObject().put("credentials",trustEntries().toString()).put("identifier","phone-remotes").put("name","Aurea Home"));}
 
     private org.json.JSONArray trustEntries() throws Exception {org.json.JSONArray entries=new org.json.JSONArray();for(java.util.Map.Entry<String,String> entry:tokens.entrySet())entries.put(new JSONObject().put("token",entry.getKey()).put("origin",entry.getValue()));return entries;}
     void stop() {
+        commands.run("voice-cancel");
         running = false;
         for(Socket client:connections)try{client.close();}catch(Exception ignored){}
         workers.shutdownNow();
@@ -130,7 +131,7 @@ final class HomeRemoteServer implements Runnable {
             try (InputStream page = context.getAssets().open(asset)) { respond(client, 200, "text/html; charset=utf-8", new String(readAll(page), StandardCharsets.UTF_8).replace("<head>","<head><meta name=\"aurea-remote\" content=\"1\">").replace("https://github.com/Xarber/MiTV-Home\"", "https://github.com/Xarber/MiTV-Home/tree/" + io.github.jqssun.airplay.BuildConfig.SOURCE_COMMIT + "\"")); }
             return;
         }
-        if(method.equals("GET")&&(path.startsWith("/_expo/")||path.startsWith("/assets/")||path.equals("/favicon.ico")||path.startsWith("/branding/")||path.startsWith("/screenshots/")||path.equals("/manifest.webmanifest")||path.equals("/remote.webmanifest")||path.equals("/sw.js")||path.equals("/release.json"))){
+        if(method.equals("GET")&&(path.startsWith("/_expo/")||path.startsWith("/assets/")||path.equals("/favicon.ico")||path.startsWith("/branding/")||path.startsWith("/screenshots/")||path.equals("/manifest.webmanifest")||path.equals("/remote.webmanifest")||path.equals("/voice-capture.js")||path.equals("/sw.js")||path.equals("/release.json"))){
             if(path.contains("..")||!path.matches("/[A-Za-z0-9_./-]+")){respond(client,404,"text/plain","not found");return;}
             try(InputStream asset=context.getAssets().open("remoteapp"+path)){
                 String mime=path.endsWith(".webmanifest")?"application/manifest+json":path.endsWith(".json")?"application/json":path.endsWith(".svg")?"image/svg+xml":path.endsWith(".js")?"application/javascript; charset=utf-8":path.endsWith(".css")?"text/css; charset=utf-8":path.endsWith(".png")?"image/png":path.endsWith(".ico")?"image/x-icon":"application/octet-stream";
@@ -183,13 +184,19 @@ final class HomeRemoteServer implements Runnable {
                 else activeRemotes.put(authenticatedToken,android.os.SystemClock.elapsedRealtime());
             }
             if(path.equals("/api/revoke")){
+                commands.request("voice_end",new JSONObject().put("owner",hexOwner(payload.optString("token"))));
                 synchronized(this){String token=payload.optString("token"),binding=tokens.remove(token);try{persistTrust();}catch(Exception unavailable){tokens.put(token,binding);respond(client,500,"application/json","{\"error\":\"storage_failed\"}");return;}activeRemotes.remove(token);}
                 respond(client,200,"application/json","{\"ok\":true}");return;
+            }
+            if(path.startsWith("/api/voice/")||path.equals("/api/presence")&&payload.optBoolean("disconnect",false)){
+                // Internal owner identity is derived from authenticated trust, never supplied by clients.
+                payload.put("owner",hexOwner(payload.optString("token")));
+                if(path.equals("/api/presence"))commands.request("voice_end",payload);
             }
             if (path.equals("/api/presence")) { respond(client,200,"application/json","{\"ok\":true}"); return; }
             if(path.equals("/api/key")&&!RemoteKeys.supported(payload.optString("command"))){respond(client,400,"application/json","{\"error\":\"unsupported\"}");return;}
             java.util.Map<String,String> routes=new java.util.HashMap<>();
-            routes.put("/api/key","key");routes.put("/api/state","state");routes.put("/api/catalog","catalog");routes.put("/api/icon","icon");routes.put("/api/artwork","artwork");routes.put("/api/launch","launch");routes.put("/api/media","media");routes.put("/api/system/pair/start","system_pair_begin");routes.put("/api/system/pair/finish","system_pair_finish");
+            routes.put("/api/voice/start","voice_start");routes.put("/api/voice/chunk","voice_chunk");routes.put("/api/voice/end","voice_end");routes.put("/api/key","key");routes.put("/api/state","state");routes.put("/api/catalog","catalog");routes.put("/api/icon","icon");routes.put("/api/artwork","artwork");routes.put("/api/launch","launch");routes.put("/api/media","media");routes.put("/api/system/pair/start","system_pair_begin");routes.put("/api/system/pair/finish","system_pair_finish");
             String operation=routes.get(path);if(operation==null){respond(client,404,"application/json","{\"error\":\"not_found\"}");return;}
             JSONObject result;
             try{result=commands.request(operation,payload);if(operation.equals("state"))result.put("id",deviceId);}catch(Exception unavailable){result=SystemRemoteController.error("unavailable");}
@@ -199,6 +206,9 @@ final class HomeRemoteServer implements Runnable {
         respond(client, 404, "text/plain", "not found");
     }
 
+    private static String hexOwner(String token)throws Exception{
+        byte[] hash=java.security.MessageDigest.getInstance("SHA-256").digest(token.getBytes(StandardCharsets.UTF_8));StringBuilder result=new StringBuilder();for(byte value:hash)result.append(String.format(java.util.Locale.ROOT,"%02x",value&255));return result.toString();
+    }
     private static byte[] readAll(InputStream in) throws Exception {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         byte[] buffer = new byte[2048]; int n;

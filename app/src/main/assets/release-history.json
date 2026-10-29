@@ -2,6 +2,37 @@
   "schema": 1,
   "releases": [
     {
+      "version": "2.0.6",
+      "code": 33,
+      "date": "2026-10-29",
+      "critical": false,
+      "highlights": {
+        "en": "Use your phone microphone for Android TV voice search.",
+        "it": "Usa il microfono del telefono per la ricerca vocale su Android TV."
+      },
+      "fixes": {
+        "en": "Encrypted in-memory voice packets, bounded recording sessions and cleanup on disconnect, app backgrounding and TV switching.",
+        "it": "Pacchetti vocali cifrati in memoria, registrazione limitata e interruzione alla disconnessione, in background o cambiando TV."
+      },
+      "compatibility": {
+        "en": "Requires paired Android TV system controls and receiver voice support. Native phones request microphone permission. Browsers need HTTPS/localhost; plain HTTP cannot capture audio. Recognition depends on the TV assistant.",
+        "it": "Richiede i controlli di sistema abbinati e il supporto vocale della TV. I telefoni richiedono il permesso microfono. I browser richiedono HTTPS/localhost; HTTP non può acquisire audio. Il riconoscimento dipende dall’assistente TV."
+      },
+      "features": [
+        {
+          "icon": "remote",
+          "label": {
+            "en": "Phone microphone",
+            "it": "Microfono del telefono"
+          },
+          "detail": {
+            "en": "Tap to speak and tap again to stop; recording ends automatically after 30 seconds. Audio is not saved to disk.",
+            "it": "Tocca per parlare e di nuovo per interrompere; termina automaticamente dopo 30 secondi. L’audio non viene salvato su disco."
+          }
+        }
+      ]
+    },
+    {
       "version": "2.0.5",
       "code": 32,
       "date": "2026-10-29",

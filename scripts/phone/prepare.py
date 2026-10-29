@@ -10,7 +10,7 @@ if target.exists():
 target.mkdir()
 for name in ['App.tsx','TVHome.tsx','index.ts','app.json','app.config.js','package.json','package-lock.json','.npmrc','metro.config.js','react-native.config.js','tsconfig.json','global.d.ts']:
     shutil.copy2(root/name,target/name)
-for name in ['src','assets','public']:
-    shutil.copytree(root/name,target/name)
+for name in ['src','assets','public','modules']:
+    shutil.copytree(root/name,target/name,ignore=shutil.ignore_patterns("build", ".gradle") if name=="modules" else None)
 (target/'node_modules').symlink_to(root/'node_modules',target_is_directory=True)
 print('Prepared isolated phone workspace: .phone-native')

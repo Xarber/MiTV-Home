@@ -83,3 +83,11 @@ paused activity without ending its playback session or disabling controls. Nativ
 key payloads carry eventId to reject duplicate bridged delivery. Background Home
 failure returns foreground_access_required; permission is requested through the
 TV's Remote settings, never granted automatically by the application.
+
+## Phone microphone (2.0.6)
+
+Authenticated `/api/voice/start`, `/api/voice/chunk`, `/api/voice/end` forward
+phone PCM through the paired system remote. Only chunk bodies allow 16 KiB;
+ordinary JSON retains 4 KiB. Voice payloads use ephemeral RSA-OAEP/AES-GCM;
+owner binding, sequencing and deadlines are checked independently of decryption.
+See [exact voice contract and trust limitations](features/PHONE_VOICE.md).

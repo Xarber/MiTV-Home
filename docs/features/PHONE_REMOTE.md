@@ -156,3 +156,11 @@ adapter starts with loopback and can fall back only to an interface address of
 this same TV supplied by native code. A system_connection_failed error preserves
 the working launcher bridge. Phone-microphone streaming is not implemented; voice
 currently opens the TV's assistant. Actual key behavior depends on the TV/app.
+
+### Phone microphone (2.0.6)
+
+The phone controls button now captures the phone microphone instead of sending
+only the assistant key. See [voice capture, encryption and compatibility](PHONE_VOICE.md).
+Native phones request recording consent; secure browsers use AudioWorklet.
+The TV's HTTP remote page explains the browser restriction. No audio files are
+saved; sessions stop on cancellation/background/disconnect and after 30 seconds.

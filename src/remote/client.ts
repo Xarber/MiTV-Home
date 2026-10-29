@@ -48,6 +48,19 @@ export class RemoteClient {
   try{return await this.transport.rpc(operation,payload,operation==='hello'?undefined:this.session?.token||undefined,controller.signal);}
   finally{clearTimeout(timer);this.requests.delete(controller);}
  }
+ /** Captures one TV and its trust generation; microphone packets can never follow a TV switch. */
+ voiceTransport(){
+  if(this.fixture||this.snapshot.device?.provenance==='simulated')throw new RemoteError('voice_unavailable_in_preview');
+  if(this.snapshot.status!=='connected'||!this.transport||!this.session?.token)throw new RemoteError('not_connected');
+  const transport=this.transport,token=this.session.token,generation=this.generation;
+  return async(operation:'voice_start'|'voice_chunk'|'voice_end',payload:Record<string,unknown>)=>{
+   if(operation!=='voice_end'&&(generation!==this.generation||!this.active))throw new RemoteError('disconnected');
+   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),operation==='voice_start'?25000:5000);
+   if(operation!=='voice_end')this.requests.add(controller);
+   try{const result=await transport.rpc(operation,payload,token,controller.signal);if(result.error)throw new RemoteError(String(result.error));return result;}
+   finally{clearTimeout(timer);this.requests.delete(controller);}
+  };
+ }
  private async verifyIdentity(){
   if(this.fixture)return;
   const generation=this.generation,session=this.session;

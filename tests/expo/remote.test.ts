@@ -22,3 +22,14 @@ test('system pairing confirms only a ready handshake and never reports success f
 test('wallpaper sync is optional, sanitized and keeps demo playback isolated',()=>{assert.equal(parseState(state()).wallpaper,undefined);assert.deepEqual(parseState({...state(),wallpaper:{id:'dune',motion:true,musicTint:true}}).wallpaper,{id:'dune',motion:true,musicTint:true});assert.equal(parseState({...state(),wallpaper:{id:3,motion:true}}).wallpaper,undefined);assert.throws(()=>parseState({...state(),music:{active:true,source:'demo'}}));assert.equal(parseState({...state(),provenance:'simulated',music:{active:true,source:'demo'}}).music.source,'demo');});
 
 test('system remote failure does not disconnect the working launcher bridge',async()=>{class SystemFailure extends Mock{async rpc(op:string,payload:Record<string,unknown>,token?:string){if(op==='key')return {error:'system_connection_failed'};return super.rpc(op,payload,token);}}const client=new RemoteClient(trust);try{client.connect(new SystemFailure(),{address:'http://192.168.1.4',id:first,token});await sleep();await client.key('channelup');assert.equal(client.snapshot.status,'connected');}finally{await client.disconnect();}});
+
+test('voice cannot follow TV switches and cleanup remains bound to the old TV',async()=>{
+ const firstTV=new Mock(),nextTV=new Mock(),client=new RemoteClient(trust);nextTV.id=second;
+ try{
+  client.connect(firstTV,{address:'http://192.168.1.2',token,id:first});await sleep();const voice=client.voiceTransport();
+  client.connect(nextTV,{address:'http://192.168.1.3',token,id:second});await sleep();
+  await assert.rejects(voice('voice_chunk',{id:'a'.repeat(32)}));await voice('voice_end',{id:'a'.repeat(32)});
+  assert.equal(firstTV.calls.filter(call=>call.op==='voice_end').length,1);assert.equal(nextTV.calls.filter(call=>call.op.startsWith('voice_')).length,0);
+ }finally{await client.disconnect();}
+});
+test('preview never obtains a microphone transport',async()=>{const client=new RemoteClient(trust);try{client.connect(new Mock(),{address:'http://192.168.1.2',token,id:first},true);await sleep();assert.throws(()=>client.voiceTransport());}finally{await client.disconnect();}});

@@ -86,7 +86,7 @@ export default function PhoneRemoteApp({preview=false}:{preview?:boolean}){
  {displayed&&<AnchoredPanel key={displayed==='music'?'music':'settings'} kind={displayed==='music'?'music':'settings'} phone safeInsets={{...insets,bottom:Math.max(insets.bottom,keyboardHeight)}} anchor={anchor} bounds={bounds} visible={!!panel} close={()=>setPanel(null)}>
  {displayed!=='music'&&<View style={s.panelHeader}><Text style={[s.sectionTitle,{flex:1,marginVertical:0}]}>{displayed==='controls'?'TV controls':displayed==='system'?'System controls':displayed==='paired'?'Connected':'Your televisions'}</Text><FocusButton id="phone-panel-close" group="phone-modal" label={navigation.canGoBack?"Back":"Close"} onPress={navigation.canGoBack?navigation.back:navigation.close} style={s.roundButton}><Icon name={navigation.canGoBack?"back":"close"} size={20}/></FocusButton></View>}
  <FadedScroll>
- {displayed==='controls'&&<TVControls connected={connected} paired={!!state.device?.systemRemote.paired} ready={!!state.device?.systemRemote.ready} command={command} pair={()=>setPanel('system')}/>}
+ {displayed==='controls'&&<TVControls client={client} connected={connected} paired={!!state.device?.systemRemote.paired} ready={!!state.device?.systemRemote.ready} command={command} pair={()=>setPanel('system')}/>}
  {displayed==='music'&&music&&<PhonePlayer music={music} artwork={state.artwork} connected={connected} action={(action,value)=>{void client.media(action,value);}}/>}
  {displayed==='settings'&&<>
  <Text style={s.groupTitle}>PAIRED TELEVISIONS</Text>
