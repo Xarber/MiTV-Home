@@ -187,7 +187,7 @@ final class HomeRemoteServer implements Runnable {
                 respond(client,200,"application/json","{\"ok\":true}");return;
             }
             if (path.equals("/api/presence")) { respond(client,200,"application/json","{\"ok\":true}"); return; }
-            if(path.equals("/api/key")&&!payload.optString("command").matches("up|down|left|right|ok|back|home|volumeup|volumedown|playpause|next|previous|menu|control")){respond(client,400,"application/json","{\"error\":\"unsupported\"}");return;}
+            if(path.equals("/api/key")&&!RemoteKeys.supported(payload.optString("command"))){respond(client,400,"application/json","{\"error\":\"unsupported\"}");return;}
             java.util.Map<String,String> routes=new java.util.HashMap<>();
             routes.put("/api/key","key");routes.put("/api/state","state");routes.put("/api/catalog","catalog");routes.put("/api/icon","icon");routes.put("/api/artwork","artwork");routes.put("/api/launch","launch");routes.put("/api/media","media");routes.put("/api/system/pair/start","system_pair_begin");routes.put("/api/system/pair/finish","system_pair_finish");
             String operation=routes.get(path);if(operation==null){respond(client,404,"application/json","{\"error\":\"not_found\"}");return;}

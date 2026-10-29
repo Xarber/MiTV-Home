@@ -7,6 +7,7 @@ keys, metadata and raw protocol logs are excluded from diagnostic records.
 import asyncio
 import concurrent.futures
 import json
+import ipaddress
 import logging
 import os
 from pathlib import Path
@@ -18,13 +19,15 @@ from playback_diagnostics import Recorder
 
 KEYS={'up':'DPAD_UP','down':'DPAD_DOWN','left':'DPAD_LEFT','right':'DPAD_RIGHT',
       'ok':'DPAD_CENTER','back':'BACK','home':'HOME','volumeup':'VOLUME_UP',
-      'volumedown':'VOLUME_DOWN','playpause':'MEDIA_PLAY_PAUSE','next':'MEDIA_NEXT','previous':'MEDIA_PREVIOUS','menu':'MENU'}
+      'volumedown':'VOLUME_DOWN','playpause':'MEDIA_PLAY_PAUSE','next':'MEDIA_NEXT','previous':'MEDIA_PREVIOUS','menu':'MENU','mute':'VOLUME_MUTE',
+      'channelup':'CHANNEL_UP','channeldown':'CHANNEL_DOWN','rewind':'MEDIA_REWIND','fastforward':'MEDIA_FAST_FORWARD',
+      'stop':'MEDIA_STOP','voice':'VOICE_ASSIST','red':'PROG_RED','green':'PROG_GREEN','yellow':'PROG_YELLOW','blue':'PROG_BLUE'}
 
 class Client:
     def __init__(self,directory,diagnostics,version,commit):
         logger=logging.getLogger('androidtvremote2')
         logger.handlers=[logging.NullHandler()];logger.propagate=False;logger.setLevel(logging.CRITICAL)
-        self.loop=asyncio.new_event_loop();self.remote=None;self.stage=None;self.ready=False
+        self.local_address=None;self.loop=asyncio.new_event_loop();self.remote=None;self.stage=None;self.ready=False
         self.paired=False;self.status='not_paired';self.directory=directory;self.pair_deadline=0
         self.recorder=Recorder(diagnostics,version,commit,basename='system-remote')
         self.thread=threading.Thread(target=self._run,name='SystemTVRemote',daemon=True);self.thread.start()
@@ -39,7 +42,7 @@ class Client:
             self.loop.close()
     def request(self,operation,payload='{}'):
         if operation=='state':return json.dumps({'status':self.status,'ready':self.ready,'paired':self.paired})
-        names={'prepare':'system_prepare','pair_begin':'system_pair_begin','pair_finish':'system_pair_finish','key':'system_key','disconnect':'system_disconnect','shutdown':'system_disconnect'}
+        names={'prepare':'system_prepare','pair_begin':'system_pair_begin','pair_finish':'system_pair_finish','key':'system_key','connect':'system_connect','disconnect':'system_disconnect','shutdown':'system_disconnect'}
         if operation not in names:return json.dumps({'error':'unsupported'})
         record=names[operation];self.recorder.write('start',record)
         future=asyncio.run_coroutine_threadsafe(self._dispatch(operation,json.loads(payload)),self.loop)
@@ -70,6 +73,9 @@ class Client:
                 descriptor=os.open(path,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600)
                 with os.fdopen(descriptor,'w') as output:output.write(value)
             self.remote=AndroidTVRemote('Aurea Home',str(cert_path),str(key_path),'127.0.0.1',loop=self.loop,enable_ime=False,enable_voice=False)
+            local=data.get('localAddress')
+            try:self.local_address=local if isinstance(local,str) and ipaddress.ip_address(local).version==4 and ipaddress.ip_address(local).is_private and not ipaddress.ip_address(local).is_loopback else None
+            except ValueError:self.local_address=None
             self.paired=data.get('paired') is True;self.status='paired' if self.paired else 'not_paired';self.ready=False
             self.remote.add_is_available_updated_callback(self._availability)
             # Java persists this result before starting any pairing operation.
@@ -104,19 +110,28 @@ class Client:
                 if type(error).__name__=='InvalidAuth':self.paired=False;raise
                 self.ready=False;self.status='reconnecting';self.remote.keep_reconnecting(self._invalid_auth)
             return {'status':self.status,'ready':self.ready,'paired':True}
+        if operation=='connect':
+            if not self.paired:return {'error':'system_pairing_required'}
+            if not self.ready:await self._connect()
+            return {'status':'ready','ready':True,'paired':True}
         if operation=='key':
             command=data.get('command')
             if command not in KEYS:return {'error':'unsupported'}
             if not self.ready:await self._connect()
             try:self.remote.send_key_command(KEYS[command])
-            except Exception as error:
+            except Exception:
                 self.ready=False
-                if type(error).__name__!='ConnectionClosed':raise
-                await self._connect();self.remote.send_key_command(KEYS[command])
+                raise
             return {'status':'accepted'}
         return {'error':'unsupported'}
     async def _connect(self):
-        await asyncio.wait_for(self.remote.async_connect(),10)
+        try:await asyncio.wait_for(self.remote.async_connect(),7)
+        except Exception as error:
+            # A self-hosted remote service may reset loopback TLS after pairing.
+            # Retry only establishment, never a potentially delivered key command.
+            if not self.local_address or self.remote.host!='127.0.0.1' or type(error).__name__ not in {'CannotConnect','ConnectionClosed','TimeoutError'}:raise
+            self.remote.disconnect();self.remote.host=self.local_address
+            await asyncio.wait_for(self.remote.async_connect(),7)
         self._remove_private_staging();self.ready=True;self.status='ready'
         self.remote.keep_reconnecting(self._invalid_auth)
     def _availability(self,available):

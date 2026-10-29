@@ -33,7 +33,7 @@ public final class HomeRemoteService extends Service {
     private volatile RemotePlayback playback;
     private volatile String pendingLaunch;
     private volatile long launchDeadline;
-    private final Runnable monitor=new Runnable(){public void run(){if(playback!=null){playback.clients(server!=null&&server.hasActiveRemote());playback.tickActivity();}main.postDelayed(this,5000);}};
+    private final Runnable monitor=new Runnable(){public void run(){if(system!=null)system.recover();if(playback!=null){playback.clients(server!=null&&server.hasActiveRemote());playback.tickActivity();}main.postDelayed(this,5000);}};
 
     static synchronized void attach(LegacyHomeActivity home){visibleHome=new WeakReference<>(home);HomeRemoteService service=instance;if(service!=null&&service.pendingLaunch!=null&&SystemClock.elapsedRealtime()<service.launchDeadline){String target=service.pendingLaunch;service.pendingLaunch=null;service.main.post(()->{if(home.resumed)service.catalog.launch(home,target);});}}
     static synchronized void attachExpo(MainActivity home){HomeRemoteService service=instance;if(service!=null&&service.pendingLaunch!=null&&SystemClock.elapsedRealtime()<service.launchDeadline){String target=service.pendingLaunch;service.pendingLaunch=null;service.main.post(()->service.catalog.launch(home,target));}}
@@ -89,7 +89,9 @@ public final class HomeRemoteService extends Service {
     }
     private JSONObject wallpaper()throws Exception{android.content.SharedPreferences preferences=getSharedPreferences("it.xarber.tvhome.MainActivity",0);return new JSONObject().put("id",preferences.getString("wallpaper","classic")).put("motion",preferences.getBoolean("wallpaper-motion",false)).put("musicTint",preferences.getBoolean("music-wallpaper-tint",false));}
     private JSONObject key(String command)throws Exception{
-        if(!command.matches("up|down|left|right|ok|back|home|volumeup|volumedown|playpause|next|previous|menu|control"))return SystemRemoteController.error("unsupported");
+        if(!RemoteKeys.supported(command))return SystemRemoteController.error("unsupported");
+        if(command.equals("mute")){AudioManager audio=getSystemService(AudioManager.class);audio.adjustStreamVolume(AudioManager.STREAM_MUSIC,AudioManager.ADJUST_TOGGLE_MUTE,0);return accepted();}
+        if(RemoteKeys.systemOnly(command))return system.state().optBoolean("paired")?system.request("key",new JSONObject().put("command",command)):SystemRemoteController.error("system_pairing_required");
         if(TVPlatform.foreground())return TVPlatform.remoteKey(command);
         if(home()!=null)return onMain(()->{LegacyHomeActivity activity=home();if(activity==null)return SystemRemoteController.error("home_changed");activity.remoteCommand(command);return accepted();});
         if(command.equals("control"))return SystemRemoteController.error("home_required");

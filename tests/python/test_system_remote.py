@@ -74,3 +74,29 @@ class PairingRecoveryChecks(unittest.TestCase):
         with self.adapter(DelayedControl):
             self.prepare();self.request('pair_begin');result=self.request('pair_finish',pin='ABC123')
             self.assertTrue(result['paired']);self.assertFalse(result['ready']);self.assertEqual(result['status'],'reconnecting')
+
+class ExtendedRemoteChecks(unittest.TestCase):
+    setUp=SystemRemoteChecks.setUp
+    tearDown=SystemRemoteChecks.tearDown
+    request=SystemRemoteChecks.request
+    prepare=SystemRemoteChecks.prepare
+    adapter=PairingRecoveryChecks.adapter
+    def test_standard_tv_commands_and_read_only_recovery(self):
+        with self.adapter(FakeRemote):
+            self.prepare();self.request('pair_begin');self.request('pair_finish',pin='ABC123');remote=FakeRemote.instances[-1]
+            for command in ['mute','channelup','channeldown','rewind','fastforward','stop','voice','red','green','yellow','blue']:self.assertEqual(self.request('key',command=command)['status'],'accepted')
+            self.assertEqual(remote.keys,['VOLUME_MUTE','CHANNEL_UP','CHANNEL_DOWN','MEDIA_REWIND','MEDIA_FAST_FORWARD','MEDIA_STOP','VOICE_ASSIST','PROG_RED','PROG_GREEN','PROG_YELLOW','PROG_BLUE'])
+            self.client.ready=False;before=list(remote.keys);self.assertTrue(self.request('connect')['ready']);self.assertEqual(remote.keys,before)
+    def test_only_connection_establishment_can_fallback_to_native_supplied_self_address(self):
+        class ResetLoopback(FakeRemote):
+            async def async_connect(self):
+                if self.host=='127.0.0.1':raise type('CannotConnect',(Exception,),{})()
+        with self.adapter(ResetLoopback):
+            self.request('prepare',certificate='PUBLIC CERTIFICATE',key='PRIVATE KEY NEVER LOG',paired=True,localAddress='192.168.1.101')
+            self.assertTrue(self.request('connect')['ready']);self.assertEqual(FakeRemote.instances[-1].host,'192.168.1.101')
+    def test_uncertain_key_delivery_is_never_replayed(self):
+        class LostAfterSend(FakeRemote):
+            def send_key_command(self,key):self.keys.append(key);raise type('ConnectionClosed',(Exception,),{})()
+        with self.adapter(LostAfterSend):
+            self.prepare();self.request('pair_begin');self.request('pair_finish',pin='ABC123');remote=FakeRemote.instances[-1]
+            self.assertIn('error',self.request('key',command='next'));self.assertEqual(remote.keys,['MEDIA_NEXT'])

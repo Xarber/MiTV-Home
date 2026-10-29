@@ -145,3 +145,14 @@ without system pairing, acknowledges foreground arrival, and reports missing
 background access. Remote settings on the TV expose Android's Display over other
 apps permission page. The grant remains user-controlled. Other apps' navigation
 continues to require the system remote service.
+
+### Extended Android TV controls (2.0.5)
+
+TV controls groups the standard system-service keys separately from local Home
+navigation: channels, media transport, colored keys and TV voice assistant.
+A quick mute button uses AudioManager. System-only controls require pairing;
+read-only reconnection never repeats a key after uncertain delivery. The TV-side
+adapter starts with loopback and can fall back only to an interface address of
+this same TV supplied by native code. A system_connection_failed error preserves
+the working launcher bridge. Phone-microphone streaming is not implemented; voice
+currently opens the TV's assistant. Actual key behavior depends on the TV/app.
